@@ -1,0 +1,429 @@
+---
+customFieldSets:
+- id: "_UK_BACS_ACCOUNT_Deposit_Account"
+  name: "UK_BACS_ACCOUNT"
+  description: ""
+  type: "SINGLE"
+  availableFor: "DEPOSIT_ACCOUNT"
+  customFields:
+  - id: "sortCode"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      validationPattern: "######"
+      unique: false
+    displaySettings:
+      displayName: "Sort Code"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: false
+    default: false
+  - id: "accID"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      validationPattern: "########"
+      unique: false
+    displaySettings:
+      displayName: "Account Number"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: false
+    default: false
+- id: "_FDROLLINSTRUCTIONS"
+  name: "Rollover Instructions"
+  description: ""
+  type: "SINGLE"
+  availableFor: "DEPOSIT_ACCOUNT"
+  customFields:
+  - id: "Rollover_Y_N_Deposit_Accounts"
+    type: "SELECTION"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Rollover Y/N"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    selectionOptions:
+    - availableOptions:
+      - selectionId: "1190873966"
+        value: "Yes"
+      - selectionId: "510937446"
+        value: "No"
+  - id: "Rollover_Product_Deposit_Account"
+    type: "SELECTION"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Rollover Product"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    selectionOptions:
+    - availableOptions:
+      - selectionId: "1333498960"
+        value: "Interest Paid at Maturity"
+      - selectionId: "852614126"
+        value: "Interest Paid Monthly"
+  - id: "Rollover_Term_Deposit_Accounts"
+    type: "SELECTION"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Rollover Term"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    selectionOptions:
+    - availableOptions:
+      - selectionId: "126235597"
+        value: "1"
+      - selectionId: "303927213"
+        value: "2"
+      - selectionId: "1151172406"
+        value: "3"
+      - selectionId: "1265741853"
+        value: "4"
+      - selectionId: "1677976503"
+        value: "6"
+      - selectionId: "824610026"
+        value: "9"
+      - selectionId: "1080463394"
+        value: "12"
+  - id: "Rollover_Amount_Deposit_Accounts"
+    type: "SELECTION"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Rollover Amount"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    selectionOptions:
+    - availableOptions:
+      - selectionId: "920000866"
+        value: "Original Principal without Interest"
+      - selectionId: "1777494515"
+        value: "Original Principal with Interest"
+      - selectionId: "1492259036"
+        value: "Specify Rollover Amount"
+      - selectionId: "22822573"
+        value: "Specify Payout Amount"
+  - id: "Specified_Rollover_Amount_Deposi"
+    type: "NUMBER"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Specified Rollover Amount"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "Specify_Payout_Amount_Deposit_Ac"
+    type: "NUMBER"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Specified Payout Amount"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "Payout_Account_Number_Deposit_Ac"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Payout Account Number"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "Payout_BSB_Number_Deposit_Accoun"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Payout Bank SortCode"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+- id: "_AccountAlias"
+  name: "AccountAlias"
+  description: ""
+  type: "GROUPED"
+  availableFor: "DEPOSIT_ACCOUNT"
+  customFields:
+  - id: "Type"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Type"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+  - id: "AccNum"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: true
+    displaySettings:
+      displayName: "Acc Number"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+  - id: "AccSortCodeBranch"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Acc Sort-Code or Branch"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false

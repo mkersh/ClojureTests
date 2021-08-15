@@ -1,0 +1,1034 @@
+---
+customFieldSets:
+- id: "_CustomField1Client"
+  name: "CustomField1Client"
+  description: ""
+  type: "SINGLE"
+  availableFor: "CLIENT"
+  customFields:
+  - id: "CF1"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "CF1"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "client"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+- id: "_MKExtraCustomer"
+  name: "MKExtraCustomer"
+  description: ""
+  type: "SINGLE"
+  availableFor: "CLIENT"
+  customFields:
+  - id: "MyCustomerField1"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "MyCustomerField1"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "client"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+- id: "_Beneficiaries"
+  name: "Beneficiaries"
+  description: "List of beneficiaries for the customer"
+  type: "GROUPED"
+  availableFor: "CLIENT"
+  customFields:
+  - id: "ID"
+    type: "FREE_TEXT"
+    state: "INACTIVE"
+    validationRules:
+      unique: true
+    displaySettings:
+      displayName: "ID"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: true
+    default: true
+  - id: "SortCode"
+    type: "FREE_TEXT"
+    state: "INACTIVE"
+    validationRules:
+      validationPattern: "######"
+      unique: false
+    displaySettings:
+      displayName: "SortCode"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "SME"
+      required: true
+      default: true
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "AccountNumber"
+    type: "FREE_TEXT"
+    state: "INACTIVE"
+    validationRules:
+      validationPattern: "########"
+      unique: false
+    displaySettings:
+      displayName: "AccountNumber"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "SME"
+      required: true
+      default: true
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "PayeeName"
+    type: "FREE_TEXT"
+    state: "INACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "PayeeName"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "SME"
+      required: true
+      default: true
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "Notes"
+    type: "FREE_TEXT"
+    state: "INACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Notes"
+      description: ""
+      fieldSize: "LONG"
+    usage:
+    - id: "SME"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+- id: "_GlobalCreditLimits"
+  name: "Global Credit Limits"
+  description: ""
+  type: "GROUPED"
+  availableFor: "CLIENT"
+  customFields:
+  - id: "globalLimitID"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Global Limit ID"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+  - id: "globalLimitAllocated"
+    type: "NUMBER"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Global Limit Allocated"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+  - id: "globalLimitStartDate"
+    type: "DATE"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Global Limit Start Date"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+  - id: "globalLimitEndDate"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Global Limit End Date"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+- id: "_SMBExtras"
+  name: "SMBExtras"
+  description: ""
+  type: "SINGLE"
+  availableFor: "GROUP"
+  customFields:
+  - id: "LinkedBusiness"
+    type: "GROUP_LINK"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "LinkedBusiness"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "SoleTrader"
+      required: true
+      default: true
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+- id: "_LargeAccounts"
+  name: "LargeAccounts"
+  description: ""
+  type: "SINGLE"
+  availableFor: "GROUP"
+  customFields:
+  - id: "LinkToClient"
+    type: "CLIENT_LINK"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "LinkToClient"
+      description: ""
+      fieldSize: "LONG"
+    usage:
+    - id: "group"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+- id: "_UK_BACS_ACCOUNT"
+  name: "UK_BACS_ACCOUNT"
+  description: ""
+  type: "SINGLE"
+  availableFor: "LOAN_ACCOUNT"
+  customFields:
+  - id: "sortCode2"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      validationPattern: "######"
+      unique: false
+    displaySettings:
+      displayName: "Sort Code"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+  - id: "accID2"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      validationPattern: "########"
+      unique: false
+    displaySettings:
+      displayName: "Account Number"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+- id: "_mambuLoanCFieldSet"
+  name: "mambuLoanCFieldSet"
+  description: ""
+  type: "SINGLE"
+  availableFor: "LOAN_ACCOUNT"
+  customFields:
+  - id: "mambuLoanCFieldId"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "mambuLoanCFieldId"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+- id: "Guarantor_Default_Guarantors"
+  name: "Guarantor Default"
+  description: "Default custom field set used only for grouping guarantor custom fields"
+  type: "SINGLE"
+  availableFor: "GUARANTOR"
+  customFields: []
+- id: "Asset_Default_Assets"
+  name: "Asset Default"
+  description: "Default custom field set used only for grouping asset custom fields"
+  type: "SINGLE"
+  availableFor: "ASSET"
+  customFields:
+  - id: "AssetID"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      validationPattern: "####"
+      unique: false
+    displaySettings:
+      displayName: "AssetID"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: true
+    default: true
+  - id: "AssetID2"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "AssetID2"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: true
+    default: true
+- id: "_UK_BACS_ACCOUNT_Deposit_Account"
+  name: "UK_BACS_ACCOUNT"
+  description: ""
+  type: "SINGLE"
+  availableFor: "DEPOSIT_ACCOUNT"
+  customFields:
+  - id: "sortCode"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      validationPattern: "######"
+      unique: false
+    displaySettings:
+      displayName: "Sort Code"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: false
+    default: false
+  - id: "accID"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      validationPattern: "########"
+      unique: false
+    displaySettings:
+      displayName: "Account Number"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: false
+    default: false
+- id: "_FDROLLINSTRUCTIONS"
+  name: "Rollover Instructions"
+  description: ""
+  type: "SINGLE"
+  availableFor: "DEPOSIT_ACCOUNT"
+  customFields:
+  - id: "Rollover_Y_N_Deposit_Accounts"
+    type: "SELECTION"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Rollover Y/N"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    selectionOptions:
+    - availableOptions:
+      - selectionId: "1190873966"
+        value: "Yes"
+      - selectionId: "510937446"
+        value: "No"
+  - id: "Rollover_Product_Deposit_Account"
+    type: "SELECTION"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Rollover Product"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    selectionOptions:
+    - availableOptions:
+      - selectionId: "1333498960"
+        value: "Interest Paid at Maturity"
+      - selectionId: "852614126"
+        value: "Interest Paid Monthly"
+  - id: "Rollover_Term_Deposit_Accounts"
+    type: "SELECTION"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Rollover Term"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    selectionOptions:
+    - availableOptions:
+      - selectionId: "126235597"
+        value: "1"
+      - selectionId: "303927213"
+        value: "2"
+      - selectionId: "1151172406"
+        value: "3"
+      - selectionId: "1265741853"
+        value: "4"
+      - selectionId: "1677976503"
+        value: "6"
+      - selectionId: "824610026"
+        value: "9"
+      - selectionId: "1080463394"
+        value: "12"
+  - id: "Rollover_Amount_Deposit_Accounts"
+    type: "SELECTION"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Rollover Amount"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    selectionOptions:
+    - availableOptions:
+      - selectionId: "920000866"
+        value: "Original Principal without Interest"
+      - selectionId: "1777494515"
+        value: "Original Principal with Interest"
+      - selectionId: "1492259036"
+        value: "Specify Rollover Amount"
+      - selectionId: "22822573"
+        value: "Specify Payout Amount"
+  - id: "Specified_Rollover_Amount_Deposi"
+    type: "NUMBER"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Specified Rollover Amount"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "Specify_Payout_Amount_Deposit_Ac"
+    type: "NUMBER"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Specified Payout Amount"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "Payout_Account_Number_Deposit_Ac"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Payout Account Number"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+  - id: "Payout_BSB_Number_Deposit_Accoun"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Payout Bank SortCode"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "1208_CUR"
+      required: false
+      default: false
+    - id: "AIC2"
+      required: false
+      default: false
+    - id: "CURACCNO"
+      required: false
+      default: false
+    - id: "MPOTDMATURITY"
+      required: false
+      default: false
+    - id: "NEGCUR1"
+      required: false
+      default: false
+    - id: "ROLLTERMMAT"
+      required: false
+      default: false
+    - id: "offdep"
+      required: false
+      default: false
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+- id: "_AccountAlias"
+  name: "AccountAlias"
+  description: ""
+  type: "GROUPED"
+  availableFor: "DEPOSIT_ACCOUNT"
+  customFields:
+  - id: "Type"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Type"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+  - id: "AccNum"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: true
+    displaySettings:
+      displayName: "Acc Number"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+  - id: "AccSortCodeBranch"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Acc Sort-Code or Branch"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: false
+- id: "Transaction_Details_Transactions"
+  name: "Transaction Details"
+  description: "Captures default transaction custom fields"
+  type: "SINGLE"
+  availableFor: "TRANSACTION_CHANNEL"
+  customFields:
+  - id: "IDENTIFIER_TRANSACTION_CHANNEL_I"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: true
+    displaySettings:
+      displayName: "Identifier"
+      description: "An unique user-defined identifier for each transaction. This field\
+        \ is optional, but if specified, it must be unique across all loan and deposit\
+        \ transactions"
+      fieldSize: "SHORT"
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+  - id: "BANK_NUMBER_TRANSACTION_CHANNEL_"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Bank #"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "BACS"
+      required: false
+      default: true
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+  - id: "RECEPIT_NUMBER_TRANSACTION_CHANN"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Receipt #"
+      fieldSize: "SHORT"
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+  - id: "CHECK_NUMBER_TRANSACTION_CHANNEL"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Check #"
+      fieldSize: "SHORT"
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+  - id: "ACCOUNT_NUMBER_TRANSACTION_CHANN"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Account #"
+      description: ""
+      fieldSize: "SHORT"
+    usage:
+    - id: "BACS"
+      required: false
+      default: true
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+  - id: "ACCOUNT_NAME_TRANSACTION_CHANNEL"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Account Name"
+      fieldSize: "SHORT"
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+  - id: "ROUTING_NUMBER_TRANSACTION_CHANN"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Routing #"
+      fieldSize: "SHORT"
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+- id: "_DepositTransactionFieldsExtra"
+  name: "Deposit Transaction Fields Extra"
+  description: ""
+  type: "SINGLE"
+  availableFor: "TRANSACTION_CHANNEL"
+  customFields:
+  - id: "TestField"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Test Field"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    required: false
+    default: true
+- id: "_ISAGeneric_MK20181223"
+  name: "ISA Generic"
+  description: "Common attributes for all ISA products"
+  type: "SINGLE"
+  availableFor: "CENTRE"
+  customFields:
+  - id: "personal_isa_yearly_allowance"
+    type: "NUMBER"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "Personal ISA Allowance"
+      description: "Maximum amount that a single customer can deposit into their \
+        \ ISA accounts in a single year"
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: true
+    default: true
+  - id: "isa_year_start"
+    type: "DATE"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "ISA Year Start Date"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: true
+    default: true
+- id: "_isa_customer_attributes"
+  name: "ISA Customer (level)"
+  description: "Attributes needed for each ISA customer. "
+  type: "SINGLE"
+  availableFor: "CENTRE"
+  customFields:
+  - id: "isa_customer_year_balance"
+    type: "FREE_TEXT"
+    state: "ACTIVE"
+    validationRules:
+      unique: false
+    displaySettings:
+      displayName: "Yearly Balance"
+      description: "Deposit balance for all ISAs a customer has"
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: true
+    default: true
+- id: "_isa_product_attributes"
+  name: "ISA Product (level)"
+  description: ""
+  type: "SINGLE"
+  availableFor: "CENTRE"
+  customFields:
+  - id: "is_isa_product"
+    type: "CHECKBOX"
+    state: "ACTIVE"
+    displaySettings:
+      displayName: "ISA Product"
+      description: ""
+      fieldSize: "SHORT"
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    required: true
+    default: true
