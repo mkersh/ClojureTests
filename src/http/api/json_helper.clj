@@ -2,7 +2,17 @@
 ;; GitHub: https://github.com/mkersh/ClojureTests/tree/master/src/http/api/json_helper.clj 
 ;;
 ;; Useful helper functions:
-;; get-attr - to extract the results you want from a results
+;; [1] GET, POST, PATCH, DELETE, PUT
+;;   Params: <url-endpoint> <options>
+;;     <options> - See https://github.com/ring-clojure/ring 
+;;   Return: Results of the API call
+;;
+;;   See also api_pipe/apply-api for a higher level way of calling APIs
+;;   
+;; [2] setenv - sets the value of {{*env*}} used in API endpoints e.g "{{*env*}}/clients/"
+;; [3] find-path
+;; [4] get-attr - to extract the results you want from a results
+;;   This function is not needed use clojure standard get-in instead.
 (ns http.api.json_helper
   (:require
    [clojure.data.json :as json]
@@ -121,6 +131,8 @@
 
 (declare get-lists-from tidyup-results findPath-aux)
 
+;; Besides the conversion to :DECIMAL this function is nor needed
+;; Use the clojure standard get-in instead
 (defn get-attr [obj nested-fields & format]
   (let [att-val (reduce #(get %1 %2) obj nested-fields)]
     (if (= (first format) :DECIMAL)
