@@ -20,14 +20,14 @@
 (defn setup-logfile [fpath]
   (reset! output-file fpath))
 
-;; Controls when to stop the main thread/loop in consume-sse-stream
+;; stop-atom - controls when to stop the main thread/loop in consume-sse-stream
 (defonce stop-atom (atom false))
 (defn stop-client []
   (reset! stop-atom true))
 (defn start-client []
   (reset! stop-atom false))
 
-;; Controls whether or not to commit the events being received 
+;; commit-atom - controls whether or not to commit the events being received 
 ;; NOTE: If you don't commit then the event will be resent next time you consume
 ;; If you don't commit an event-cursor in 60 secs then Mambu will close the connection - assuming something is wrong
 (defonce commit-atom (atom true))
@@ -44,7 +44,7 @@
    :method api/POST
    :query-params {"size" "10"}
    :body   {"owning_application" "demo-app"
-            "event_types" ["mrn.event.europeshowcase.streamingapi.client_activity"]}
+            "event_types" (:topic-list context)}
    :headers {"Content-Type" "application/json"}})
 
 (defn delete-subscription-api [context]
@@ -189,7 +189,7 @@
   ;; This next function will create a new subscription for mrn.event.europeshowcase.streamingapi.client_activity
   ;; If one already exists it will return the same
   ;; NOTE: For testing run and then copy into subscriptionid def above (if it differs)
-  (steps/apply-api create-subscription-api {})
+  (steps/apply-api create-subscription-api {:topic-list ["mrn.event.europeshowcase.streamingapi.client_activity"]})
   ;; Next function will delete the subscription for mrn.event.europeshowcase.streamingapi.client_activity
   (steps/apply-api delete-subscription-api {:subscription_id subscriptionid})
 
