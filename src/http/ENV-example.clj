@@ -17,3 +17,7 @@
    "env1" {:url "https://europeshowcase.sandbox.mambu.com/api" :basic-auth ["fdrollover" "<password>"]}
    "env2" {:url "https://europeshowcase.sandbox.mambu.com/api" :ApiKey "<api-key>"} 
    })
+
+(comment 
+  ENV-MAP ;; To shut kondo reporting ENV-MAP as unused
+)
