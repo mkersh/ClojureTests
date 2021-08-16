@@ -74,7 +74,8 @@
 ;;; -----------------------------------------------------------------
 ;;; Helper functions
 
-;; Function to extract the ApiKey from a file - not stored in github :)
+;; Function to extract the ApiKey from the ENV.clj file
+;; NOTE: From a security perspective it is important that this ENV.clj file is not stored in github
 (defn get-auth2
   ([envId]
    (:ApiKey (get env/ENV-MAP envId))))
