@@ -10,7 +10,7 @@
 ;;;    See https://github.com/ring-clojure/ring for details of the <api-template>
 ;;;    Add the results from the API call to the <context> and return.
 ;;;       - Results are by default added using :last-call attribute or under attribute identified in :saveas
-;;; 
+;;; gg
 (ns http.api.api_pipe
   (:require [http.api.json_helper :as api]
             [clojure.pprint :as pp]))
