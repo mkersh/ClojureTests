@@ -6,7 +6,7 @@
 ;;; This ENV-MAP is used to expand {{*env*}} placeholders in my API helper functions
 ;;;
 ;;; IMPORTANT - The real ENV.clj file contains security secrets for accesssing Mambu environments
-;;; DO NOT STORE this file in Github
+;;; SO IT IS CRITICAL THAT YOU DO NOT STORE this file in Github
 ;;; ADD to .gitignore file to make sure it never gets saved
 
 (ns http.ENV-example)
