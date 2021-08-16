@@ -190,9 +190,15 @@
 
 
 (comment
+  
+  (api/setenv "env2")
   (json-api-example {:custid "019327031"})
 
+  ;; process-api-request is low-level function for calling APIs
+  ;; Better method is apply-api (which adds results to the context)
   (process-api-request (:context example-collection) json-api-example)
+
+  (apply-api json-api-example {:custid "019327031"})
 
   (process-collection example-collection)
 
