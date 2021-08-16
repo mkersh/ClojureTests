@@ -1,4 +1,4 @@
-;;; Example of what the ENV.clj should contain
+;;; This is an Example of what the ENV.clj should look like
 ;;; Instructions:
 ;;;    - Copy this file to a local ENV.clj file
 ;;;    - Add ENV.clj to your .gitignore (see below)
