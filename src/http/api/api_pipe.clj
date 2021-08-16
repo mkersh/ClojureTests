@@ -1,4 +1,15 @@
-;;; Support the processing of a collection of JSON API calls
+;;; Support functions for calling JSON API calls
+;;; 
+;;; [1] (process-collection <steps-collection>)
+;;;    Takes a collections that defines a number of API related steps to perform.
+;;;    See example-collection
+;;;
+;;; [2] (apply-api <api-template> <context>)
+;;;    Expand the <api-template> using the <context> and call the resulting API structure.
+;;;    See json-api-example
+;;;    See https://github.com/ring-clojure/ring for details of the <api-template>
+;;;    Add the results from the API call to the <context> and return.
+;;;       - Results are by default added using :last-call attribute or under attribute identified in :saveas
 ;;; 
 (ns http.api.api_pipe
   (:require [http.api.json_helper :as api]
@@ -36,7 +47,7 @@
 ;; merge with save-last-to-context when have time
 (defn save-last-to-context2 [item-id name]
   (fn [context _] ; 2nd param is the step object
-      (assoc context name {item-id (:last-call context)})))
+    (assoc context name {item-id (:last-call context)})))
 
 
 (defn print-context [label]
@@ -44,44 +55,37 @@
     (do (prn label)
         (pp/pprint context))
     context))
-      
+
 
 ;;; *******************************************************
 ;;; Example datastructures that this file handles
 
 ;; An individual API request
 ;; Part of a parent collection See example-collection below
-(def json-api-example
-  ;; Each request has to be wrapped in a fn (to delay evaluation until we are ready)
-  ;; This is the only tricky part of the setup
-  ;; Reason: We need to delay the evaluation of the map that defines the request
-  ;; until the context from the previous step has been evaluated  
-  (fn [context]
+(defn json-api-example
+  [context]
     {:url (str "{{*env*}}/clients/" (:custid context))
      :method api/GET
      :headers {"Accept" "application/vnd.mambu.v2+json"}
-     :query-params {}}))
+     :query-params {}})
 
 ;; A collection of steps     
-(def example-collection 
-{
-    :context {:accID 1, :custName "Smith"}
-    :steps [{:pre-filter nil
-             :request json-api-example
+(def example-collection
+  {:context {:accID 1, :custName "Smith"}
+   :steps [{:pre-filter nil
+            :request json-api-example
              ;;:post-filter (save-last-to-context :cust-list)}
-             :post-filter [(save-part-to-context [0 "id"] :last-id)
-                           (save-part-to-context [0 "birthDate"] :last-date)
+            :post-filter [(save-part-to-context [0 "id"] :last-id)
+                          (save-part-to-context [0 "birthDate"] :last-date)
                            ;(save-last-to-context :cust-list)
-                           ]}
-             
-            {:pre-filter nil
-             :request (fn [_] ; again remember to wrap requests as functions
-                        {:method (fn [_,_] (prn "Step 2"))})
-             :post-filter nil}
-            {:request (fn [_]
-                        {:method (fn [_,_] (prn "Step 3"))})}]
-}
-)
+                          ]}
+
+           {:pre-filter nil
+            :request (fn [_] ; again remember to wrap requests as functions
+                       {:method (fn [_,_] (prn "Step 2"))})
+            :post-filter nil}
+           {:request (fn [_]
+                       {:method (fn [_,_] (prn "Step 3"))})}]})
 
 (defn method-name [fn]
   (cond
@@ -106,8 +110,7 @@
     (if (:show-only context)
       (do (prn "DEBUG:")
           (pp/pprint request0))
-      (api-method url request1))    
-    ))
+      (api-method url request1))))
 
 (defn process-filter [filterFn context step]
   (if (vector? filterFn)
@@ -149,20 +152,17 @@
                  jumpto)
         oneOnly (if (vector? jumpto)
                   (= (second jumpto) :one-only)
-                  false)
-        ]
+                  false)]
     (if jumpto
       (let [start-from (drop (- (find-jump-pos jumpId steps-list) 1) steps-list)]
         (if oneOnly (take 1 start-from) start-from))
-      steps-list)
-    ))
+      steps-list)))
 
 ;; Test jump-to-step
 ;;(jump-to-step {:jump-to-step [:jump-here :one-only]} [1 2 {:id :jump-here} 3 4 5])
 
 (defn process-collection [col]
-  (reduce next-step (:context col) (jump-to-step col (:steps col)) )
-  )
+  (reduce next-step (:context col) (jump-to-step col (:steps col))))
 
 ;; Next function is an easy way to call individual API calls
 (defn- apply-api1 [api-obj context]
@@ -178,6 +178,8 @@
         context2 (process-collection steps)]
     context2))
 
+;; Function for applying an API to a context
+;; Results of the API are added to the context and returned
 (defn apply-api
   ([api-obj context]
    (if-let [saveas (:saveas context)]
@@ -188,12 +190,10 @@
 
 
 (comment
-  (json-api-example {:custid "019327031"}) 
+  (json-api-example {:custid "019327031"})
 
   (process-api-request (:context example-collection) json-api-example)
 
   (process-collection example-collection)
 
-  (reduce prn "start" [1 2 3])
-  
-  )
+  (reduce prn "start" [1 2 3]))
