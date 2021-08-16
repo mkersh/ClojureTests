@@ -1,4 +1,4 @@
-;; Helper functions to calling JSON APIs using http://http-kit.github.io/
+;; Helper functions for calling JSON APIs using http://http-kit.github.io/
 ;; GitHub: https://github.com/mkersh/ClojureTests/tree/master/src/http/api/json_helper.clj 
 ;;
 ;; Useful helper functions:
