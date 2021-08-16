@@ -48,6 +48,10 @@
   (def ENV envId))
 (setenv "env1")
 
+(defmacro setenv-local [envId & body]
+  `(binding [*ENV* ~envId] ~@body)
+)
+
 ;; Get the environment to use 
 (defn get-env-key []
   (if *ENV* *ENV* ENV))

@@ -67,6 +67,11 @@
 
 (binding [api/*ENV* "env1"]
   (print-client-page {:page-size 3, :page-num 0}))
+
+;; api/setenv-local is the easier way to set a binding for *ENV*
+(api/setenv-local "env5"
+    (print-client-page {:page-size 3, :page-num 0})
+    (print-client-page {:page-size 3, :page-num 0}))
   
 (print-client-page {:page-size 3, :page-num 0})
 
