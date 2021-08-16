@@ -31,9 +31,26 @@
 ;;; GET, POST, DELETE, PATCH, PUT
 ;;; 
 
+;; Support 2 ways to define the ENV that will be used to expand {{*env*}} placeholders in API URL endpoints
+;; (1) *ENV* - to be set using (binding *ENV* ...)
+;; (2) (setenv ...) - which will set the ENV def
+;;
+;; (get-env-key) - returns the ENV key from either (1) or (2)
+;;
+;; To define the value to use for {{*env*}} use one of the following:
+;;     [1] (api/setenv "env2") ;; set to use https://markkershaw.mambu.com
+;;     [2] (binding [api/*ENV* "env2"]
+;;            (print-client-page {:page-size 3, :page-num 0}))
+;;
+(def ^:dynamic *ENV* nil)
+
 (defn setenv [envId]
   (def ENV envId))
 (setenv "env1")
+
+;; Get the environment to use 
+(defn get-env-key []
+  (if *ENV* *ENV* ENV))
 
 (defn set-show-only [b] ;; call this is just display the calls but not execute
   (def ^:dynamic *show-only* b))
@@ -281,25 +298,18 @@
     (DEBUG "TIDY: " res)
     res))
 
-
-
-
-
-
-
-
 (defn- get-envID [_ placeHolder]
   (let [;; Need to strip the {{ and }} from the placeholder before doing the lookup
         p2 (str/replace placeHolder "{{" "")
         p3 (str/replace p2 "}}" "")
-        p4 (if (= p3 "*env*") ENV p3)]
+        p4 (if (= p3 "*env*") (get-env-key) p3)]
     p4))
 
 (defn- replacePlaceholder [currentStr placeHolder]
   (let [;; Need to strip the {{ and }} from the placeholder before doing the lookup
         p2 (str/replace placeHolder "{{" "")
         p3 (str/replace p2 "}}" "")
-        p4 (if (= p3 "*env*") ENV p3)
+        p4 (if (= p3 "*env*") (get-env-key) p3)
         ;;placeHolderValue (:url (get env/ENV-MAP p3))
         placeHolderValue (:url (get env/ENV-MAP p4))
         ]
