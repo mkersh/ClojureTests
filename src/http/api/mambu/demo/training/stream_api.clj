@@ -117,7 +117,7 @@
 ;;;
 
 (defn consume-sse-stream [url apikey]
-  (start-client) ;; make sure @stop-atom = true when we start
+  (start-client) ;; make sure @stop-atom = false when we start
 
   ;; The bindings section of this let connects to the events stream URL
   ;; and opens up a bufferReader file socket that you can then listen on for events.
@@ -171,7 +171,7 @@
 ;;;        You will need to modify slightly to run your own tests
 
 (api/setenv "env8") ;; setup API calls to use europeshowcase.sandbox.mambu.com with streaming API consumer
-(def subscriptionid "e888e76b-d51e-4fb3-b125-f646af9f603a")
+(def subscriptionid "e888e76b-d51e-4fb3-b125-f646af9f603a") ;; See create-subscription-api call below - to get value for this
 (def url (str "https://europeshowcase.sandbox.mambu.com/api/v1/subscriptions/" subscriptionid "/events?batch_flush_timeout=20&batch_limit=1&commit_timeout=60"))
 (def apiKey (get-auth2 "env8")) ;; Get streaming apikey for europeshowcase.sandbox.mambu.com
 (def apiKey2 (get-auth2 "env6")) ;; Get apikey for europeshowcase.sandbox.mambu.com with core API consumer
@@ -185,7 +185,6 @@
   ;; You also need to setup a StreamingAPI Consumer/ApiKey to access the StreamingAPI endpoints
 
   ;; [1] - Get a SubscriptionID for 1 or more StreamingAPI topics (from step #0 above)
-  
   ;; This next function will create a new subscription for mrn.event.europeshowcase.streamingapi.client_activity
   ;; If one already exists it will return the same
   ;; NOTE: For testing run and then copy into subscriptionid def above (if it differs)
