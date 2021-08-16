@@ -1,5 +1,5 @@
 ;; Helper functions to calling JSON APIs using http://http-kit.github.io/
-;; GitHub: https://github.com/mkersh/JupyterNotebooks/blob/master/ClojureTests/src/http/api/json_helper.clj 
+;; GitHub: https://github.com/mkersh/ClojureTests/tree/master/src/http/api/json_helper.clj 
 ;;
 ;; Useful helper functions:
 ;; get-attr - to extract the results you want from a results

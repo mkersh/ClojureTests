@@ -1,5 +1,5 @@
 ;;; Early attempt to get Mambu streaming APIs working
-;;; See https://github.com/mkersh/JupyterNotebooks/blob/master/ClojureTests/src/http/api/mambu/demo/training/stream-api.clj
+;;; See https://github.com/mkersh/ClojureTests/tree/master/src/http/api/mambu/demo/training/stream-api.clj
 
 
 (ns http.api.mambu.demo.training.streaming-api

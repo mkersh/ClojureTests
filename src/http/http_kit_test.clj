@@ -1,6 +1,6 @@
 
 ;;; http://http-kit.github.io/
-;;; https://github.com/mkersh/JupyterNotebooks/blob/master/ClojureTests/src/http/http_kit_test.clj
+;;; https://github.com/mkersh/ClojureTests/tree/master/src/http/http_kit_test.clj
 (ns http.http_kit_test
   (:require
    [clojure.data.json :as json]

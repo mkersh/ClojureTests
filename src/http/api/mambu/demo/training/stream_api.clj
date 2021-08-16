@@ -1,5 +1,5 @@
 ;; Mambu Streaming APIs from Cloure - Examples
-;; GitHub: https://github.com/mkersh/JupyterNotebooks/blob/master/ClojureTests/src/http/api/mambu/demo/training/stream-api.clj
+;; GitHub: https://github.com/mkersh/ClojureTests/tree/master/src/http/api/mambu/demo/training/stream_api.clj
 ;; See Also the more official Mambu Java streaming client:
 ;;     https://github.com/mambu-gmbh/Streaming-API-Java-Sample-Client/blob/master/src/main/java/streamingapi/client/StreamingApiClient.java
 (ns http.api.mambu.demo.training.stream_api

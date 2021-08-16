@@ -2,7 +2,7 @@
 ;;;
 ;;; Clojure Tests and examples
 ;;;
-;;;  GITHUB: https://github.com/mkersh/JupyterNotebooks/blob/master/ClojureTests/src/sandbox/ClojureNotebook.clj 
+;;;  GITHUB: https://github.com/mkersh/ClojureTests/tree/master/src/sandbox/ClojureNotebook.clj 
 ;;;
 ;;; ************************************************************
 (ns sandbox.ClojureNotebook

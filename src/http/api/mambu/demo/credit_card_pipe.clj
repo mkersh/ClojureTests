@@ -1,4 +1,4 @@
-;;; https://github.com/mkersh/JupyterNotebooks/blob/master/ClojureTests/src/http/api/mambu/demo/credit_card_pipe.clj
+;;; https://github.com/mkersh/ClojureTests/tree/master/src/http/api/mambu/demo/credit_card_pipe.clj
 (ns http.api.mambu.demo.credit_card_pipe
   (:require [http.api.json_helper :as api]
              [http.api.api_pipe :as steps]))

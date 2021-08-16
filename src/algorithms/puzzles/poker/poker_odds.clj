@@ -2,7 +2,7 @@
 ;;; Let's see if I ever do develop this :)
 ;;; Because my maths is really not good enough these days I may look to calculate these odds 
 ;;; using first-principles by running multiple trials on a pack of card??
-;;; https://github.com/mkersh/JupyterNotebooks/blob/master/ClojureTests/src/algorithms/puzzles/poker/poker_odds.clj
+;;; https://github.com/mkersh/ClojureTests/tree/master/src/algorithms/puzzles/poker/poker_odds.clj
 (ns algorithms.puzzles.poker.poker-odds
 (:require [functions.pow :as math1]))
 
