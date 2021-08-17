@@ -54,9 +54,13 @@
   (read-string (slurp fpath)))
 
 
+;; https://rosettacode.org/wiki/Walk_a_directory/Recursively#Clojure
 (defn walk-dir [dirpath pattern]
   (doall (filter #(re-matches pattern (.getName %))
                  (file-seq (io/file dirpath)))))
+
+;; ---------------------------------------------------------
+;; functions to call when walking the DWH
 
 (defn object-last-mod [^java.io.File f]
   (let [obj (read-object f)
@@ -65,6 +69,8 @@
     [lastModDate encodedKey]
     ))
 
+;; Maker functions for creating a function that can be called by map or reduce
+;; We need this to capture the to-find as part of the func  
 (defn find-string-maker [to-find]
   (fn [^java.io.File f]
     (let [obj (read-object f)
@@ -77,18 +83,23 @@
   (prn (type f))
   (println (.getPath f)))
 
+;; ----------------------------------------------------------
+;; The main entry points for walking the DWH
+
 (defn map-all-DWH-files [func]
   (map func (walk-dir (dwh-root-dir {}) #".*\.edn")))
 
 (defn reduce-all-DWH-files [func res]
   (reduce func res (walk-dir (dwh-root-dir {}) #".*\.edn")))
 
+;; Sort all the entries in the DWH by lastModifiedDate
 (defn sort-DWH-lastmoddate []
 (let [unsorted-list (map-all-DWH-files object-last-mod)]
   ;; To reverse change the order of the compare params
   (sort #(compare %2 %1) unsorted-list))
 )
 
+;; Find all matches to a string in the DWH
 (defn find-all-matches-DWH [to-match]
   (filter some? (map (find-string-maker to-match) (walk-dir (dwh-root-dir {}) #".*\.edn"))))
 
