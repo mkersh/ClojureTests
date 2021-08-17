@@ -1,4 +1,0 @@
-{"encodedKey" "encKey1",
- :f1 "value1",
- :f2 {:f2.1 "val2.1"},
- :f3 [1 2 3 4]}

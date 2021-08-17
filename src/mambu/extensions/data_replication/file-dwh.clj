@@ -26,7 +26,7 @@
   (delete-directory-recursive (clojure.java.io/file (dwh-root-dir {}))))
 
 (defn dwh-get-file-path [root-dir object-type object]
-  (str root-dir "/" (symbol object-type) "/" (get object "encodedKey") ".edn"))
+  (str root-dir (symbol object-type) "/" (get object "encodedKey") ".edn"))
 
 (defn save-to-file
   [file-name s]
@@ -45,6 +45,7 @@
         root-dir (dwh-root-dir context)
         file-path (dwh-get-file-path root-dir object-type object)
         object-str (get-object-str object)]
+    (prn "save-object:" file-path)    
     (io/make-parents file-path)
     (save-to-file file-path object-str)))
 

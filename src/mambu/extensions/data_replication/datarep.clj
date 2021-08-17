@@ -28,32 +28,6 @@
         (prn title time-diff )
         time-diff))
 
-(defn get-all-clients-next-page [context]
-  (let [api-call (fn [context0]
-                   (let [page-size (:page-size context0)
-                         offset (* (:page-num context0) page-size)]
-                     {:url (str "{{*env*}}/clients")
-                      :method api/GET
-                      :query-params {"detailsLevel" "FULL"
-                                     "paginationDetails" "ON"
-                                     "offset" offset "limit" (:page-size context0)
-                                     "sortBy" "lastModifiedDate:ASC"} 
-                      :headers {"Accept" "application/vnd.mambu.v2+json"
-                                "Content-Type" "application/json"}}))]
-    (steps/apply-api api-call context)))
-
-(defn print-client-page [context]
-  (let [startTimer (getTimer)
-        context1 (get-all-clients-next-page context)
-        timeDiff (showTimeDiff "API call took (ms):" startTimer)
-        page (:last-call context1)]
-    (api/PRINT (api/extract-attrs ["encodedKey" "id" "lastName" "creationDate" "lastModifiedDate"] page))
-    ;; Save the object to the DWH
-    (map #(dwh/save-object % {:object-type :client}) page)
-    (prn "API call took (ms):" timeDiff)
-    (showTimeDiff "Time including print (ms):" startTimer)
-    (count page)))
-
 ;;; -----------------------------------------------------------------
 ;;;  Next functions allow you to create some activity on customers
 ;;;
@@ -76,42 +50,71 @@
        (prn "Change name to: " (str stem i))
        (patch-customer apikey id (str stem i))))))
 
+;;; END --------------------------------------------------------------
 
-(comment 
-(api/setenv "env2") ;; set to use https://markkershaw.mambu.com
+(defn get-all-clients-next-page [context]
+  (let [api-call (fn [context0]
+                   (let [page-size (:page-size context0)
+                         offset (* (:page-num context0) page-size)]
+                     {:url (str "{{*env*}}/clients")
+                      :method api/GET
+                      :query-params {"detailsLevel" "FULL"
+                                     "paginationDetails" "ON"
+                                     "offset" offset "limit" (:page-size context0)
+                                     "sortBy" "lastModifiedDate:ASC"} 
+                      :headers {"Accept" "application/vnd.mambu.v2+json"
+                                "Content-Type" "application/json"}}))]
+    (steps/apply-api api-call context)))
 
-(binding [api/*ENV* "env1"]
-  (print-client-page {:page-size 3, :page-num 0}))
+(defn print-client-page [context]
+  (let [startTimer (getTimer)
+        context1 (get-all-clients-next-page context)
+        ;;timeDiff (showTimeDiff "API call took (ms):" startTimer)
+        page (:last-call context1)]
+    ;;(api/PRINT (api/extract-attrs ["encodedKey" "id" "lastName" "creationDate" "lastModifiedDate"] page))
+    ;; Save the object to the DWH
+    (prn "Saving page to DWH")
+    (doall (map #(dwh/save-object % {:object-type :client}) page))
+    (prn "**END")
+    ;;(prn "API call took (ms):" timeDiff)
+    ;;(showTimeDiff "Time including print (ms):" startTimer)
+    (count page)
+    ))
 
-;; api/setenv-local is the easier way to set a binding for *ENV*
-(api/setenv-local "env5"
-    (print-client-page {:page-size 3, :page-num 0})
-    (print-client-page {:page-size 3, :page-num 0}))
-  
-(print-client-page {:page-size 3, :page-num 0})
-
-;; Test getting a page of customer objects
-(defn get-all-clients []
+(defn get-all-clients [context]
   (doall ;; force evaluation of the take-while - which is a LazySeq
    (take-while
     #(> % 0) ;; Get another page if the last one had items in it
     (for [i (range)]
       (do
         (prn "Getting Page: " i)
-        (print-client-page {:page-size 30, :page-num i})))))
+        (print-client-page {:page-size (:page-size context), :page-num i})
+        ))))
   (prn "Finished - get-all-clients"))
 
-(get-all-clients)
+
+
+
+(comment
+  (api/setenv "env2") ;; set to use https://markkershaw.mambu.com
+
+  (print-client-page {:page-size 3, :page-num 0})
+
+  
+
+  (dwh/delete-DWH) ;; Recursively delete the entire DWH
+  
+  ;; Get all the clients and save to the DWH
+  (get-all-clients {:page-size 30})
 
 
 ;; Test that showTimeDiff is accurate
-(let [startTimer (getTimer)]
-(Thread/sleep 2000)
-(showTimeDiff "Sleep Timer (ms):" startTimer)
-)
+  (let [startTimer (getTimer)]
+    (Thread/sleep 2000)
+    (showTimeDiff "Sleep Timer (ms):" startTimer))
 
-(take 100 (range))
-(+ 1 2)
+  (take 100 (range))
+  (+ 1 2)
 ;;
-)
+  )
 
