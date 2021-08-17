@@ -68,8 +68,10 @@
 (defn find-string-maker [to-find]
   (fn [^java.io.File f]
     (let [obj (read-object f)
-          objStr (pr-str obj)]
-      (str/includes? objStr to-find))))
+          objStr (pr-str obj)
+          encodedKey (get obj "encodedKey")
+          isMatch  (str/includes? objStr to-find)]
+      (if isMatch encodedKey nil))))
 
 (defn print-file-details [^java.io.File f]
   (prn (type f))
@@ -88,7 +90,7 @@
 )
 
 (defn find-all-matches-DWH [to-match]
-  (map (find-string-maker to-match) (walk-dir (dwh-root-dir {}) #".*\.edn")))
+  (filter some? (map (find-string-maker to-match) (walk-dir (dwh-root-dir {}) #".*\.edn"))))
 
 (comment
 (delete-DWH) ;; This will recursively delete the DWH folder structure
@@ -102,7 +104,7 @@
 
 (pp/pprint (take 1000 (sort-DWH-lastmoddate)))
 
-(find-all-matches-DWH "Test")
+(find-all-matches-DWH "James")
 
 
 (reduce-all-DWH-files (fn [_ new] (print-file-details new)) []) 
