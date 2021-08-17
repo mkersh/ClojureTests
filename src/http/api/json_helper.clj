@@ -9,10 +9,11 @@
 ;;
 ;;   See also api_pipe/apply-api for a higher level way of calling APIs
 ;;   
-;; [2] setenv - sets the value of {{*env*}} used in API endpoints e.g "{{*env*}}/clients/"
+;; [2] setenv/setenv-local - sets the value of {{*env*}} used in API endpoints e.g "{{*env*}}/clients/"
 ;; [3] find-path
 ;; [4] get-attr - to extract the results you want from a results
 ;;   This function is not needed use clojure standard get-in instead.
+;; [5] extract-attrs - Extract attributes from an object or an array-of-objects 
 (ns http.api.json_helper
   (:require
    [clojure.data.json :as json]
@@ -382,8 +383,7 @@
 ;;(def nCinoConnectorJson (convertJsonFileToEdn "/Users/mkersh/Downloads/folder_684_1599545125.json"))
 
 (comment
-;;(find-path "https://{{config.url}}" nCinoConnectorJson
-;;
+
 (def req1 {:xbasic-auth ["apiUser" "k6RxsaedvbPEg6cjNmXqvxaW32"], :headers {"Accept" "application/vnd.mambu.v2+json"}, :query-params {"detailsLevel" "FULL"}})
 
 (add-auth-header req1 "{{*env*}}/clients/")
@@ -394,4 +394,6 @@
 
 (setenv "env3b")
 (get-auth2)
+
+;;
 )

@@ -2,7 +2,7 @@
 ;;;
 ;;; For each object-type to replicate we are looking for:
 ;;; (a) A single API endpoint that allows us to page through all object(s)
-;;; (b) Also endpoint that has the ability to sortBy "lastModifiedDate ASC" (oldest to youngest) 
+;;; (b) Also endpoint should have the ability to sortBy "lastModifiedDate ASC" (oldest to youngest) 
 ;;;     This will allow us to efficiently continue replication from a previous saved lastModifiedDate
 ;;;     NOTE: The sortBy should be oldest to youngest. If the other way around (youngest to oldest):
 ;;;           Updates would be added to the front as you page through causing chaos.
