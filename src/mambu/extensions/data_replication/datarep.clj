@@ -66,8 +66,8 @@
                                 "Content-Type" "application/json"}}))]
     (steps/apply-api api-call context)))
 
-(defn print-client-page [context]
-  (let [startTimer (getTimer)
+(defn get-client-page [context]
+  (let [;;startTimer (getTimer)
         context1 (get-all-clients-next-page context)
         ;;timeDiff (showTimeDiff "API call took (ms):" startTimer)
         page (:last-call context1)]
@@ -88,7 +88,7 @@
     (for [i (range)]
       (do
         (prn "Getting Page: " i)
-        (print-client-page {:page-size (:page-size context), :page-num i})
+        (get-client-page {:page-size (:page-size context), :page-num i})
         ))))
   (prn "Finished - get-all-clients"))
 
@@ -96,25 +96,17 @@
 
 
 (comment
-  (api/setenv "env2") ;; set to use https://markkershaw.mambu.com
-
-  (print-client-page {:page-size 3, :page-num 0})
-
-  
-
+  (api/setenv "env5") ;; set to use https://markkershaw.mambu.com
+   
   (dwh/delete-DWH) ;; Recursively delete the entire DWH
-  
+
+  ;; Get a single page and save to the DWH
+  (get-client-page {:page-size 3, :page-num 0})
+
   ;; Get all the clients and save to the DWH
-  (get-all-clients {:page-size 30})
+  (get-all-clients {:page-size 1000})
 
 
-;; Test that showTimeDiff is accurate
-  (let [startTimer (getTimer)]
-    (Thread/sleep 2000)
-    (showTimeDiff "Sleep Timer (ms):" startTimer))
-
-  (take 100 (range))
-  (+ 1 2)
 ;;
   )
 

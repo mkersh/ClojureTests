@@ -2,6 +2,7 @@
 (ns mambu.extensions.data-replication.file-dwh
   (:require [clojure.java.io :as io]
             [clojure.pprint :as pp]
+            [clojure.string :as str]
             ;;[clojure.data.json :as json]
             ))
 
@@ -49,6 +50,45 @@
     (io/make-parents file-path)
     (save-to-file file-path object-str)))
 
+(defn read-object [fpath]
+  (read-string (slurp fpath)))
+
+
+(defn walk-dir [dirpath pattern]
+  (doall (filter #(re-matches pattern (.getName %))
+                 (file-seq (io/file dirpath)))))
+
+(defn object-last-mod [^java.io.File f]
+  (let [obj (read-object f)
+        lastModDate (get obj "lastModifiedDate")
+        encodedKey (get obj "encodedKey")]
+    [lastModDate encodedKey]
+    ))
+
+(defn find-string-maker [to-find]
+  (fn [^java.io.File f]
+    (let [obj (read-object f)
+          objStr (pr-str obj)]
+      (str/includes? objStr to-find))))
+
+(defn print-file-details [^java.io.File f]
+  (prn (type f))
+  (println (.getPath f)))
+
+(defn map-all-DWH-files [func]
+  (map func (walk-dir (dwh-root-dir {}) #".*\.edn")))
+
+(defn reduce-all-DWH-files [func res]
+  (reduce func res (walk-dir (dwh-root-dir {}) #".*\.edn")))
+
+(defn sort-DWH-lastmoddate []
+(let [unsorted-list (map-all-DWH-files object-last-mod)]
+  ;; To reverse change the order of the compare params
+  (sort #(compare %2 %1) unsorted-list))
+)
+
+(defn find-all-matches-DWH [to-match]
+  (map (find-string-maker to-match) (walk-dir (dwh-root-dir {}) #".*\.edn")))
 
 (comment
 (delete-DWH) ;; This will recursively delete the DWH folder structure
@@ -56,6 +96,19 @@
 (save-object
  {"encodedKey" "encKey1" :f1 "value1" :f2 {:f2.1 "val2.1"} :f3 [1 2 3 4]}
  {:object-type :client})
+
+(map-all-DWH-files print-file-details)
+(map-all-DWH-files object-last-mod)
+
+(pp/pprint (take 1000 (sort-DWH-lastmoddate)))
+
+(find-all-matches-DWH "Test")
+
+
+(reduce-all-DWH-files (fn [_ new] (print-file-details new)) []) 
+
+(read-object "MAMBU-DWH/client/8a19cde572757f19017275dbf9dd0109.edn")
+
 
 ;;
 )
