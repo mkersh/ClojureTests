@@ -31,6 +31,7 @@
 ;;; GET, POST, DELETE, PATCH, PUT
 ;;; 
 
+;; --------------------------------------
 ;; Support 2 ways to define the ENV that will be used to expand {{*env*}} placeholders in API URL endpoints
 ;; (1) *ENV* - to be set using (binding *ENV* ...)
 ;; (2) (setenv ...) - which will set the ENV def
@@ -55,6 +56,8 @@
 ;; Get the environment to use 
 (defn get-env-key []
   (if *ENV* *ENV* ENV))
+
+;; ------------------------------------------
 
 (defn set-show-only [b] ;; call this is just display the calls but not execute
   (def ^:dynamic *show-only* b))
