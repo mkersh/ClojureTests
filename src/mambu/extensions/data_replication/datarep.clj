@@ -15,7 +15,9 @@
 
 (ns mambu.extensions.data_replication.datarep
   (:require [http.api.json_helper :as api]
-            [http.api.api_pipe :as steps]))
+            [http.api.api_pipe :as steps]
+            [mambu.extensions.data-replication.file-dwh :as dwh]
+            ))
 
 (defn getTimer []
 (. System (nanoTime)))
@@ -45,7 +47,9 @@
         context1 (get-all-clients-next-page context)
         timeDiff (showTimeDiff "API call took (ms):" startTimer)
         page (:last-call context1)]
-    (api/PRINT (api/extract-attrs ["id" "lastName" "creationDate" "lastModifiedDate"] page))
+    (api/PRINT (api/extract-attrs ["encodedKey" "id" "lastName" "creationDate" "lastModifiedDate"] page))
+    ;; Save the object to the DWH
+    (map #(dwh/save-object % {:object-type :client}) page)
     (prn "API call took (ms):" timeDiff)
     (showTimeDiff "Time including print (ms):" startTimer)
     (count page)))
