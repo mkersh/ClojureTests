@@ -1,5 +1,19 @@
 ;;; Examples/tests for how to efficiently replicate data/objects from Mambu to a data-lake/DWH
-(ns http.api.mambu.datarepl.datarep
+;;;
+;;; For each object-type to replicate we are looking for:
+;;; (a) A single API endpoint that allows us to page through all object(s)
+;;; (b) API endpoint that has the ability to sortBy "lastModifiedDate ASC" (oldest to youngest) 
+;;;     This will allow us to efficiently continue replication from a previous saved lastModifiedDate
+;;;     NOTE: The sortBy should be oldest to youngest. If the other way around (youngest to oldest):
+;;;           Updates would be added to the front as you page through causing chaos.
+;;; (c) To support replication continuation:
+;;;     We will store previous-position as {:page-size <s> :page-num <n> :lastModifiedDate <date>}
+;;;     Finding initial start position will involve jumping to page from previous-position
+;;;     BUT we will then need to check that we start at the correct :lastModifiedDate
+;;;     Previous order may not be exactly the same because some object(s) will have been updated and now be further down the paging order
+;;;
+
+(ns mambu.extensions.data_replication.datarep
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]))
 
@@ -12,9 +26,6 @@
         (prn title time-diff )
         time-diff))
 
-;; Sorting on lastModifiedDate ASC will allow us to have a shortcut to resume where we left off
-;; If will not be 100% accurate because the lastModifiedDate on certain records will have changed
-;;
 (defn get-all-clients-next-page [context]
   (let [api-call (fn [context0]
                    (let [page-size (:page-size context0)
@@ -76,14 +87,17 @@
 (print-client-page {:page-size 3, :page-num 0})
 
 ;; Test getting a page of customer objects
-(take-while
- #(> % 0) ;; Get another page if the last one had items in it
- (for [i (range)]
-   (do
-     (prn "Getting Page: " i)
-     (print-client-page {:page-size 3, :page-num i}))))
+(defn get-all-clients []
+  (doall ;; force evaluation of the take-while - which is a LazySeq
+   (take-while
+    #(> % 0) ;; Get another page if the last one had items in it
+    (for [i (range)]
+      (do
+        (prn "Getting Page: " i)
+        (print-client-page {:page-size 30, :page-num i})))))
+  (prn "Finished - get-all-clients"))
 
-
+(get-all-clients)
 
 
 ;; Test that showTimeDiff is accurate
