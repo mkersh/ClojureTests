@@ -67,17 +67,14 @@
     (steps/apply-api api-call context)))
 
 (defn get-client-page [context]
-  (let [;;startTimer (getTimer)
+  (let [
         context1 (get-all-clients-next-page context)
-        ;;timeDiff (showTimeDiff "API call took (ms):" startTimer)
+        
         page (:last-call context1)]
-    ;;(api/PRINT (api/extract-attrs ["encodedKey" "id" "lastName" "creationDate" "lastModifiedDate"] page))
     ;; Save the object to the DWH
     (prn "Saving page to DWH")
     (doall (map #(dwh/save-object % {:object-type :client}) page))
     (prn "**END")
-    ;;(prn "API call took (ms):" timeDiff)
-    ;;(showTimeDiff "Time including print (ms):" startTimer)
     (count page)
     ))
 
@@ -91,9 +88,6 @@
         (get-client-page {:page-size (:page-size context), :page-num i})
         ))))
   (prn "Finished - get-all-clients"))
-
-
-
 
 (comment
   (api/setenv "env5") ;; set to use https://markkershaw.mambu.com
