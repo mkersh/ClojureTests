@@ -29,6 +29,9 @@
 (defn dwh-get-file-path [root-dir object-type object]
   (str root-dir (symbol object-type) "/" (get object "encodedKey") ".edn"))
 
+(defn dwh-get-lastpos-path [root-dir object-type]
+  (str root-dir (symbol object-type) "/.lastPosition" ))
+
 (defn save-to-file
   [file-name s]
   (spit file-name s))
@@ -52,6 +55,19 @@
 
 (defn read-object [fpath]
   (read-string (slurp fpath)))
+
+(defn save-last-position [object-type last-position]
+  (let [root-dir (dwh-root-dir {})
+        file-path (dwh-get-lastpos-path root-dir object-type)]
+    (prn "save last-position:" file-path)
+    (io/make-parents file-path)
+    (save-to-file file-path last-position)))
+
+(defn read-last-position [object-type]
+  (let [root-dir (dwh-root-dir {})
+        file-path (dwh-get-lastpos-path root-dir object-type)]
+    (prn "read last-position:" file-path)
+    (read-object file-path)))
 
 
 ;; https://rosettacode.org/wiki/Walk_a_directory/Recursively#Clojure
@@ -121,6 +137,9 @@
 (reduce-all-DWH-files (fn [_ new] (print-file-details new)) []) 
 
 (read-object "MAMBU-DWH/client/8a19cde572757f19017275dbf9dd0109.edn")
+
+(save-last-position :client [1 2 3])
+(read-last-position :client)
 
 
 ;;

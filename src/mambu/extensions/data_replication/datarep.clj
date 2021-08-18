@@ -16,17 +16,67 @@
 (ns mambu.extensions.data_replication.datarep
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
-            [mambu.extensions.data-replication.file-dwh :as dwh]
-            ))
+            [mambu.extensions.data-replication.file-dwh :as dwh]))
 
-(defn getTimer []
-(. System (nanoTime)))
+;;; -----------------------------------------------------------------
+;;;  Functions for recording where you previously finished.
+;;;  Enabling us to resume from a last-position
+;;;
 
-(defn showTimeDiff [title startTimer]
-  (let [curr-time (getTimer)
-        time-diff (/ (- curr-time startTimer) 1000000.0)]
-        (prn title time-diff )
-        time-diff))
+;;; last-positions-map = Map of last-position(s) key'ed by object-type
+;;; last-position = {<:page-num> <:page-size> <lastModifiedDate>}
+(defonce last-positions-map (atom {}))
+
+(defn set-last-position
+  ([object-type page-num page-size lastModifiedDate]
+   (set-last-position object-type {:page-num page-num :page-size page-size :lastModifiedDate lastModifiedDate}))
+  ([object-type last-position]
+   (swap! last-positions-map
+          (fn [current-state]
+            (assoc current-state object-type last-position)))))
+
+(defn determine-last-position [object-type context page]
+  (let [lastObj (last page)
+        last-moddate (get lastObj "lastModifiedDate")
+        page-num (:page-num context)
+        page-size (:page-size context)
+        last-position {:page-num page-num :page-size page-size :lastModifiedDate last-moddate}]
+    (set-last-position object-type last-position)))
+
+(defn get-last-position [object-type]
+  (get @last-positions-map object-type))
+
+;; NOT good enough yet
+;; need to make sure that this page contain our :lastModifiedDate
+;; else we need to go back a page
+(defn get-start-page [object-type]
+  (let [last-position (get-last-position object-type)
+        start-page (:page-num last-position)]
+        (if start-page start-page 0)))
+
+;; Save the last-postion for object-type to the DWH
+(defn save-last-position-DWH
+  ([object-type page-num page-size lastModifiedDate]
+   (save-last-position-DWH object-type {:page-num page-num :page-size page-size :lastModifiedDate lastModifiedDate}))
+  ([object-type last-position]
+   (dwh/save-last-position object-type last-position)))
+
+;; Read the last-postion for object-type from the DWH
+(defn read-last-position-DWH [object-type]
+  (let [last-position (dwh/read-last-position object-type)]
+    (set-last-position object-type last-position)))
+
+(comment ;; Tests
+  (set-last-position :client 1 30 "252525")
+  
+  (reset! last-positions-map {})
+  (get-last-position :clients)
+  (save-last-position-DWH :client 1 30 "252525")
+  (save-last-position-DWH :client {:page-num 4 :page-size 30 :lastModifiedDate "5656565"})
+  (read-last-position-DWH :client)
+;;
+  )
+
 
 ;;; -----------------------------------------------------------------
 ;;;  Next functions allow you to create some activity on customers
@@ -61,46 +111,46 @@
                       :query-params {"detailsLevel" "FULL"
                                      "paginationDetails" "ON"
                                      "offset" offset "limit" (:page-size context0)
-                                     "sortBy" "lastModifiedDate:ASC"} 
+                                     "sortBy" "lastModifiedDate:ASC"}
                       :headers {"Accept" "application/vnd.mambu.v2+json"
                                 "Content-Type" "application/json"}}))]
     (steps/apply-api api-call context)))
 
 (defn get-client-page [context]
-  (let [
-        context1 (get-all-clients-next-page context)
-        
-        page (:last-call context1)]
+  (let [context1 (get-all-clients-next-page context)
+        page (:last-call context1)
+        _ (determine-last-position :client context page)]
     ;; Save the object to the DWH
     (prn "Saving page to DWH")
     (doall (map #(dwh/save-object % {:object-type :client}) page))
+    (save-last-position-DWH :client (get-last-position :client))
     (prn "**END")
-    (count page)
-    ))
+    (count page)))
 
-(defn get-all-clients [context]
+(defn get-all-objects [object_type context]
+  (read-last-position-DWH object_type) ;; Start from where you left off
   (doall ;; force evaluation of the take-while - which is a LazySeq
    (take-while
     #(> % 0) ;; Get another page if the last one had items in it
-    (for [i (range)]
+    (for [i (iterate inc (get-start-page object_type))]
       (do
         (prn "Getting Page: " i)
-        (get-client-page {:page-size (:page-size context), :page-num i})
-        ))))
+        (get-client-page {:page-size (:page-size context), :page-num i})))))
   (prn "Finished - get-all-clients"))
 
 (comment
   (api/setenv "env5") ;; set to use https://markkershaw.mambu.com
-   
+
   (dwh/delete-DWH) ;; Recursively delete the entire DWH
 
+  (read-last-position-DWH :client)
   ;; Get a single page and save to the DWH
   (get-client-page {:page-size 3, :page-num 0})
 
   ;; Get all the clients and save to the DWH
-  (get-all-clients {:page-size 1000})
-
-
+  (get-all-objects :client {:page-size 1000})
+  (take 10 (iterate inc 1))
+(get-start-page :client)
 ;;
   )
 
