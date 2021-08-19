@@ -35,13 +35,13 @@
           (fn [current-state]
             (assoc current-state object-type last-position)))))
 
-(defn determine-last-position [object-type context page]
+(defn determine-last-position [context page]
   (let [lastObj (last page)
         last-moddate (get lastObj "lastModifiedDate")
         page-num (:page-num context)
         page-size (:page-size context)
         last-position {:page-num page-num :page-size page-size :lastModifiedDate last-moddate}]
-    (set-last-position object-type last-position)))
+    last-position))
 
 (defn get-last-position [object-type]
   (get @last-positions-map object-type))
@@ -63,14 +63,15 @@
 
 ;; Read the last-postion for object-type from the DWH
 (defn read-last-position-DWH [object-type]
-  (let [last-position (dwh/read-last-position object-type)]
-    (set-last-position object-type last-position)))
+  (try (let [last-position (dwh/read-last-position object-type)]
+    (set-last-position object-type last-position))
+    (catch Exception _ nil)))
 
 (comment ;; Tests
   (set-last-position :client 1 30 "252525")
   
   (reset! last-positions-map {})
-  (get-last-position :clients)
+  (get-last-position :client)
   (save-last-position-DWH :client 1 30 "252525")
   (save-last-position-DWH :client {:page-num 4 :page-size 30 :lastModifiedDate "5656565"})
   (read-last-position-DWH :client)
@@ -116,19 +117,45 @@
                                 "Content-Type" "application/json"}}))]
     (steps/apply-api api-call context)))
 
+(defn save-object [obj context]
+(prn "In save-object:")
+  (let [object-type (:object-type context)
+        last-position (get-last-position object-type)
+        last-moddate (:lastModifiedDate last-position)
+        obj-last-moddate (get obj "lastModifiedDate")
+        _ (prn "obj-date:" obj-last-moddate "last-moddate" last-moddate)]
+    (if  (> (compare obj-last-moddate last-moddate) -1) ;; obj modified after or exactly on last-moddate
+      ;; NOTE: If the obj-last-moddate = last-moddate we need to be cautious and update again
+      ;; There may have been multiple objects updated with exactly the same last-moddate and we may not have
+      ;; seen all of these previously
+      (dwh/save-object obj context)
+      (prn "Skipping object") ;; We have already processed this object
+      ))) 
+
 (defn get-client-page [context]
   (let [context1 (get-all-clients-next-page context)
         page (:last-call context1)
-        _ (determine-last-position :client context page)]
+        last-position (determine-last-position context page)]
     ;; Save the object to the DWH
-    (prn "Saving page to DWH")
-    (doall (map #(dwh/save-object % {:object-type :client}) page))
-    (save-last-position-DWH :client (get-last-position :client))
+    (prn "Saving page to DWH XX")
+    (doall (map #(save-object % {:object-type :client}) page))
+    (save-last-position-DWH :client last-position)
+    (set-last-position :client nil) ;; Avoid skipping checks for other pages
     (prn "**END")
     (count page)))
 
+;; Need to improve determine-start-page 
+;; There is the possibility that we could missing object updates
+;; This could happen if updates are made to objects that we have previously processed
+;; Need to check that the previous page before (read-last-position-DWH ..) has been processed
+;; If not then recursively check one before that etc.
+(defn determine-start-page [object_type context]
+  
+  (let [last-page](get-start-page object_type)))
+
+
 (defn get-all-objects [object_type context]
-  (read-last-position-DWH object_type) ;; Start from where you left off
+  (determine-start-page object_type context) ;; Start from where you left off
   (doall ;; force evaluation of the take-while - which is a LazySeq
    (take-while
     #(> % 0) ;; Get another page if the last one had items in it
@@ -138,19 +165,24 @@
         (get-client-page {:page-size (:page-size context), :page-num i})))))
   (prn "Finished - get-all-clients"))
 
-(comment
+(defn reset-all []
+  (dwh/delete-DWH) ;; Recursively delete the entire DWH
+  (set-last-position :client nil))
+
+(comment  ;; Testing sandbox area
+
   (api/setenv "env5") ;; set to use https://markkershaw.mambu.com
 
-  (dwh/delete-DWH) ;; Recursively delete the entire DWH
+  (reset-all) ;; Delete the DWH and reset other things
 
+  (get-last-position :client)
   (read-last-position-DWH :client)
   ;; Get a single page and save to the DWH
   (get-client-page {:page-size 3, :page-num 0})
 
   ;; Get all the clients and save to the DWH
   (get-all-objects :client {:page-size 1000})
-  (take 10 (iterate inc 1))
-(get-start-page :client)
+  
 ;;
   )
 

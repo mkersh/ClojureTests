@@ -24,7 +24,8 @@
   (io/delete-file file))
 
 (defn delete-DWH []
-  (delete-directory-recursive (clojure.java.io/file (dwh-root-dir {}))))
+  (try (delete-directory-recursive (clojure.java.io/file (dwh-root-dir {})))
+       (catch Exception _ "Nothing to DELETE")))
 
 (defn dwh-get-file-path [root-dir object-type object]
   (str root-dir (symbol object-type) "/" (get object "encodedKey") ".edn"))

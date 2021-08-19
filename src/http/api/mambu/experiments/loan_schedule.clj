@@ -1,0 +1,192 @@
+(ns http.api.mambu.experiments.loan_schedule
+(:require [http.api.json_helper :as api]
+          [http.api.api_pipe :as steps]
+          [mambu.extensions.data-replication.file-dwh :as dwh])
+)
+
+(defn get-loan-api [context]
+  {:url (str "{{*env*}}/loans/" (:loanAccountId context))
+   :method api/GET
+   :query-params {"detailsLevel" "FULL"}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+ (defn get-loan-schedule-api [context]
+   {:url (str "{{*env*}}/loans/" (:loanAccountId context) "/schedule")
+    :method api/GET
+    :query-params {"detailsLevel" "FULL"}
+    :headers {"Accept" "application/vnd.mambu.v2+json"
+              "Content-Type" "application/json"}})
+
+(defn disburse-loan-api [context]
+  {:url (str "{{*env*}}/loans/" (:loanAccountId context) "/disbursement-transactions")
+   :method api/POST
+   :body {
+       "valueDate" (:value-date context) 
+       "firstRepaymentDate" (:first-date context) 
+       "notes" "Disbursement from clojure"}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn approveLoanAccount [context]
+  {:url (str "{{*env*}}/loans/" (:loanAccountId context) ":changeState")
+   :method api/POST
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}
+   :body {"action" "APPROVE"
+          "notes" "Approved from the API"}})
+
+(defn writeoffLoanAccount [context]
+  {:url (str "{{*env*}}/loans/" (:loanAccountId context) ":writeOff")
+   :method api/POST
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}
+   :body {}})
+
+ (defn create-installment-loan-api [context]
+   {:url (str "{{*env*}}/loans")
+    :method api/POST
+    :headers {"Accept" "application/vnd.mambu.v2+json"
+              "Content-Type" "application/json"}
+    :query-params {}
+    :body  {"loanAmount" (:amount context)
+            "loanName" (:acc-name context)
+            "accountHolderKey" (:cust-key context)
+            "productTypeKey" (:prod-key context)
+            "accountHolderType" "CLIENT"
+            "interestFromArrearsAccrued" 0.0
+            "interestSettings" {"interestRate" (:interest-rate context)}
+            "scheduleSettings" {"gracePeriod" (:grace_period context)
+                                "repaymentInstallments" (:num-installments context)}}})
+
+(defn get-loan-product [context]
+  {:url (str "{{*env*}}/loanproducts/" (:product-id context))
+   :method api/GET
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}
+   :query-params {"detailsLevel" "FULL"}
+   })
+
+(defn zap-a-loan []
+  (try (steps/apply-api approveLoanAccount {:loanAccountId @LOANID}) (catch Exception _ nil))
+  (try (steps/apply-api disburse-loan-api {:loanAccountId @LOANID}) (catch Exception _ nil))
+  (try (steps/apply-api writeoffLoanAccount {:loanAccountId @LOANID}) (catch Exception _ nil)))
+
+(defn get-cust-api [context]
+  {:url (str "{{*env*}}/clients/" (:cust-id context))
+   :method api/GET
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}
+   :query-params {"detailsLevel" "FULL"}})
+
+;; Some atoms that will hold IDs/data used in multiple places
+(defonce PRODUCT_ID (atom nil))
+(defonce PRODUCT_KEY (atom nil))
+(defonce CUSTID (atom nil))
+(defonce CUSTKEY (atom nil))
+(defonce LOANID (atom nil))
+;;(defonce BOOK_DATE (atom "2021-01-01T13:37:50+01:00"))
+(defonce VALUE_DATE (atom "2021-01-01T13:37:50+01:00"))
+(defonce FIRST_DATE (atom "2021-02-01T13:37:50+01:00"))
+
+
+(defn make-context []
+  {:cust-key @CUSTKEY
+   :prod-key @PRODUCT_KEY})
+
+;; Define the environment to use for testing
+(api/setenv "env2") ;; https://markkershaw.mambu.com
+
+(comment
+
+;------------------------
+;; [1] Get Customer details
+;;
+
+;; Code to find a customer's encodedKey
+(reset! CUSTID "843556103")
+(let  [res (steps/apply-api get-cust-api {:cust-id @CUSTID})
+       encKey (get-in res [:last-call "encodedKey"])]
+  (reset! CUSTKEY encKey)
+  (api/PRINT res)
+  (prn "encoded key = " encKey))
+
+
+;;------------------------
+;; [2] Get product details
+;;
+
+;; Code to find a product's encodedKey
+;; PROVEQ1 - equal instalments 30/360 - prin-round-into-last
+(reset! PRODUCT_ID "PROVEQ1")
+;; PROVEQ1b - equal instalments 30/360 - no-rounding-principle
+(reset! PRODUCT_ID "PROVEQ1b")
+;; PROVEQ1c - equal instalments 30/360 - no-rounding-principle (v2)
+(reset! PRODUCT_ID "PROVEQ1c")
+;; PROVEQ1c - DecBal 30/360 - no-rounding-principle
+(reset! PRODUCT_ID "PROVEQ1d")
+;; PROVEQ2 - equal instalments actual/365 - prin-round-into-last
+(reset! PRODUCT_ID "PROVEQ2")
+;; PROVEQ2 - equal instalments actual/365 - no-rounding-principle
+(reset! PRODUCT_ID "PROVEQ2b")
+;; PROVEQ - equal instalments actual/365 (optimised) - prin-round-into-last
+(reset! PRODUCT_ID "PROVEQ3")
+;; PROVEQ - equal instalments actual/365 (optimised) - no-rounding-principle
+(reset! PRODUCT_ID "PROVEQ3b")
+(let  [res (steps/apply-api get-loan-product {:product-id @PRODUCT_ID})
+       encKey (get-in res [:last-call "encodedKey"])]
+  (api/PRINT res)
+  (reset! PRODUCT_KEY encKey)
+  (prn "encoded key = " encKey))
+
+(defn get-product-accname [prodid]
+(condp = prodid
+  "PROVEQ1" "Equi 30/360 - prin-round-into-last"
+  "PROVEQ1b" "Equi 30/360 - no-rounding-principle"
+  "PROVEQ1c" "Equi 30/360 - no-rounding-principle (v2)"
+  "PROVEQ2" "Equi actual/365 - prin-round-into-last"
+  "PROVEQ2b" "Equi actual/365 - no-rounding-principle"
+  "PROVEQ3" "Equi actual/365 (optimised) - prin-round-into-last"
+  "PROVEQ3b" "Equi actual/365 (optimised) - no-rounding-principle"
+  "PROVEQ1d" "DecBal 30/360 - prin-round-into-last"
+  (throw (Exception. "Unknown @PRODUCT_ID - Update get-product-accname function"))))
+ 
+  @PRODUCT_ID
+;;------------------------
+;; [3] Create a new loan
+;;    Using PRODUCT_KEY set above
+;;
+
+(let [res (steps/apply-api create-installment-loan-api
+                           (merge (make-context) {:amount 5000
+                                                  :acc-name (get-product-accname @PRODUCT_ID)
+                                                  :interest-rate 5
+                                                  :grace_period 0
+                                                  :num-installments 12}))
+      id (get-in res [:last-call "id"])]
+  (reset! LOANID id)
+  ;;(api/PRINT res)
+  (prn "encoded key = " id)
+  ;; Approve the Loan 
+  (steps/apply-api approveLoanAccount {:loanAccountId @LOANID}))
+
+;; [3.2] Disburse the Loan 
+(reset! VALUE_DATE "2021-01-01T13:37:50+01:00")
+(reset! FIRST_DATE "2021-02-01T13:37:50+01:00")
+(steps/apply-api disburse-loan-api {:loanAccountId @LOANID :value-date @VALUE_DATE :first-date @FIRST_DATE})
+@LOANID
+
+;; [3.3] Zap the loan
+(zap-a-loan) ;; uses @LOANID
+;; Set below first to change LOANID (if needed)
+(reset! LOANID "EBLR299") ;; To link to an existing loan set this
+
+;------------------------
+;; [4] Get a loan details
+;;
+(api/PRINT (steps/apply-api get-loan-api {:loanAccountId @LOANID}))
+
+
+
+;;
+  )
