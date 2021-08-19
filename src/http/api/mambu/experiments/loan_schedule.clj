@@ -134,12 +134,17 @@
 (reset! PRODUCT_ID "PROVEQ3")
 ;; PROVEQ - equal instalments actual/365 (optimised) - no-rounding-principle
 (reset! PRODUCT_ID "PROVEQ3b")
+
+;; [2.1] Make sure you execute the following if you change the PRODUCT_ID
+;;       This will set the corresponding PRODUCT_KEY
 (let  [res (steps/apply-api get-loan-product {:product-id @PRODUCT_ID})
        encKey (get-in res [:last-call "encodedKey"])]
   (api/PRINT res)
   (reset! PRODUCT_KEY encKey)
   (prn "encoded key = " encKey))
 
+;; If you add a new PRODUCT_ID above, then give it a name below
+;; This is the name that the accounts will be given when we create a new loan in step #3 below
 (defn get-product-accname [prodid]
 (condp = prodid
   "PROVEQ1" "Equi 30/360 - prin-round-into-last"
@@ -152,12 +157,15 @@
   "PROVEQ1d" "DecBal 30/360 - prin-round-into-last"
   (throw (Exception. "Unknown @PRODUCT_ID - Update get-product-accname function"))))
  
-  @PRODUCT_ID
+ ;; Run the following to see what the PRODUCT_ID is currently set to
+@PRODUCT_ID
+
 ;;------------------------
 ;; [3] Create a new loan
 ;;    Using PRODUCT_KEY set above
 ;;
 
+;; Run this let to create a new loan account
 (let [res (steps/apply-api create-installment-loan-api
                            (merge (make-context) {:amount 5000
                                                   :acc-name (get-product-accname @PRODUCT_ID)
@@ -171,8 +179,8 @@
   ;; Approve the Loan 
   (steps/apply-api approveLoanAccount {:loanAccountId @LOANID}))
 
-;; [3.2] Disburse the Loan 
-(reset! VALUE_DATE "2021-01-01T13:37:50+01:00")
+;; [3.1] Disburse the Loan 
+(reset! VALUE_DATE "2021-01-01T13:37:50+01:00") ;; Change these dates as required
 (reset! FIRST_DATE "2021-02-01T13:37:50+01:00")
 (steps/apply-api disburse-loan-api {:loanAccountId @LOANID :value-date @VALUE_DATE :first-date @FIRST_DATE})
 @LOANID
