@@ -1,9 +1,21 @@
 ;;; https://github.com/mkersh/ClojureTests/blob/master/src/http/api/mambu/experiments/loan_schedule.clj
 (ns http.api.mambu.experiments.loan_schedule
 (:require [http.api.json_helper :as api]
-          [http.api.api_pipe :as steps]
-          [mambu.extensions.data-replication.file-dwh :as dwh])
+          [http.api.api_pipe :as steps])
 )
+
+;; Some atoms that will hold IDs/data used in multiple places
+(defonce PRODUCT_ID (atom nil))
+(defonce PRODUCT_KEY (atom nil))
+(defonce CUSTID (atom nil))
+(defonce CUSTKEY (atom nil))
+(defonce LOANID (atom nil))
+(defonce LOANAMOUNT (atom 5000))
+(defonce INTEREST_RATE (atom 5))
+(defonce NUM_INSTALS (atom 12))
+;;(defonce BOOK_DATE (atom "2021-01-01T13:37:50+01:00"))
+(defonce VALUE_DATE (atom "2021-01-01T13:37:50+01:00"))
+(defonce FIRST_DATE (atom "2021-02-01T13:37:50+01:00"))
 
 (defn get-loan-api [context]
   {:url (str "{{*env*}}/loans/" (:loanAccountId context))
@@ -80,17 +92,6 @@
              "Content-Type" "application/json"}
    :query-params {"detailsLevel" "FULL"}})
 
-;; Some atoms that will hold IDs/data used in multiple places
-(defonce PRODUCT_ID (atom nil))
-(defonce PRODUCT_KEY (atom nil))
-(defonce CUSTID (atom nil))
-(defonce CUSTKEY (atom nil))
-(defonce LOANID (atom nil))
-;;(defonce BOOK_DATE (atom "2021-01-01T13:37:50+01:00"))
-(defonce VALUE_DATE (atom "2021-01-01T13:37:50+01:00"))
-(defonce FIRST_DATE (atom "2021-02-01T13:37:50+01:00"))
-
-
 (defn make-context []
   {:cust-key @CUSTKEY
    :prod-key @PRODUCT_KEY})
@@ -165,13 +166,19 @@
 ;;    Using PRODUCT_KEY set above
 ;;
 
+;; Set the following if you want to change the loan amount (default 5K)
+(reset! LOANAMOUNT 12550)
+(reset! INTEREST_RATE 19.4)
+(reset! NUM_INSTALS 78)
+
+
 ;; Run this let to create a new loan account
 (let [res (steps/apply-api create-installment-loan-api
-                           (merge (make-context) {:amount 5000
+                           (merge (make-context) {:amount @LOANAMOUNT
                                                   :acc-name (get-product-accname @PRODUCT_ID)
-                                                  :interest-rate 5
+                                                  :interest-rate @INTEREST_RATE
                                                   :grace_period 0
-                                                  :num-installments 12}))
+                                                  :num-installments @NUM_INSTALS}))
       id (get-in res [:last-call "id"])]
   (reset! LOANID id)
   ;;(api/PRINT res)
@@ -180,15 +187,15 @@
   (steps/apply-api approveLoanAccount {:loanAccountId @LOANID}))
 
 ;; [3.1] Disburse the Loan 
-(reset! VALUE_DATE "2021-01-01T13:37:50+01:00") ;; Change these dates as required
-(reset! FIRST_DATE "2021-02-01T13:37:50+01:00")
+(reset! VALUE_DATE "2021-07-08T13:37:50+02:00") ;; Change these dates as required
+(reset! FIRST_DATE "2021-10-18T13:37:50+02:00") ;; Make sure the timezone offset is set correct!!! This will change throughout the year
 (steps/apply-api disburse-loan-api {:loanAccountId @LOANID :value-date @VALUE_DATE :first-date @FIRST_DATE})
 @LOANID
 
 ;; [3.3] Zap the loan
 (zap-a-loan) ;; uses @LOANID
 ;; Set below first to change LOANID (if needed)
-(reset! LOANID "EBLR299") ;; To link to an existing loan set this
+(reset! LOANID "RZXX667") ;; To link to an existing loan set this
 
 ;------------------------
 ;; [4] Get a loan details
