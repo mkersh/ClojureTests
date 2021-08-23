@@ -13,6 +13,8 @@
 (defonce LOANAMOUNT (atom 5000))
 (defonce INTEREST_RATE (atom 5))
 (defonce NUM_INSTALS (atom 12))
+(defonce GRACE_PERIOD (atom 0))
+
 ;;(defonce BOOK_DATE (atom "2021-01-01T13:37:50+01:00"))
 (defonce VALUE_DATE (atom "2021-01-01T13:37:50+01:00"))
 (defonce FIRST_DATE (atom "2021-02-01T13:37:50+01:00"))
@@ -24,7 +26,7 @@
    :headers {"Accept" "application/vnd.mambu.v2+json"
              "Content-Type" "application/json"}})
 
- (defn get-loan-schedule-api [context]
+(defn get-loan-schedule-api [context]
    {:url (str "{{*env*}}/loans/" (:loanAccountId context) "/schedule")
     :method api/GET
     :query-params {"detailsLevel" "FULL"}
@@ -41,6 +43,19 @@
    :headers {"Accept" "application/vnd.mambu.v2+json"
              "Content-Type" "application/json"}})
 
+(defn round-to-2dp [num]
+  (read-string (api/round-num num)))
+
+(defn adjusted-disburse-amount [disburse-amount backdated-days annual-interest-rate]
+  (let [day-rate (/ (/ annual-interest-rate 100) 365)
+        day-rate1 (float day-rate)]
+     (round-to-2dp (/ (float disburse-amount) (+ 1 (* backdated-days day-rate1))))))
+
+(defn capitalize-grace-period-interest [principal-amount amount-per-period num-periods]
+  (let [total-cap-amount (* amount-per-period num-periods)]
+    (round-to-2dp (+ (float principal-amount) total-cap-amount))))
+  
+
 (defn approveLoanAccount [context]
   {:url (str "{{*env*}}/loans/" (:loanAccountId context) ":changeState")
    :method api/POST
@@ -56,7 +71,7 @@
              "Content-Type" "application/json"}
    :body {}})
 
- (defn create-installment-loan-api [context]
+(defn create-installment-loan-api [context]
    {:url (str "{{*env*}}/loans")
     :method api/POST
     :headers {"Accept" "application/vnd.mambu.v2+json"
@@ -127,20 +142,28 @@
 (reset! PRODUCT_ID "PROVEQ1c")
 ;; PROVEQ1c - DecBal 30/360 - no-rounding-principle
 (reset! PRODUCT_ID "PROVEQ1d")
+;; PROVEQ1c - equal instalments 30/360 - compound interest
+(reset! PRODUCT_ID "PROVEQ1e3")
+;; PROVEQ1c - equal instalments 30/360 - capitalized interest
+(reset! PRODUCT_ID "PROVEQ1e4")
 ;; PROVEQ2 - equal instalments actual/365 - prin-round-into-last
 (reset! PRODUCT_ID "PROVEQ2")
 ;; PROVEQ2 - equal instalments actual/365 - no-rounding-principle
 (reset! PRODUCT_ID "PROVEQ2b")
+;; PROVEQ2 - equal instalments actual/365 - compound interest
+(reset! PRODUCT_ID "PROVEQ2c")
 ;; PROVEQ - equal instalments actual/365 (optimised) - prin-round-into-last
 (reset! PRODUCT_ID "PROVEQ3")
 ;; PROVEQ - equal instalments actual/365 (optimised) - no-rounding-principle
 (reset! PRODUCT_ID "PROVEQ3b")
+;;PROVEQ1 - equal instalments 30/360 - optimised
+(reset! PRODUCT_ID "PROVEQ1f")
 
 ;; [2.1] Make sure you execute the following if you change the PRODUCT_ID
 ;;       This will set the corresponding PRODUCT_KEY
 (let  [res (steps/apply-api get-loan-product {:product-id @PRODUCT_ID})
        encKey (get-in res [:last-call "encodedKey"])]
-  (api/PRINT res)
+  ;;(api/PRINT res)
   (reset! PRODUCT_KEY encKey)
   (prn "encoded key = " encKey))
 
@@ -149,13 +172,17 @@
 (defn get-product-accname [prodid]
 (condp = prodid
   "PROVEQ1" "Equi 30/360 - prin-round-into-last"
+  "PROVEQ1f" "Equi 30/360 - optimised"
   "PROVEQ1b" "Equi 30/360 - no-rounding-principle"
   "PROVEQ1c" "Equi 30/360 - no-rounding-principle (v2)"
   "PROVEQ2" "Equi actual/365 - prin-round-into-last"
   "PROVEQ2b" "Equi actual/365 - no-rounding-principle"
+  "PROVEQ2c" "Equi actual/365 - comp int"
   "PROVEQ3" "Equi actual/365 (optimised) - prin-round-into-last"
   "PROVEQ3b" "Equi actual/365 (optimised) - no-rounding-principle"
   "PROVEQ1d" "DecBal 30/360 - prin-round-into-last"
+  "PROVEQ1e3" "Equi 30/360 - Compound Interest3"
+  "PROVEQ1e4" "Equi 30/360 - Capitalized Interest"
   (throw (Exception. "Unknown @PRODUCT_ID - Update get-product-accname function"))))
  
  ;; Run the following to see what the PRODUCT_ID is currently set to
@@ -169,15 +196,20 @@
 ;; Set the following if you want to change the loan amount (default 5K)
 (reset! LOANAMOUNT 12550)
 (reset! INTEREST_RATE 19.4)
-(reset! NUM_INSTALS 78)
+(reset! NUM_INSTALS 81)
+(reset! GRACE_PERIOD 3) ;; Number of grace periods. 
+;; Use next function to adjust the loan amount
+(reset! LOANAMOUNT (capitalize-grace-period-interest (adjusted-disburse-amount @LOANAMOUNT 20 @INTEREST_RATE) 202.89 @GRACE_PERIOD))
 
+(reset! LOANAMOUNT  (adjusted-disburse-amount @LOANAMOUNT 20 @INTEREST_RATE))
+@LOANAMOUNT
 
 ;; Run this let to create a new loan account
 (let [res (steps/apply-api create-installment-loan-api
                            (merge (make-context) {:amount @LOANAMOUNT
                                                   :acc-name (get-product-accname @PRODUCT_ID)
                                                   :interest-rate @INTEREST_RATE
-                                                  :grace_period 0
+                                                  :grace_period @GRACE_PERIOD
                                                   :num-installments @NUM_INSTALS}))
       id (get-in res [:last-call "id"])]
   (reset! LOANID id)
@@ -187,22 +219,23 @@
   (steps/apply-api approveLoanAccount {:loanAccountId @LOANID}))
 
 ;; [3.1] Disburse the Loan 
-(reset! VALUE_DATE "2021-07-08T13:37:50+02:00") ;; Change these dates as required
-(reset! FIRST_DATE "2021-10-18T13:37:50+02:00") ;; Make sure the timezone offset is set correct!!! This will change throughout the year
+(reset! VALUE_DATE "2020-06-18T13:37:50+02:00") ;; Change these dates as required
+(reset! FIRST_DATE "2020-07-18T13:37:50+02:00") ;; Make sure the timezone offset is set correct!!! This will change throughout the year
 (steps/apply-api disburse-loan-api {:loanAccountId @LOANID :value-date @VALUE_DATE :first-date @FIRST_DATE})
 @LOANID
 
 ;; [3.3] Zap the loan
 (zap-a-loan) ;; uses @LOANID
 ;; Set below first to change LOANID (if needed)
-(reset! LOANID "RZXX667") ;; To link to an existing loan set this
+(reset! LOANID "LTMY547") ;; To link to an existing loan set this
 
 ;------------------------
 ;; [4] Get a loan details
 ;;
 (api/PRINT (steps/apply-api get-loan-api {:loanAccountId @LOANID}))
 
-
+(* 202.89 3)
+(+ 284.26 (/ (* 202.89 3) 78))
 
 ;;
   )
