@@ -223,7 +223,7 @@
 
 (reset! NUM_INSTALS 81)
 (reset! GRACE_PERIOD (months-diff @FIRST_DATE @FIRST_PAY_DATE)) ;; Number of grace periods. 
-;; Use next function to adjust the loan amount
+;; Use next function to adjust the loan amount - for equal instalment workaroundxs
 (let [adjust-for-backdated-days (adjusted-disburse-amount @LOANAMOUNT (days-diff @VALUE_DATE @REAL_DISBURSE_DATE) @INTEREST_RATE)
       per-grace-period-interest (grace-period-interest-amount @LOANAMOUNT @FIRST_DATE @FIRST_PAY_DATE @INTEREST_RATE) ;; Was using 202.89 for grace-period-capitalization
       cap-grace-period-total (+ adjust-for-backdated-days per-grace-period-interest)]
