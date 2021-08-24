@@ -6,6 +6,7 @@
 )
 
 ;; Some atoms that will hold IDs/data used in multiple places
+(defonce TIMEZONE (atom "Europe/Berlin"))
 (defonce PRODUCT_ID (atom nil))
 (defonce PRODUCT_KEY (atom nil))
 (defonce CUSTID (atom nil))
@@ -19,6 +20,14 @@
 (defonce FIRST_PAY_DATE (atom nil))
 (defonce VALUE_DATE (atom "2021-01-01T13:37:50+01:00"))
 (defonce FIRST_DATE (atom "2021-02-01T13:37:50+01:00"))
+
+;; Adjust the timezone according to date passed
+(defn adjust-timezone [dateStr]
+  (let [date-local (t/zoned-date-time dateStr)
+        date2 (t/with-zone date-local @TIMEZONE)
+        zone-offset (str (t/zone-offset date2))
+        date-minus-offset (subs dateStr 0 (- (count dateStr) 6))]
+    (str date-minus-offset zone-offset)))
 
 (defn get-all-loans-api [context]
   {:url (str "{{*env*}}/loans")
@@ -241,10 +250,10 @@
 ;; Set the following if you want to change the loan amount (default 5K)
 (reset! LOANAMOUNT 12550)
 (reset! INTEREST_RATE 19.4)
-(reset! VALUE_DATE "2020-06-18T13:37:50+02:00") ;; Change these dates as required
-(reset! REAL_DISBURSE_DATE "2020-07-08T13:37:50+02:00")
-(reset! FIRST_DATE "2020-07-18T13:37:50+02:00") ;; Make sure the timezone offset is set correct!!! This will change throughout the year
-(reset! FIRST_PAY_DATE "2020-10-18T13:37:50+02:00")
+(reset! VALUE_DATE (adjust-timezone "2020-06-18T13:37:50+00:00")) ;; Change these dates as required
+(reset! REAL_DISBURSE_DATE (adjust-timezone "2020-07-08T13:37:50+00:00"))
+(reset! FIRST_DATE (adjust-timezone "2020-07-18T13:37:50+00:00")) ;; Make sure the timezone offset is set correct!!! This will change throughout the year
+(reset! FIRST_PAY_DATE (adjust-timezone "2020-10-18T13:37:50+00:00"))
 
 (reset! NUM_INSTALS 81)
 (reset! GRACE_PERIOD (months-diff @FIRST_DATE @FIRST_PAY_DATE)) ;; Number of grace periods. 
