@@ -1,7 +1,8 @@
 ;;; https://github.com/mkersh/ClojureTests/blob/master/src/http/api/mambu/experiments/loan_schedule.clj
 (ns http.api.mambu.experiments.loan_schedule
 (:require [http.api.json_helper :as api]
-          [http.api.api_pipe :as steps])
+          [http.api.api_pipe :as steps]
+          [java-time :as t])
 )
 
 ;; Some atoms that will hold IDs/data used in multiple places
@@ -14,6 +15,9 @@
 (defonce INTEREST_RATE (atom 5))
 (defonce NUM_INSTALS (atom 12))
 (defonce GRACE_PERIOD (atom 0))
+(defonce REAL_DISBURSE_DATE (atom nil))
+(defonce FIRST_PAY_DATE (atom nil))
+
 
 ;;(defonce BOOK_DATE (atom "2021-01-01T13:37:50+01:00"))
 (defonce VALUE_DATE (atom "2021-01-01T13:37:50+01:00"))
@@ -43,8 +47,24 @@
    :headers {"Accept" "application/vnd.mambu.v2+json"
              "Content-Type" "application/json"}})
 
+(defn days-diff [date1 date2]
+  (let [date2-local (t/local-date "yyyy-MM-dd" (subs date2 0 10))
+        date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
+    (t/time-between :days date1-local date2-local)))
+
+(defn months-diff [date1 date2]
+  (let [date2-local (t/local-date "yyyy-MM-dd" (subs date2 0 10))
+        date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
+    (t/time-between :months date1-local date2-local)))
+
 (defn round-to-2dp [num]
   (read-string (api/round-num num)))
+
+(defn grace-period-interest-amount [disburse-amount start-date first-pay-date annual-interest-rate]
+  (let [day-rate (/ (/ annual-interest-rate 100) 365)
+        day-rate1 (float day-rate)
+        num-days (days-diff start-date first-pay-date)]
+    (round-to-2dp (* (float disburse-amount) day-rate1 num-days))))
 
 (defn adjusted-disburse-amount [disburse-amount backdated-days annual-interest-rate]
   (let [day-rate (/ (/ annual-interest-rate 100) 365)
@@ -196,12 +216,19 @@
 ;; Set the following if you want to change the loan amount (default 5K)
 (reset! LOANAMOUNT 12550)
 (reset! INTEREST_RATE 19.4)
-(reset! NUM_INSTALS 81)
-(reset! GRACE_PERIOD 3) ;; Number of grace periods. 
-;; Use next function to adjust the loan amount
-(reset! LOANAMOUNT (capitalize-grace-period-interest (adjusted-disburse-amount @LOANAMOUNT 20 @INTEREST_RATE) 202.89 @GRACE_PERIOD))
+(reset! VALUE_DATE "2020-06-18T13:37:50+02:00") ;; Change these dates as required
+(reset! REAL_DISBURSE_DATE "2020-07-08T13:37:50+02:00")
+(reset! FIRST_DATE "2020-07-18T13:37:50+02:00") ;; Make sure the timezone offset is set correct!!! This will change throughout the year
+(reset! FIRST_PAY_DATE "2020-10-18T13:37:50+02:00")
 
-(reset! LOANAMOUNT  (adjusted-disburse-amount @LOANAMOUNT 20 @INTEREST_RATE))
+(reset! NUM_INSTALS 81)
+(reset! GRACE_PERIOD (months-diff @FIRST_DATE @FIRST_PAY_DATE)) ;; Number of grace periods. 
+;; Use next function to adjust the loan amount
+(let [adjust-for-backdated-days (adjusted-disburse-amount @LOANAMOUNT (days-diff @VALUE_DATE @REAL_DISBURSE_DATE) @INTEREST_RATE)
+      per-grace-period-interest (grace-period-interest-amount @LOANAMOUNT @FIRST_DATE @FIRST_PAY_DATE @INTEREST_RATE) ;; Was using 202.89 for grace-period-capitalization
+      cap-grace-period-total (+ adjust-for-backdated-days per-grace-period-interest)]
+  (reset! LOANAMOUNT cap-grace-period-total))
+
 @LOANAMOUNT
 
 ;; Run this let to create a new loan account
@@ -219,8 +246,7 @@
   (steps/apply-api approveLoanAccount {:loanAccountId @LOANID}))
 
 ;; [3.1] Disburse the Loan 
-(reset! VALUE_DATE "2020-06-18T13:37:50+02:00") ;; Change these dates as required
-(reset! FIRST_DATE "2020-07-18T13:37:50+02:00") ;; Make sure the timezone offset is set correct!!! This will change throughout the year
+(days-diff @VALUE_DATE @VALUE_DATE)
 (steps/apply-api disburse-loan-api {:loanAccountId @LOANID :value-date @VALUE_DATE :first-date @FIRST_DATE})
 @LOANID
 
