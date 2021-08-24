@@ -23,6 +23,18 @@
 (defonce VALUE_DATE (atom "2021-01-01T13:37:50+01:00"))
 (defonce FIRST_DATE (atom "2021-02-01T13:37:50+01:00"))
 
+(defn get-all-loans-api [context]
+  {:url (str "{{*env*}}/loans")
+   :method api/GET
+   :query-params {"detailsLevel" "BASIC"
+   "accountHolderType" "CLIENT"
+   "accountHolderId" (:cust-key context)
+   "accountState" (:status context)
+   }
+
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
 (defn get-loan-api [context]
   {:url (str "{{*env*}}/loans/" (:loanAccountId context))
    :method api/GET
@@ -120,6 +132,23 @@
   (try (steps/apply-api disburse-loan-api {:loanAccountId @LOANID}) (catch Exception _ nil))
   (try (steps/apply-api writeoffLoanAccount {:loanAccountId @LOANID}) (catch Exception _ nil)))
 
+(defn zap-all-loans-aux [acc-list]
+  (doall
+   (map
+    (fn [obj]
+         (reset! LOANID (get obj "id"))
+         (zap-a-loan))
+    acc-list)))
+
+(defn zap-all-loans []
+  (let
+   [active-list (api/extract-attrs ["id"] (:last-call (steps/apply-api get-all-loans-api {:cust-key @CUSTKEY :status "ACTIVE_IN_ARREARS"})))
+    active-in-arrears-list (api/extract-attrs ["id"] (:last-call (steps/apply-api get-all-loans-api {:cust-key @CUSTKEY :status "ACTIVE_IN_ARREARS"})))]
+  (prn "Zapping ACTIVE loans")
+  (zap-all-loans-aux active-list)
+  (prn "Zapping ACTIVE_IN_ARREARS loans")
+  (zap-all-loans-aux active-in-arrears-list)))
+
 (defn get-cust-api [context]
   {:url (str "{{*env*}}/clients/" (:cust-id context))
    :method api/GET
@@ -147,7 +176,6 @@
   (reset! CUSTKEY encKey)
   (api/PRINT res)
   (prn "encoded key = " encKey))
-
 
 ;;------------------------
 ;; [2] Get product details
@@ -246,12 +274,12 @@
   (steps/apply-api approveLoanAccount {:loanAccountId @LOANID}))
 
 ;; [3.1] Disburse the Loan 
-(days-diff @VALUE_DATE @VALUE_DATE)
 (steps/apply-api disburse-loan-api {:loanAccountId @LOANID :value-date @VALUE_DATE :first-date @FIRST_DATE})
 @LOANID
 
 ;; [3.3] Zap the loan
 (zap-a-loan) ;; uses @LOANID
+(zap-all-loans) ;; Zap all active and in-arrears loans for @CUSTKEY
 ;; Set below first to change LOANID (if needed)
 (reset! LOANID "LTMY547") ;; To link to an existing loan set this
 
@@ -260,8 +288,6 @@
 ;;
 (api/PRINT (steps/apply-api get-loan-api {:loanAccountId @LOANID}))
 
-(* 202.89 3)
-(+ 284.26 (/ (* 202.89 3) 78))
 
 ;;
   )
