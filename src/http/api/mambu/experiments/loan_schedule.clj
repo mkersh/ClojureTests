@@ -17,9 +17,6 @@
 (defonce GRACE_PERIOD (atom 0))
 (defonce REAL_DISBURSE_DATE (atom nil))
 (defonce FIRST_PAY_DATE (atom nil))
-
-
-;;(defonce BOOK_DATE (atom "2021-01-01T13:37:50+01:00"))
 (defonce VALUE_DATE (atom "2021-01-01T13:37:50+01:00"))
 (defonce FIRST_DATE (atom "2021-02-01T13:37:50+01:00"))
 
@@ -251,10 +248,10 @@
 
 (reset! NUM_INSTALS 81)
 (reset! GRACE_PERIOD (months-diff @FIRST_DATE @FIRST_PAY_DATE)) ;; Number of grace periods. 
-;; Use next function to adjust the loan amount - for equal instalment workaroundxs
+;; Use next function to adjust the loan amount - for equal instalment workaround
 (let [adjust-for-backdated-days (adjusted-disburse-amount @LOANAMOUNT (days-diff @VALUE_DATE @REAL_DISBURSE_DATE) @INTEREST_RATE)
-      per-grace-period-interest (grace-period-interest-amount @LOANAMOUNT @FIRST_DATE @FIRST_PAY_DATE @INTEREST_RATE) ;; Was using 202.89 for grace-period-capitalization
-      cap-grace-period-total (+ adjust-for-backdated-days per-grace-period-interest)]
+      grace-period-interest (grace-period-interest-amount @LOANAMOUNT @FIRST_DATE @FIRST_PAY_DATE @INTEREST_RATE) ;; Was using 202.89 for grace-period-capitalization
+      cap-grace-period-total (+ adjust-for-backdated-days grace-period-interest)]
   (reset! LOANAMOUNT cap-grace-period-total))
 
 @LOANAMOUNT

@@ -118,7 +118,7 @@
     (steps/apply-api api-call context)))
 
 (defn save-object [obj context]
-(prn "In save-object:")
+  (prn "In save-object:")
   (let [object-type (:object-type context)
         last-position (get-last-position object-type)
         last-moddate (:lastModifiedDate last-position)
