@@ -88,10 +88,6 @@
   (let [day-rate (/ (/ annual-interest-rate 100) 365)
         day-rate1 (float day-rate)]
      (round-to-2dp (/ (float disburse-amount) (+ 1 (* backdated-days day-rate1))))))
-
-(defn capitalize-grace-period-interest [principal-amount amount-per-period num-periods]
-  (let [total-cap-amount (* amount-per-period num-periods)]
-    (round-to-2dp (+ (float principal-amount) total-cap-amount))))
   
 
 (defn approveLoanAccount [context]
