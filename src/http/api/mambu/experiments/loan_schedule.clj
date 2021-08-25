@@ -169,7 +169,7 @@
 ;; Define the environment to use for testing
 (api/setenv "env2") ;; https://markkershaw.mambu.com
 
-(comment
+(comment ;; Run functions in this section manually
 
 ;------------------------
 ;; [1] Get Customer details
@@ -221,6 +221,11 @@
   (reset! PRODUCT_KEY encKey)
   (prn "encoded key = " encKey))
 
+;; Run the following to see what the PRODUCT_ID is currently set to
+@PRODUCT_ID
+
+)
+
 ;; If you add a new PRODUCT_ID above, then give it a name below
 ;; This is the name that the accounts will be given when we create a new loan in step #3 below
 (defn get-product-accname [prodid]
@@ -238,9 +243,8 @@
   "PROVEQ1e3" "Equi 30/360 - Compound Interest3"
   "PROVEQ1e4" "Equi 30/360 - Capitalized Interest"
   (throw (Exception. "Unknown @PRODUCT_ID - Update get-product-accname function"))))
- 
- ;; Run the following to see what the PRODUCT_ID is currently set to
-@PRODUCT_ID
+
+(comment ;; Run functions in this section manually
 
 ;;------------------------
 ;; [3] Create a new loan
