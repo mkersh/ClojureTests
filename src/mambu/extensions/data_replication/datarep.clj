@@ -271,11 +271,10 @@
       (< (compare page-last-moddate last-moddate) 1) (+ page-num 1)
       :else (check-previous-pages context object_type last-moddate (dec-page-num page-num)))))
 
-;; Need to improve determine-start-page 
-;; There is the possibility that we could missing object updates
-;; This could happen if updates are made to objects that we have previously processed
 ;; Need to check that the previous page before (read-last-position-DWH ..) has been processed
 ;; If not then recursively check one before that etc.
+;; NOTE: Although we have processed a page before the order of items could have changed - So
+;; we are not guarenteed to have processed a page. 
 (defn determine-start-page [object_type context]
   (read-last-position-DWH object_type)
   (let [last-position (get-last-position object_type)
@@ -333,7 +332,7 @@
   (get-obj-page :schedule_install {:page-size 10, :page-num 0})
   
 
-  ;; Get all the clients and save to the DWH
+  ;; Get all objects (of a given type) and save to the DWH
   (get-all-objects :client {:page-size 100})
   (get-all-objects :deposit_account {:page-size 100})
   (get-all-objects :loan_account {:page-size 100})
