@@ -67,7 +67,6 @@
 (defn read-last-position [object-type]
   (let [root-dir (dwh-root-dir {})
         file-path (dwh-get-lastpos-path root-dir object-type)]
-    (prn "read last-position:" file-path)
     (read-object file-path)))
 
 
