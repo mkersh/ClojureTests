@@ -9,6 +9,12 @@
 ;;(refer-clojure :exclude [range iterate format max min])
 ;;(use 'java-time)
 
+(defn adjust-timezone [dateStr timezone]
+  (let [date-local (t/zoned-date-time dateStr)
+        date2 (t/with-zone date-local timezone)
+        zone-offset (str (t/zone-offset date2))
+        date-minus-offset (subs dateStr 0 (- (count dateStr) 6))]
+    (str date-minus-offset zone-offset)))
 
 (comment 
 
@@ -23,5 +29,14 @@
 (t/with-zone (t/zoned-date-time 2021 05) "Europe/London")
 (t/with-zone (t/zoned-date-time 2021 07) "Europe/Berlin")
 
+(adjust-timezone "2021-08-27T13:37:50+00:00" "Europe/Berlin")
+(adjust-timezone "2021-08-27T13:37:50+00:00" "Europe/London")
+(adjust-timezone "2021-08-27T13:37:50+00:00" "Universal")
+(adjust-timezone "2021-01-01T13:37:50+00:00" "Europe/Berlin")
+(adjust-timezone "2021-01-01T13:37:50+00:00" "Europe/London")
+(adjust-timezone "2021-08-27T13:37:50+00:00" "Universal")
+
+
+(t/available-zone-ids)
 ;;
 )

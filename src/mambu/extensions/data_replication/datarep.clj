@@ -46,9 +46,7 @@
 (defn get-last-position [object-type]
   (get @last-positions-map object-type))
 
-;; NOT good enough yet
-;; need to make sure that this page contain our :lastModifiedDate
-;; else we need to go back a page
+;; See also determine-start-page below
 (defn get-start-page [object-type]
   (let [last-position (get-last-position object-type)
         start-page (:page-num last-position)]
@@ -139,10 +137,27 @@
     ;; Save the object to the DWH
     (prn "Saving page to DWH XX")
     (doall (map #(save-object % {:object-type :client}) page))
-    (save-last-position-DWH :client last-position)
+    ;; Only save the details if last page not empty
+    (when (last page) (save-last-position-DWH :client last-position))
     (set-last-position :client nil) ;; Avoid skipping checks for other pages
     (prn "**END")
     (count page)))
+
+(defn dec-page-num [page-num]
+  (if (< page-num 1) 0 (- page-num 1)))
+
+
+(defn check-previous-pages [context object_type last-moddate page-num]
+  (let
+   [context1 (get-all-clients-next-page {:page-size (:page-size context), :page-num page-num})
+    page (:last-call context1)
+    lastObj (last page)
+    page-last-moddate (get lastObj "lastModifiedDate")]
+    (cond
+      (= page-num 0) 0
+      (nil? page-last-moddate) (dec-page-num page-num)
+      (< (compare page-last-moddate last-moddate) 1) (+ page-num 1)
+      :else (check-previous-pages context object_type last-moddate (dec-page-num page-num)))))
 
 ;; Need to improve determine-start-page 
 ;; There is the possibility that we could missing object updates
@@ -150,8 +165,20 @@
 ;; Need to check that the previous page before (read-last-position-DWH ..) has been processed
 ;; If not then recursively check one before that etc.
 (defn determine-start-page [object_type context]
-  
-  (let [last-page](get-start-page object_type)))
+
+  (let [last-position (get-last-position object_type)
+        last-moddate (:lastModifiedDate last-position)
+        last-page (get-start-page object_type)]
+    (if last-moddate
+      (check-previous-pages  context object_type last-moddate last-page)
+      last-page)))
+
+(comment
+  (int? "shshs")
+  (check-previous-pages {:page-size 10} :client "2021-08-27T14:12:18+02:00" 5)
+  (determine-start-page :client {:page-size 10})
+  (get-last-position :client)
+  (< (compare "2021-08-26T14:12:18+02:00" "2021-08-27T14:12:18+02:00") 1))
 
 
 (defn get-all-objects [object_type context]
@@ -178,7 +205,7 @@
   (get-last-position :client)
   (read-last-position-DWH :client)
   ;; Get a single page and save to the DWH
-  (get-client-page {:page-size 3, :page-num 0})
+  (get-client-page {:page-size 10, :page-num 1000})
 
   ;; Get all the clients and save to the DWH
   (get-all-objects :client {:page-size 1000})
