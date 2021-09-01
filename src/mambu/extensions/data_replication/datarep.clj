@@ -241,7 +241,6 @@
                                 "Content-Type" "application/json"}}))]
     (steps/apply-api api-call context)))
 
-;; fn-type = (:save-page, :read-page)
 (defn get-obj-fn [object_type fn-type]
   (let [func-map
         {:client {:read-page get-all-clients-next-page :last-mod-attr "lastModifiedDate"}
@@ -254,10 +253,8 @@
          }]
     (get-in func-map [object_type fn-type])))
 
-
 (defn dec-page-num [page-num]
   (if (< page-num 1) 0 (- page-num 1)))
-
 
 (defn check-previous-pages [context object_type last-moddate page-num]
   (let
