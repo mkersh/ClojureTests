@@ -33,6 +33,9 @@
 (defn dwh-get-lastpos-path [root-dir object-type]
   (str root-dir (symbol object-type) "/.lastPosition" ))
 
+(defn dwh-get-cache-path [root-dir object-type]
+  (str root-dir (symbol object-type) "/.cache"))
+
 (defn save-to-file
   [file-name s]
   (spit file-name s))
@@ -48,9 +51,10 @@
 (defn save-object [object context]
   (let [object-type (:object-type context)
         root-dir (dwh-root-dir context)
-        file-path (dwh-get-file-path root-dir object-type object)
+        get-file-path-fn (or (:get-file-path-fn context) dwh-get-file-path)
+        file-path (get-file-path-fn root-dir object-type object)
         object-str (get-object-str object)]
-    (prn "save-object:" file-path)    
+    ;;(prn "save-object:" file-path)    
     (io/make-parents file-path)
     (save-to-file file-path object-str)))
 
@@ -60,13 +64,24 @@
 (defn save-last-position [object-type last-position]
   (let [root-dir (dwh-root-dir {})
         file-path (dwh-get-lastpos-path root-dir object-type)]
-    (prn "save last-position:" file-path)
-    (io/make-parents file-path)
+    ;;(prn "save last-position:" file-path)
+    ;;(io/make-parents file-path)
     (save-to-file file-path last-position)))
 
 (defn read-last-position [object-type]
   (let [root-dir (dwh-root-dir {})
         file-path (dwh-get-lastpos-path root-dir object-type)]
+    (read-object file-path)))
+
+(defn save-cache [object-type cache-map]
+  (let [root-dir (dwh-root-dir {})
+        file-path (dwh-get-cache-path root-dir object-type)]
+    (io/make-parents file-path)
+    (save-to-file file-path cache-map)))
+
+(defn read-cache [object-type]
+  (let [root-dir (dwh-root-dir {})
+        file-path (dwh-get-cache-path root-dir object-type)]
     (read-object file-path)))
 
 

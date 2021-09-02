@@ -18,6 +18,17 @@
             [http.api.api_pipe :as steps]
             [mambu.extensions.data-replication.file-dwh :as dwh]))
 
+(defonce debug-flag (atom true))
+
+(defn debug [ & ks ]
+  (when @debug-flag (apply prn ks)))
+
+(defn debug-off [& ks]
+  (when (not @debug-flag) (apply println ks)))
+
+(defn setup-debug [debugOn?]
+  (reset! debug-flag debugOn?))
+
 ;;; -----------------------------------------------------------------
 ;;;  Functions for recording where you previously finished.
 ;;;  Enabling us to resume from a last-position
@@ -50,7 +61,8 @@
 ;; See also determine-start-page below
 (defn get-start-page [object-type]
   (let [last-position (get-last-position object-type)
-        start-page (:page-num last-position)]
+        last-moddate (:lastModifiedDate last-position)
+        start-page (if last-moddate (:page-num last-position) 0)]
         (if start-page start-page 0)))
 
 ;; Save the last-postion for object-type to the DWH
@@ -58,7 +70,7 @@
   ([object-type page-num page-size lastModifiedDate]
    (save-last-position-DWH object-type {:page-num page-num :page-size page-size :lastModifiedDate lastModifiedDate}))
   ([object-type last-position]
-   (dwh/save-last-position object-type last-position)))
+   (when (:lastModifiedDate last-position)(dwh/save-last-position object-type last-position))))
 
 ;; Read the last-postion for object-type from the DWH
 (defn read-last-position-DWH [object-type]
@@ -97,24 +109,104 @@
   (doall ;; remember to force your way through the LazySeq that the for returns
    (for [i (range startNum endNum)]
      (do
-       (prn "Change name to: " (str stem i))
+       (debug "Change name to: " (str stem i))
        (patch-customer apikey id (str stem i))))))
 
 ;;; END --------------------------------------------------------------
 
+;;; -----------------------------------------------------------------
+;;;  Next functions support keeping a SHA1 cache of objects
+;;;  That can be used to determine whether we need to Save or not
+
+(defonce save-object-cache (atom {}))
+
+(defn sha1-str [s]
+  (->> (-> "sha1"
+           java.security.MessageDigest/getInstance
+           (.digest (.getBytes s)))
+       (map #(.substring
+              (Integer/toString
+               (+ (bit-and % 0xff) 0x100) 16) 1))
+       (apply str)))
+
+
+(defn make_sha1 [obj]
+  (let [s (dwh/get-object-str obj)
+        signature (sha1-str s)]
+    signature))
+
+(defn remove-fields-from-obj [obj remove-fields]
+  (reduce #(dissoc %1 %2) obj remove-fields))
+
+(defn add-to-cache [object_type obj remove-fields]
+  (let [obj1 (remove-fields-from-obj obj remove-fields)
+        cache-map @save-object-cache
+        cache-map-objtype (or (get cache-map object_type) {})
+        sha1Str (make_sha1 obj1)
+        cache-map-objtype2 (assoc cache-map-objtype sha1Str true)]
+    (reset! save-object-cache (assoc cache-map object_type cache-map-objtype2))))
+
+(defn in-cache? [object_type obj remove-fields]
+  (let [obj1 (remove-fields-from-obj obj remove-fields)
+        cache-map @save-object-cache
+        cache-map-objtype (or (get cache-map object_type) {})
+        sha1Str (make_sha1 obj1)]
+    (get cache-map-objtype sha1Str)))
+
+(defn save-cache [object_type]
+  (let [caching_enabled? (get-obj-fn object_type :use-caching)]
+    (when caching_enabled? (dwh/save-cache object_type (get @save-object-cache object_type)))))
+
+(defn load-cache [object_type]
+  (let [caching_enabled? (get-obj-fn object_type :use-caching)]
+    (when caching_enabled?
+      (let [cache-map-objtype (try (dwh/read-cache object_type)
+                                   (catch Exception _ {}))]
+        (reset! save-object-cache (assoc @save-object-cache object_type cache-map-objtype))))))
+
+(defn clear-cache []
+  (reset! save-object-cache {}))
+
+(comment ;; Some tests
+(clear-cache)
+(add-to-cache :schedule_install {:f1 "v2" :f2 "v3"} [:f2])
+(in-cache? :schedule_install {:f1 "v2" :f2 "v3"} [:f2])
+(get @save-object-cache :schedule_install)
+(save-cache :schedule_install)
+(load-cache :schedule_install)
+;;
+)
+
+;;; END --------------------------------------------------------------
+
+
 (defn save-object [obj context]
-  (prn "In save-object:")
+  (debug "In save-object:")
   (let [object-type (:object-type context)
+        context1 (assoc context :get-file-path-fn (get-obj-fn object-type :get-file-path-fn))
         last-position (get-last-position object-type)
         last-moddate (:lastModifiedDate last-position)
         obj-last-moddate (get obj (get-obj-fn object-type :last-mod-attr))
-        _ (prn "obj-date:" obj-last-moddate "last-moddate" last-moddate)]
+        caching_enabled? (get-obj-fn object-type :use-caching)
+        cache-remove-fields (get-obj-fn object-type :cache-remove-fields)
+        _ (debug "obj-date:" obj-last-moddate "last-moddate" last-moddate)]
     (if  (> (compare obj-last-moddate last-moddate) -1) ;; obj modified after or exactly on last-moddate
       ;; NOTE: If the obj-last-moddate = last-moddate we need to be cautious and update again
       ;; There may have been multiple objects updated with exactly the same last-moddate and we may not have
       ;; seen all of these previously
-      (dwh/save-object obj context)
-      (prn "Skipping object") ;; We have already processed this object
+      (if caching_enabled?
+        ;; If caching enabled check to see if we have already saved this obj
+        (if (in-cache? object-type obj cache-remove-fields)
+          ;; Already in cache do not save
+          (debug "Skipping object - In Cache")
+          ;; Else save the object
+          (do
+            (dwh/save-object obj context1)
+            (add-to-cache object-type obj cache-remove-fields)))
+        ;; else just save to DWH
+        (dwh/save-object obj context1))
+      ;; else part of compare if
+      (debug "Skipping object") ;; We have already processed this object
       ))) 
 
 (defn get-all-clients-next-page [context]
@@ -122,6 +214,20 @@
                    (let [page-size (:page-size context0)
                          offset (* (:page-num context0) page-size)]
                      {:url (str "{{*env*}}/clients")
+                      :method api/GET
+                      :query-params {"detailsLevel" "FULL"
+                                     "paginationDetails" "ON"
+                                     "offset" offset "limit" (:page-size context0)
+                                     "sortBy" "lastModifiedDate:ASC"}
+                      :headers {"Accept" "application/vnd.mambu.v2+json"
+                                "Content-Type" "application/json"}}))]
+    (steps/apply-api api-call context)))
+
+(defn get-all-groups-next-page [context]
+  (let [api-call (fn [context0]
+                   (let [page-size (:page-size context0)
+                         offset (* (:page-num context0) page-size)]
+                     {:url (str "{{*env*}}/groups")
                       :method api/GET
                       :query-params {"detailsLevel" "FULL"
                                      "paginationDetails" "ON"
@@ -169,6 +275,15 @@
     (steps/apply-api api-call context)))
 
 
+
+(defn get-loan-account [context]
+  (let [api-call (fn [context0]
+                     {:url (str "{{*env*}}/loans/" (:accid context))
+                      :method api/GET
+                      :query-params {"detailsLevel" "FULL"}
+                      :headers {"Accept" "application/vnd.mambu.v2+json"
+                                "Content-Type" "application/json"}})]
+    (steps/apply-api api-call context)))
 
 (defn get-all-loan-accounts-next-page [context]
   (let [api-call (fn [context0]
@@ -224,6 +339,8 @@
                                 "Content-Type" "application/json"}}))]
     (steps/apply-api api-call context)))
 
+;; The following only works for bringing down the complete set of installments
+;; It does NOT work for incremental updates because there is nothing to sort on
 (defn get-installments-next-page [context]
   (let [api-call (fn [context0]
                    (let [page-size (:page-size context0)
@@ -233,7 +350,6 @@
                       :query-params {"detailsLevel" "FULL"
                                      "paginationDetails" "ON"
                                      "offset" offset "limit" (:page-size context0)
-                                     "sortBy" "lastModifiedDate:ASC"
                                      "dueFrom" "1900-01-01"
                                      "dueTo" "3000-01-01"
                                      }
@@ -241,15 +357,40 @@
                                 "Content-Type" "application/json"}}))]
     (steps/apply-api api-call context)))
 
+  (defn get-gl-accounts-next-page [context]
+    (let [api-call (fn [context0]
+                     (let [page-size (:page-size context0)
+                           offset (* (:page-num context0) page-size)]
+                       {:url (str "{{*env*}}/glaccounts")
+                        :method api/GET
+                        :query-params {"detailsLevel" "FULL"
+                                       "paginationDetails" "ON"
+                                       "offset" offset "limit" (:page-size context0)
+                                       "type" (:gl-type context)
+                                       "balanceExcluded" true}
+                        :headers {"Accept" "application/vnd.mambu.v2+json"
+                                  "Content-Type" "application/json"}}))]
+      (steps/apply-api api-call context)))
+
+;; Save installments under their parent account sub-folder
+;; NOTE: Was using "number" to order but this does not work - read API to see why
+;;       Now using dueDate to sort
+(defn install-get-file-path [root-dir object-type object]
+  (str root-dir (symbol object-type) "/" (get object "parentAccountKey") "/" (subs (get object "dueDate") 0 10) "-"(get object "encodedKey") ".edn"))
+
 (defn get-obj-fn [object_type fn-type]
   (let [func-map
         {:client {:read-page get-all-clients-next-page :last-mod-attr "lastModifiedDate"}
+         :group {:read-page get-all-groups-next-page :last-mod-attr "lastModifiedDate"}
          :deposit_account {:read-page get-all-deposits-accounts-next-page :last-mod-attr "lastModifiedDate"}
          :deposit_trans {:read-page get-all-deposit-trans-next-page :last-mod-attr "creationDate"}
          :loan_account {:read-page get-all-loan-accounts-next-page :last-mod-attr "lastModifiedDate"}
          :loan_trans {:read-page get-all-loan-trans-next-page :last-mod-attr "creationDate"}
          :gl_journal_entry {:read-page get-all-JEs-next-page :last-mod-attr "creationDate"}
-         :schedule_install {:read-page get-installments-next-page :last-mod-attr "dueDate"}
+         :gl_account {:read-page get-gl-accounts-next-page :last-mod-attr "noDate"}
+         :schedule_install {:read-page get-installments-next-page
+                            :last-mod-attr "noDate" :get-file-path-fn install-get-file-path
+                            :use-caching true :cache-remove-fields ["number"]}
          }]
     (get-in func-map [object_type fn-type])))
 
@@ -279,31 +420,34 @@
         last-page (get-start-page object_type)]
     (if last-moddate
       (check-previous-pages  context object_type last-moddate last-page)
-      last-page)))
+      0)))
 
 (defn get-obj-page [object_type context]
   (let [context1 ((get-obj-fn object_type :read-page) context)
         page (:last-call context1)
         last-position (determine-last-position object_type context page)]
     ;; Save the object to the DWH
-    (prn "Saving page to DWH XX")
+    (debug "Saving page to DWH")
+    (debug-off ".")
     (doall (map #(save-object % {:object-type object_type}) page))
     ;; Only save the details if last page not empty
     (when (last page) (save-last-position-DWH object_type last-position))
     (set-last-position object_type nil) ;; Avoid skipping checks for other pages
-    (prn "**END")
+    (debug "**END")
     (count page)))
 
 (defn get-all-objects [object_type context]
+  (load-cache object_type)
   (determine-start-page object_type context) ;; Start from where you left off
   (doall ;; force evaluation of the take-while - which is a LazySeq
    (take-while
     #(> % 0) ;; Get another page if the last one had items in it
     (for [i (iterate inc (get-start-page object_type))]
       (do
-        (prn "Getting Page: " i)
-        (get-obj-page object_type {:page-size (:page-size context), :page-num i})))))
-  (prn "Finished - get-all-clients"))
+        (debug "Getting Page: " i)
+        (get-obj-page object_type  (merge context {:page-size (:page-size context), :page-num i}))))))
+  (save-cache object_type)
+  (debug "Finished - get-all-clients"))
 
 (defn reset-all []
   (dwh/delete-DWH) ;; Recursively delete the entire DWH
@@ -312,6 +456,8 @@
 (comment  ;; Testing sandbox area
 
   (api/setenv "env5") ;; set to use https://markkershaw.mambu.com
+  (setup-debug false) ;; Turn off debug messages
+  (setup-debug true) ;; Turn on debug messages
 
   (reset-all) ;; Delete the DWH and reset other things
 
@@ -319,6 +465,7 @@
   (read-last-position-DWH :client)
   ;; Get a single page and save to the DWH
   (get-obj-page :client {:page-size 10, :page-num 1})
+  (get-obj-page :group {:page-size 10, :page-num 1})
   (get-obj-page :deposit_account {:page-size 10, :page-num 0})
   ;; transactions do not have a lastModifiedDate??
   ;; Query this because you can modify a transaction with notes/customFields
@@ -327,26 +474,35 @@
   (get-obj-page :loan_trans {:page-size 10, :page-num 0})
   (get-obj-page :gl_journal_entry {:page-size 10, :page-num 0})
   (get-obj-page :schedule_install {:page-size 10, :page-num 0})
+  (get-obj-page :gl_account {:gl-type "ASSET" :page-size 100, :page-num 0})
+  
   
 
   ;; Get all objects (of a given type) and save to the DWH
   (get-all-objects :client {:page-size 100})
+  (get-all-objects :group {:page-size 100})
   (get-all-objects :deposit_account {:page-size 100})
   (get-all-objects :loan_account {:page-size 100})
   (get-all-objects :deposit_trans {:page-size 100})
   (get-all-objects :loan_trans {:page-size 100})
   (get-all-objects :gl_journal_entry {:page-size 100})
-  (get-all-objects :schedule_install {:page-size 100})
-
-
+  (get-all-objects :gl_account {:gl-type "ASSET" :page-size 100})
+  (get-all-objects :gl_account {:gl-type "LIABILITY" :page-size 100})
+  (get-all-objects :gl_account {:gl-type "EQUITY" :page-size 100})
+  (get-all-objects :gl_account {:gl-type "INCOME" :page-size 100})
+  (get-all-objects :gl_account {:gl-type "EXPENSE" :page-size 100})
+  (time (get-all-objects :schedule_install {:page-size 1000}))
+  
+  (api/PRINT (get-loan-account {:accid "8a19a3d779e6f12c0179ec07b9d45e90"}))
 
   ;; testing the determine-start-page functions and helpers
   (check-previous-pages {:page-size 100} :client "2021-08-27T14:12:18+02:00" 1)
-  (determine-start-page :client {:page-size 100})
+  (determine-start-page :schedule_install {:page-size 100})
+  (get-start-page :schedule_install)
+  
   (get-start-page :client)
   (get-last-position :client)
   (< (compare "2021-08-26T14:12:18+02:00" "2021-08-27T14:12:18+02:00") 1)
-
 
 
 ;;
