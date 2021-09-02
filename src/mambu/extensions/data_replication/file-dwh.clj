@@ -106,9 +106,9 @@
   (fn [^java.io.File f]
     (let [obj (read-object f)
           objStr (pr-str obj)
-          encodedKey (get obj "encodedKey")
+          ;;encodedKey (get obj "encodedKey")
           isMatch  (str/includes? objStr to-find)]
-      (if isMatch encodedKey nil))))
+      (if isMatch (.getPath f) nil))))
 
 (defn print-file-details [^java.io.File f]
   (prn (type f))

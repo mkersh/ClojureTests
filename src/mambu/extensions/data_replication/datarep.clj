@@ -18,7 +18,7 @@
             [http.api.api_pipe :as steps]
             [mambu.extensions.data-replication.file-dwh :as dwh]))
 
-(defonce debug-flag (atom true))
+(defonce debug-flag (atom false))
 
 (defn debug [ & ks ]
   (when @debug-flag (apply prn ks)))
@@ -372,6 +372,76 @@
                                   "Content-Type" "application/json"}}))]
       (steps/apply-api api-call context)))
 
+  (defn get-loan-products-next-page [context]
+    (let [api-call (fn [context0]
+                     (let [page-size (:page-size context0)
+                           offset (* (:page-num context0) page-size)]
+                       {:url (str "{{*env*}}/loanproducts")
+                        :method api/GET
+                        :query-params {"detailsLevel" "FULL"
+                                       "paginationDetails" "ON"
+                                       "offset" offset "limit" (:page-size context0)
+                                       "sortBy" "lastModifiedDate:ASC"
+                                       }
+                        :headers {"Accept" "application/vnd.mambu.v2+json"
+                                  "Content-Type" "application/json"}}))]
+      (steps/apply-api api-call context)))
+
+(defn get-deposit-products-next-page [context]
+  (let [api-call (fn [context0]
+                   (let [page-size (:page-size context0)
+                         offset (* (:page-num context0) page-size)]
+                     {:url (str "{{*env*}}/depositproducts")
+                      :method api/GET
+                      :query-params {"detailsLevel" "FULL"
+                                     "paginationDetails" "ON"
+                                     "offset" offset "limit" (:page-size context0)
+                                     "sortBy" "lastModifiedDate:ASC"}
+                      :headers {"Accept" "application/vnd.mambu.v2+json"
+                                "Content-Type" "application/json"}}))]
+    (steps/apply-api api-call context)))
+
+(defn get-branches-next-page [context]
+  (let [api-call (fn [context0]
+                   (let [page-size (:page-size context0)
+                         offset (* (:page-num context0) page-size)]
+                     {:url (str "{{*env*}}/branches")
+                      :method api/GET
+                      :query-params {"detailsLevel" "FULL"
+                                     "paginationDetails" "ON"
+                                     "offset" offset "limit" (:page-size context0)
+                                     "sortBy" "lastModifiedDate:ASC"}
+                      :headers {"Accept" "application/vnd.mambu.v2+json"
+                                "Content-Type" "application/json"}}))]
+    (steps/apply-api api-call context)))
+
+(defn get-centres-next-page [context]
+  (let [api-call (fn [context0]
+                   (let [page-size (:page-size context0)
+                         offset (* (:page-num context0) page-size)]
+                     {:url (str "{{*env*}}/centres")
+                      :method api/GET
+                      :query-params {"detailsLevel" "FULL"
+                                     "paginationDetails" "ON"
+                                     "offset" offset "limit" (:page-size context0)
+                                     "sortBy" "lastModifiedDate:ASC"}
+                      :headers {"Accept" "application/vnd.mambu.v2+json"
+                                "Content-Type" "application/json"}}))]
+    (steps/apply-api api-call context)))
+
+(defn get-users-next-page [context]
+  (let [api-call (fn [context0]
+                   (let [page-size (:page-size context0)
+                         offset (* (:page-num context0) page-size)]
+                     {:url (str "{{*env*}}/users")
+                      :method api/GET
+                      :query-params {"detailsLevel" "FULL"
+                                     "paginationDetails" "ON"
+                                     "offset" offset "limit" (:page-size context0)}
+                      :headers {"Accept" "application/vnd.mambu.v2+json"
+                                "Content-Type" "application/json"}}))]
+    (steps/apply-api api-call context)))
+
 ;; Save installments under their parent account sub-folder
 ;; NOTE: Was using "number" to order but this does not work - read API to see why
 ;;       Now using dueDate to sort
@@ -391,6 +461,11 @@
          :schedule_install {:read-page get-installments-next-page
                             :last-mod-attr "noDate" :get-file-path-fn install-get-file-path
                             :use-caching true :cache-remove-fields ["number"]}
+        :loan_product {:read-page get-loan-products-next-page :last-mod-attr "lastModifiedDate"}
+        :deposit_product {:read-page get-deposit-products-next-page :last-mod-attr "lastModifiedDate"}
+        :branch {:read-page get-branches-next-page :last-mod-attr "lastModifiedDate"}
+        :centre {:read-page get-centres-next-page :last-mod-attr "lastModifiedDate"}
+        :user {:read-page get-users-next-page :last-mod-attr "lastModifiedDate"}
          }]
     (get-in func-map [object_type fn-type])))
 
@@ -475,10 +550,13 @@
   (get-obj-page :gl_journal_entry {:page-size 10, :page-num 0})
   (get-obj-page :schedule_install {:page-size 10, :page-num 0})
   (get-obj-page :gl_account {:gl-type "ASSET" :page-size 100, :page-num 0})
-  
+  (get-obj-page :loan_product {:page-size 10, :page-num 1})
+  (get-obj-page :deposit_product {:page-size 10, :page-num 1})
   
 
   ;; Get all objects (of a given type) and save to the DWH
+  (get-all-objects :branch {:page-size 100})
+  (get-all-objects :centre {:page-size 100})
   (get-all-objects :client {:page-size 100})
   (get-all-objects :group {:page-size 100})
   (get-all-objects :deposit_account {:page-size 100})
@@ -492,6 +570,9 @@
   (get-all-objects :gl_account {:gl-type "INCOME" :page-size 100})
   (get-all-objects :gl_account {:gl-type "EXPENSE" :page-size 100})
   (time (get-all-objects :schedule_install {:page-size 1000}))
+  (get-all-objects :loan_product {:page-size 100})
+  (get-all-objects :deposit_product {:page-size 100})
+  (get-all-objects :user {:page-size 100})
   
   (api/PRINT (get-loan-account {:accid "8a19a3d779e6f12c0179ec07b9d45e90"}))
 
@@ -504,6 +585,8 @@
   (get-last-position :client)
   (< (compare "2021-08-26T14:12:18+02:00" "2021-08-27T14:12:18+02:00") 1)
 
+;; Searching for stuff in th DWH
+(dwh/find-all-matches-DWH "James")
 
 ;;
   )
