@@ -11,7 +11,7 @@
 ;;;     Finding initial start position will involve jumping to page from previous-position
 ;;;     BUT we will then need to check that we start at the correct :lastModifiedDate
 ;;;     Previous order may not be exactly the same because some object(s) will have been updated and now be further down the paging order
-;;;
+;;; fff
 
 (ns mambu.extensions.data_replication.datarep
   (:require [http.api.json_helper :as api]
@@ -586,7 +586,7 @@
   (< (compare "2021-08-26T14:12:18+02:00" "2021-08-27T14:12:18+02:00") 1)
 
 ;; Searching for stuff in th DWH
-(dwh/find-all-matches-DWH "James")
+(dwh/find-all-matches-DWH "Demo")
 
 ;;
   )
