@@ -11,7 +11,7 @@
 ;;;     Finding initial start position will involve jumping to page from previous-position
 ;;;     BUT we will then need to check that we start at the correct :lastModifiedDate
 ;;;     Previous order may not be exactly the same because some object(s) will have been updated and now be further down the paging order
-;;; fff
+;;; 
 
 (ns mambu.extensions.data_replication.datarep
   (:require [http.api.json_helper :as api]
@@ -528,13 +528,53 @@
   (dwh/delete-DWH) ;; Recursively delete the entire DWH
   (set-last-position :client nil))
 
+(defn resync-dwh []
+  (prn "Sync Branches")
+  (get-all-objects :branch {:page-size 100})
+  (prn "Sync Centres")
+  (get-all-objects :centre {:page-size 100})
+  (prn "Sync Clients")
+  (get-all-objects :client {:page-size 100})
+  (prn "Sync Groups")
+  (get-all-objects :group {:page-size 100})
+  (prn "Sync Deposit Accounts")
+  (get-all-objects :deposit_account {:page-size 100})
+  (prn "Sync Loan Accounts")
+  (get-all-objects :loan_account {:page-size 100})
+  (prn "Sync Deposit Transactions")
+  (get-all-objects :deposit_trans {:page-size 100})
+  (prn "Sync Loan Transactions")
+  (get-all-objects :loan_trans {:page-size 100})
+  (prn "Sync Journal Entries")
+  (get-all-objects :gl_journal_entry {:page-size 100})
+  (prn "Sync GL Accounts")
+  (get-all-objects :gl_account {:gl-type "ASSET" :page-size 100})
+  (get-all-objects :gl_account {:gl-type "LIABILITY" :page-size 100})
+  (get-all-objects :gl_account {:gl-type "EQUITY" :page-size 100})
+  (get-all-objects :gl_account {:gl-type "INCOME" :page-size 100})
+  (get-all-objects :gl_account {:gl-type "EXPENSE" :page-size 100})
+  (prn "Sync Installments")
+  (get-all-objects :schedule_install {:page-size 1000})
+  (prn "Sync Loan Products")
+  (get-all-objects :loan_product {:page-size 100})
+  (prn "Sync Deposit Products")
+  (get-all-objects :deposit_product {:page-size 100})
+  (prn "Sync Users")
+  (get-all-objects :user {:page-size 100}))  
+
 (comment  ;; Testing sandbox area
 
   (api/setenv "env5") ;; set to use https://markkershaw.mambu.com
   (setup-debug false) ;; Turn off debug messages
   (setup-debug true) ;; Turn on debug messages
 
-  (reset-all) ;; Delete the DWH and reset other things
+  (reset-all) ;; Delete the DWH and reset other things. NOTE: only deletes for the current (api/get-env-domain)
+
+  ;; Resync the DWH will all updates
+  (resync-dwh)
+
+  ;; -----------------------------------------------------------------------
+  ;; Lower level test calls
 
   (get-last-position :client)
   (read-last-position-DWH :client)

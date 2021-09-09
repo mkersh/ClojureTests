@@ -3,11 +3,12 @@
   (:require [clojure.java.io :as io]
             [clojure.pprint :as pp]
             [clojure.string :as str]
+            [http.api.json_helper :as api]
             ;;[clojure.data.json :as json]
             ))
 
 (defn dwh-root-dir [_]
-  "MAMBU-DWH/")
+  (str "MAMBU-DWH/" (api/get-env-domain) "/"))
 
 (defn delete-directory-recursive
   "Recursively delete a directory."
