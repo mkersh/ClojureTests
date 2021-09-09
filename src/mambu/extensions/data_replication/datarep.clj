@@ -570,7 +570,9 @@
 
   (reset-all) ;; Delete the DWH and reset other things. NOTE: only deletes for the current (api/get-env-domain)
 
-  ;; Resync the DWH will all updates
+  ;; ******************************************
+  ;; This is the function you will use the most to:
+  ;; Resync the DWH will all updates from Mambu
   (resync-dwh)
 
   ;; -----------------------------------------------------------------------
