@@ -528,39 +528,42 @@
   (dwh/delete-DWH) ;; Recursively delete the entire DWH
   (set-last-position :client nil))
 
-(defn resync-dwh []
-  (prn "Sync Branches")
-  (get-all-objects :branch {:page-size 100})
-  (prn "Sync Centres")
-  (get-all-objects :centre {:page-size 100})
-  (prn "Sync Clients")
-  (get-all-objects :client {:page-size 100})
-  (prn "Sync Groups")
-  (get-all-objects :group {:page-size 100})
-  (prn "Sync Deposit Accounts")
-  (get-all-objects :deposit_account {:page-size 100})
-  (prn "Sync Loan Accounts")
-  (get-all-objects :loan_account {:page-size 100})
-  (prn "Sync Deposit Transactions")
-  (get-all-objects :deposit_trans {:page-size 100})
-  (prn "Sync Loan Transactions")
-  (get-all-objects :loan_trans {:page-size 100})
-  (prn "Sync Journal Entries")
-  (get-all-objects :gl_journal_entry {:page-size 100})
-  (prn "Sync GL Accounts")
-  (get-all-objects :gl_account {:gl-type "ASSET" :page-size 100})
-  (get-all-objects :gl_account {:gl-type "LIABILITY" :page-size 100})
-  (get-all-objects :gl_account {:gl-type "EQUITY" :page-size 100})
-  (get-all-objects :gl_account {:gl-type "INCOME" :page-size 100})
-  (get-all-objects :gl_account {:gl-type "EXPENSE" :page-size 100})
-  (prn "Sync Installments")
-  (get-all-objects :schedule_install {:page-size 1000})
-  (prn "Sync Loan Products")
-  (get-all-objects :loan_product {:page-size 100})
-  (prn "Sync Deposit Products")
-  (get-all-objects :deposit_product {:page-size 100})
-  (prn "Sync Users")
-  (get-all-objects :user {:page-size 100}))  
+(defn resync-dwh
+  ([] (resync-dwh true))
+  ([full-sync-installments]
+   (prn "Sync Branches")
+   (get-all-objects :branch {:page-size 100})
+   (prn "Sync Centres")
+   (get-all-objects :centre {:page-size 100})
+   (prn "Sync Clients")
+   (get-all-objects :client {:page-size 100})
+   (prn "Sync Groups")
+   (get-all-objects :group {:page-size 100})
+   (prn "Sync Deposit Accounts")
+   (get-all-objects :deposit_account {:page-size 100})
+   (prn "Sync Loan Accounts")
+   (get-all-objects :loan_account {:page-size 100})
+   (prn "Sync Deposit Transactions")
+   (get-all-objects :deposit_trans {:page-size 100})
+   (prn "Sync Loan Transactions")
+   (get-all-objects :loan_trans {:page-size 100})
+   (prn "Sync Journal Entries")
+   (get-all-objects :gl_journal_entry {:page-size 100})
+   (prn "Sync GL Accounts")
+   (get-all-objects :gl_account {:gl-type "ASSET" :page-size 100})
+   (get-all-objects :gl_account {:gl-type "LIABILITY" :page-size 100})
+   (get-all-objects :gl_account {:gl-type "EQUITY" :page-size 100})
+   (get-all-objects :gl_account {:gl-type "INCOME" :page-size 100})
+   (get-all-objects :gl_account {:gl-type "EXPENSE" :page-size 100})
+   (when full-sync-installments
+     (prn "Sync Installments (Full)")
+     (get-all-objects :schedule_install {:page-size 1000}))
+   (prn "Sync Loan Products")
+   (get-all-objects :loan_product {:page-size 100})
+   (prn "Sync Deposit Products")
+   (get-all-objects :deposit_product {:page-size 100})
+   (prn "Sync Users")
+   (get-all-objects :user {:page-size 100})))  
 
 (comment  ;; Testing sandbox area
 
@@ -573,7 +576,10 @@
   ;; ******************************************
   ;; This is the function you will use the most to:
   ;; Resync the DWH will all updates from Mambu
-  (time (resync-dwh))
+
+  (time (resync-dwh false)) ;; Bypass installment update, which takes most time. 
+  (time (resync-dwh)) ;; Full resync including full installments update. 
+
 
   ;; -----------------------------------------------------------------------
   ;; Lower level test calls
@@ -594,7 +600,7 @@
   (get-obj-page :gl_account {:gl-type "ASSET" :page-size 100, :page-num 0})
   (get-obj-page :loan_product {:page-size 10, :page-num 1})
   (get-obj-page :deposit_product {:page-size 10, :page-num 1})
-  
+
 
   ;; Get all objects (of a given type) and save to the DWH
   (get-all-objects :branch {:page-size 100})
@@ -615,20 +621,20 @@
   (get-all-objects :loan_product {:page-size 100})
   (get-all-objects :deposit_product {:page-size 100})
   (get-all-objects :user {:page-size 100})
-  
+
   (api/PRINT (get-loan-account {:accid "8a19a3d779e6f12c0179ec07b9d45e90"}))
 
   ;; testing the determine-start-page functions and helpers
   (check-previous-pages {:page-size 100} :client "2021-08-27T14:12:18+02:00" 1)
   (determine-start-page :schedule_install {:page-size 100})
   (get-start-page :schedule_install)
-  
+
   (get-start-page :client)
   (get-last-position :client)
   (< (compare "2021-08-26T14:12:18+02:00" "2021-08-27T14:12:18+02:00") 1)
 
 ;; Searching for stuff in th DWH
-(dwh/find-all-matches-DWH "Demo")
+  (dwh/find-all-matches-DWH "Demo")
 
 ;;
   )
