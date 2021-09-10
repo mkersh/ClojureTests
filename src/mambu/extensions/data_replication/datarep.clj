@@ -578,6 +578,7 @@
   ;; Resync the DWH will all updates from Mambu
 
   (time (resync-dwh false)) ;; Bypass installment update, which takes most time. 
+  
   (time (resync-dwh)) ;; Full resync including full installments update. 
 
 
