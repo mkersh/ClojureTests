@@ -189,6 +189,7 @@
         obj-last-moddate (get obj (get-obj-fn object-type :last-mod-attr))
         caching_enabled? (get-obj-fn object-type :use-caching)
         cache-remove-fields (get-obj-fn object-type :cache-remove-fields)
+        trigger-other-fn (get-obj-fn object-type :trigger-other)
         _ (debug "obj-date:" obj-last-moddate "last-moddate" last-moddate)]
     (if  (> (compare obj-last-moddate last-moddate) -1) ;; obj modified after or exactly on last-moddate
       ;; NOTE: If the obj-last-moddate = last-moddate we need to be cautious and update again
@@ -204,7 +205,8 @@
           ;; Else save the object
           (do
             (dwh/save-object obj context1)
-            (add-to-cache object-type obj cache-remove-fields)))
+            (add-to-cache object-type obj cache-remove-fields)
+            (when trigger-other-fn (trigger-other-fn obj))))
         ;; else just save to DWH
         (dwh/save-object obj context1))
       ;; else part of compare if
@@ -490,7 +492,9 @@
         :schedule_install2 {:read-page get-schedule-next-page
                            :last-mod-attr "noDate" :get-file-path-fn install-get-file-path2
                            ;; when comparing cache ignore "feeDetails" because :schedule_install does not return this 
-                           :use-caching :schedule_install :cache-remove-fields ["number" "feeDetails"]}
+                           :use-caching :schedule_install :cache-remove-fields ["number" "feeDetails"]
+                           :trigger-other nil
+                           }
         :loan_product {:read-page get-loan-products-next-page :last-mod-attr "lastModifiedDate"}
         :deposit_product {:read-page get-deposit-products-next-page :last-mod-attr "lastModifiedDate"}
         :branch {:read-page get-branches-next-page :last-mod-attr "lastModifiedDate"}
