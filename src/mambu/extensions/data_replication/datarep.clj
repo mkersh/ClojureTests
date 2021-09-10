@@ -489,7 +489,8 @@
                             :use-caching :schedule_install :cache-remove-fields ["number"]}
         :schedule_install2 {:read-page get-schedule-next-page
                            :last-mod-attr "noDate" :get-file-path-fn install-get-file-path2
-                           :use-caching :schedule_install :cache-remove-fields ["number"]}
+                           ;; when comparing cache ignore "feeDetails" because :schedule_install does not return this 
+                           :use-caching :schedule_install :cache-remove-fields ["number" "feeDetails"]}
         :loan_product {:read-page get-loan-products-next-page :last-mod-attr "lastModifiedDate"}
         :deposit_product {:read-page get-deposit-products-next-page :last-mod-attr "lastModifiedDate"}
         :branch {:read-page get-branches-next-page :last-mod-attr "lastModifiedDate"}
