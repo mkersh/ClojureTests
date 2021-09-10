@@ -339,6 +339,26 @@
                                 "Content-Type" "application/json"}}))]
     (steps/apply-api api-call context)))
 
+(defn get-loan-schedule [context]
+  (let [api-call (fn [context0]
+                   {:url (str "{{*env*}}/loans/" (:accid context0) "/schedule")
+                    :method api/GET
+                    :query-params {"detailsLevel" "FULL"}
+                    :headers {"Accept" "application/vnd.mambu.v2+json"
+                              "Content-Type" "application/json"}})]
+    (steps/apply-api api-call context)))
+
+;; Next function is an alternative to get-installments-next-page
+;; It uses the passed (:accid context) to return the instalments for that specific loan
+;; and returns the results in the same format as get-installments-next-page.
+;; This allows us to save in the DWH in the same way
+(defn get-schedule-next-page [context]
+  (let [page-num (int (:page-num context))
+        acc-schedule (if (< page-num 1)(get-loan-schedule context) nil) ;; context needs :accid passed
+        instalments (get-in acc-schedule [:last-call "installments"])]
+    ;; need to wrap result back into a map with key :last-call because that is what get-obj-page expects
+    (assoc {} :last-call instalments)))
+
 ;; The following only works for bringing down the complete set of installments
 ;; It does NOT work for incremental updates because there is nothing to sort on
 (defn get-installments-next-page [context]
@@ -448,6 +468,10 @@
 (defn install-get-file-path [root-dir object-type object]
   (str root-dir (symbol object-type) "/" (get object "parentAccountKey") "/" (subs (get object "dueDate") 0 10) "-"(get object "encodedKey") ".edn"))
 
+;; Here's the one for :schedule_install2
+(defn install-get-file-path2 [root-dir _ object]
+  (str root-dir (symbol :schedule_install) "/" (get object "parentAccountKey") "/" (subs (get object "dueDate") 0 10) "-" (get object "encodedKey") ".edn"))
+
 (defn get-obj-fn [object_type fn-type]
   (let [func-map
         {:client {:read-page get-all-clients-next-page :last-mod-attr "lastModifiedDate"}
@@ -461,6 +485,9 @@
          :schedule_install {:read-page get-installments-next-page
                             :last-mod-attr "noDate" :get-file-path-fn install-get-file-path
                             :use-caching true :cache-remove-fields ["number"]}
+        :schedule_install2 {:read-page get-schedule-next-page
+                           :last-mod-attr "noDate" :get-file-path-fn install-get-file-path2
+                           :use-caching true :cache-remove-fields ["number"]}
         :loan_product {:read-page get-loan-products-next-page :last-mod-attr "lastModifiedDate"}
         :deposit_product {:read-page get-deposit-products-next-page :last-mod-attr "lastModifiedDate"}
         :branch {:read-page get-branches-next-page :last-mod-attr "lastModifiedDate"}
@@ -522,7 +549,7 @@
         (debug "Getting Page: " i)
         (get-obj-page object_type  (merge context {:page-size (:page-size context), :page-num i}))))))
   (save-cache object_type)
-  (debug "Finished - get-all-clients"))
+  (debug "Finished - get-all-objects"))
 
 (defn reset-all []
   (dwh/delete-DWH) ;; Recursively delete the entire DWH
@@ -578,7 +605,7 @@
   ;; Resync the DWH will all updates from Mambu
 
   (time (resync-dwh false)) ;; Bypass installment update, which takes most time. 
-  
+
   (time (resync-dwh)) ;; Full resync including full installments update. 
 
 
@@ -618,12 +645,21 @@
   (get-all-objects :gl_account {:gl-type "EQUITY" :page-size 100})
   (get-all-objects :gl_account {:gl-type "INCOME" :page-size 100})
   (get-all-objects :gl_account {:gl-type "EXPENSE" :page-size 100})
-  (time (get-all-objects :schedule_install {:page-size 1000}))
+  (get-all-objects :schedule_install {:page-size 1000})
+  ;; Per account schedule updates - alternative to slow :schedule_install
+  (get-all-objects :schedule_install2 {:accid "8a19a3d779e6f12c0179ec07b9d45e90"})
+  (determine-start-page :schedule_install2 {:accid "8a19a3d779e6f12c0179ec07b9d45e90"})
+  (get-obj-page :schedule_install2 {:accid "8a19a3d779e6f12c0179ec07b9d45e90" :page-size 10, :page-num 0})
+
   (get-all-objects :loan_product {:page-size 100})
   (get-all-objects :deposit_product {:page-size 100})
   (get-all-objects :user {:page-size 100})
 
   (api/PRINT (get-loan-account {:accid "8a19a3d779e6f12c0179ec07b9d45e90"}))
+  (api/PRINT (get-loan-schedule {:accid "8a19a3d779e6f12c0179ec07b9d45e90"}))
+  (api/PRINT (get-schedule-next-page {:accid "8a19a3d779e6f12c0179ec07b9d45e90" :page-num 1}))
+
+
 
   ;; testing the determine-start-page functions and helpers
   (check-previous-pages {:page-size 100} :client "2021-08-27T14:12:18+02:00" 1)
