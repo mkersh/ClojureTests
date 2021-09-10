@@ -6,9 +6,13 @@
             [http.api.json_helper :as api]
             ;;[clojure.data.json :as json]
             ))
-
+            
+(defonce DWH-ROOT (atom "MAMBU-DWH/"))
 (defn dwh-root-dir [_]
-  (str "MAMBU-DWH/" (api/get-env-domain) "/"))
+  @DWH-ROOT)
+(defn set-dwh-root-dir []
+  (reset! DWH-ROOT (str "MAMBU-DWH/" (api/get-env-domain) "/")))
+
 
 (defn delete-directory-recursive
   "Recursively delete a directory."
@@ -157,6 +161,6 @@
 (save-last-position :client [1 2 3])
 (read-last-position :client)
 
-
+(set-dwh-root-dir)
 ;;
 )

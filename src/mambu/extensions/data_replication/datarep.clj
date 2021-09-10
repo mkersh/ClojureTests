@@ -595,9 +595,13 @@
    (prn "Sync Users")
    (get-all-objects :user {:page-size 100})))  
 
+(defn SETENV [env]
+  (api/setenv env)
+  (dwh/set-dwh-root-dir))
+
 (comment  ;; Testing sandbox area
 
-  (api/setenv "env5") ;; set to use https://markkershaw.mambu.com
+  (SETENV "env5") ;; set to use https://markkershaw.mambu.com
   (setup-debug false) ;; Turn off debug messages
   (setup-debug true) ;; Turn on debug messages
 
