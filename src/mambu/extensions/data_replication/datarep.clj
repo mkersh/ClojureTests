@@ -155,14 +155,14 @@
 
 (defn save-cache [object_type]
   (let [caching_enabled? (get-obj-fn object_type :use-caching)]
-    (when caching_enabled? (dwh/save-cache object_type (get @save-object-cache object_type)))))
+    (when caching_enabled? (dwh/save-cache caching_enabled? (get @save-object-cache caching_enabled?)))))
 
 (defn load-cache [object_type]
   (let [caching_enabled? (get-obj-fn object_type :use-caching)]
     (when caching_enabled?
-      (let [cache-map-objtype (try (dwh/read-cache object_type)
+      (let [cache-map-objtype (try (dwh/read-cache caching_enabled?)
                                    (catch Exception _ {}))]
-        (reset! save-object-cache (assoc @save-object-cache object_type cache-map-objtype))))))
+        (reset! save-object-cache (assoc @save-object-cache caching_enabled? cache-map-objtype))))))
 
 (defn clear-cache []
   (reset! save-object-cache {}))
@@ -196,7 +196,9 @@
       ;; seen all of these previously
       (if caching_enabled?
         ;; If caching enabled check to see if we have already saved this obj
-        (if (in-cache? object-type obj cache-remove-fields)
+        ;; Expecting caching_enabled? to contain the object-type to use as the cache
+        ;; NOTE: Most of the time this will just be object-type but want it is not for :schedule_install2
+        (if (in-cache? caching_enabled? obj cache-remove-fields)
           ;; Already in cache do not save
           (debug "Skipping object - In Cache")
           ;; Else save the object
@@ -484,10 +486,10 @@
          :gl_account {:read-page get-gl-accounts-next-page :last-mod-attr "noDate"}
          :schedule_install {:read-page get-installments-next-page
                             :last-mod-attr "noDate" :get-file-path-fn install-get-file-path
-                            :use-caching true :cache-remove-fields ["number"]}
+                            :use-caching :schedule_install :cache-remove-fields ["number"]}
         :schedule_install2 {:read-page get-schedule-next-page
                            :last-mod-attr "noDate" :get-file-path-fn install-get-file-path2
-                           :use-caching true :cache-remove-fields ["number"]}
+                           :use-caching :schedule_install :cache-remove-fields ["number"]}
         :loan_product {:read-page get-loan-products-next-page :last-mod-attr "lastModifiedDate"}
         :deposit_product {:read-page get-deposit-products-next-page :last-mod-attr "lastModifiedDate"}
         :branch {:read-page get-branches-next-page :last-mod-attr "lastModifiedDate"}
