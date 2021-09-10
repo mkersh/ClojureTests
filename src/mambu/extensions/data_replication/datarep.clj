@@ -573,7 +573,7 @@
   ;; ******************************************
   ;; This is the function you will use the most to:
   ;; Resync the DWH will all updates from Mambu
-  (resync-dwh)
+  (time (resync-dwh))
 
   ;; -----------------------------------------------------------------------
   ;; Lower level test calls
