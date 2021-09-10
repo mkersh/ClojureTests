@@ -37,7 +37,7 @@
 ;;; last-positions-map = Map of last-position(s) key'ed by object-type
 ;;; last-position = {<:page-num> <:page-size> <lastModifiedDate>}
 (defonce last-positions-map (atom {}))
-(declare get-obj-fn)
+(declare get-obj-fn get-all-objects get-obj-page)
 
 (defn set-last-position
   ([object-type page-num page-size lastModifiedDate]
@@ -208,7 +208,9 @@
             (add-to-cache object-type obj cache-remove-fields)
             (when trigger-other-fn (trigger-other-fn obj))))
         ;; else just save to DWH
-        (dwh/save-object obj context1))
+        (do
+          (dwh/save-object obj context1)
+          (when trigger-other-fn (trigger-other-fn obj))))
       ;; else part of compare if
       (debug "Skipping object") ;; We have already processed this object
       ))) 
@@ -363,6 +365,14 @@
     ;; need to wrap result back into a map with key :last-call because that is what get-obj-page expects
     (assoc {} :last-call instalments)))
 
+(defonce UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT (atom false))
+(defn trigger-schedule-update [loan-obj]
+  (when @UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT
+    (prn "Sync schedule for " (get loan-obj "id"))
+    (get-all-objects :schedule_install2 {:accid (get loan-obj "id")})))
+(defn set-update-loan-acc-schedule-per-account [val]
+  (reset! UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT val))
+
 ;; The following only works for bringing down the complete set of installments
 ;; It does NOT work for incremental updates because there is nothing to sort on
 (defn get-installments-next-page [context]
@@ -482,7 +492,8 @@
          :group {:read-page get-all-groups-next-page :last-mod-attr "lastModifiedDate"}
          :deposit_account {:read-page get-all-deposits-accounts-next-page :last-mod-attr "lastModifiedDate"}
          :deposit_trans {:read-page get-all-deposit-trans-next-page :last-mod-attr "creationDate"}
-         :loan_account {:read-page get-all-loan-accounts-next-page :last-mod-attr "lastModifiedDate"}
+         :loan_account {:read-page get-all-loan-accounts-next-page :last-mod-attr "lastModifiedDate"
+                        :trigger-other trigger-schedule-update}
          :loan_trans {:read-page get-all-loan-trans-next-page :last-mod-attr "creationDate"}
          :gl_journal_entry {:read-page get-all-JEs-next-page :last-mod-attr "creationDate"}
          :gl_account {:read-page get-gl-accounts-next-page :last-mod-attr "noDate"}
@@ -493,7 +504,6 @@
                            :last-mod-attr "noDate" :get-file-path-fn install-get-file-path2
                            ;; when comparing cache ignore "feeDetails" because :schedule_install does not return this 
                            :use-caching :schedule_install :cache-remove-fields ["number" "feeDetails"]
-                           :trigger-other nil
                            }
         :loan_product {:read-page get-loan-products-next-page :last-mod-attr "lastModifiedDate"}
         :deposit_product {:read-page get-deposit-products-next-page :last-mod-attr "lastModifiedDate"}
@@ -565,6 +575,9 @@
 (defn resync-dwh
   ([] (resync-dwh true))
   ([full-sync-installments]
+   ;; define whether to perform per account schedule updates whenever a loan-account has changed
+   ;; NOTE: We want to do this when full-sync-installments=false
+   (set-update-loan-acc-schedule-per-account (not full-sync-installments))
    (prn "Sync Branches")
    (get-all-objects :branch {:page-size 100})
    (prn "Sync Centres")
