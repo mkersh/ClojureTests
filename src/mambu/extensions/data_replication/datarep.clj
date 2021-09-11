@@ -366,12 +366,23 @@
     (assoc {} :last-call instalments)))
 
 (defonce UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT (atom false))
-(defn trigger-schedule-update [loan-obj]
-  (when @UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT
-    (prn "Sync schedule for " (get loan-obj "id"))
-    (get-all-objects :schedule_install2 {:accid (get loan-obj "id")})))
 (defn set-update-loan-acc-schedule-per-account [val]
   (reset! UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT val))
+
+;; trigger-schedule-update below is only intended to be called for a few accounts
+;; use an atom to control the max numberf of accounts. If this is exceeded in a resync
+;; then stop performing the schedule updates
+(defonce MAX-PER-ACCOUNT-SCEDULE-UPDATE (atom 5))
+(defn reset-per-account-schedule-updates [val]
+  (reset! MAX-PER-ACCOUNT-SCEDULE-UPDATE val))
+
+(defn trigger-schedule-update [loan-obj]
+  (when (and @UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT (> 0 @MAX-PER-ACCOUNT-SCEDULE-UPDATE))
+    (reset-per-account-schedule-updates (dec @MAX-PER-ACCOUNT-SCEDULE-UPDATE))
+    (prn "Sync schedule for " (get loan-obj "id"))
+    (get-all-objects :schedule_install2 {:accid (get loan-obj "id")})))
+
+
 
 ;; The following only works for bringing down the complete set of installments
 ;; It does NOT work for incremental updates because there is nothing to sort on
@@ -578,6 +589,7 @@
    ;; define whether to perform per account schedule updates whenever a loan-account has changed
    ;; NOTE: We want to do this when full-sync-installments=false
    (set-update-loan-acc-schedule-per-account (not full-sync-installments))
+   (reset-per-account-schedule-updates 5) ;; Set a maximum number of per account schedule updates
    (prn "Sync Branches")
    (get-all-objects :branch {:page-size 100})
    (prn "Sync Centres")
