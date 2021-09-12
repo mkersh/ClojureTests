@@ -1,4 +1,4 @@
-;;; Support functions for calling JSON API calls
+;;; Support functions for calling JSON API calls 
 ;;; 
 ;;; [1] (process-collection <steps-collection>)
 ;;;    Takes a collections that defines a number of API related steps to perform.

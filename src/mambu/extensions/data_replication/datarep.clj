@@ -1,3 +1,4 @@
+;;; https://github.com/mkersh/DataRep 
 ;;; Examples/tests for how to efficiently replicate data/objects from Mambu to a data-lake/DWH
 ;;;
 ;;; For each object-type to replicate we are looking for:
@@ -377,7 +378,7 @@
   (reset! MAX-PER-ACCOUNT-SCEDULE-UPDATE val))
 
 (defn trigger-schedule-update [loan-obj]
-  (when (and @UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT (> 0 @MAX-PER-ACCOUNT-SCEDULE-UPDATE))
+  (when (and @UPDATE-LOAN-ACC-SCHEDULE-PER-ACCOUNT (> @MAX-PER-ACCOUNT-SCEDULE-UPDATE 0))
     (reset-per-account-schedule-updates (dec @MAX-PER-ACCOUNT-SCEDULE-UPDATE))
     (prn "Sync schedule for " (get loan-obj "id"))
     (get-all-objects :schedule_install2 {:accid (get loan-obj "id")})))
@@ -628,9 +629,48 @@
   (api/setenv env)
   (dwh/set-dwh-root-dir))
 
+;; setup the default env to use 
+(SETENV "env5")
+
+;; Try and change the Mambu tenant. See (terminal-ui) below for how it is called.
+(defn try-setupenv [option]
+  (try (SETENV option)
+       (println "Mambu Tenant changed to: " (api/get-env-domain))
+       (catch Exception _
+         ;; The tenant identified or the option entered was invalid
+         (println (str "ERROR: Unknown option " option " - please try again!!")))))
+
+;; Simple UI for a stdout Terminal
+;; Runs indefinitely until you input a q (for quit)
+;; Other commands it recognises are:
+;;    0 - Run (resync-dwh false) : Quick Resync
+;;    1 - Run (resync-dwh ture) : Full Resync
+;;    q - Quit the App
+;;   <envid> - The ENVID to change to. Should be an ID from your http/ENV.clj file
+;;
+;; NOTE: (terminal-ui) is run when the App is started using lein run. See repl_start.clj for details.
+(defn terminal-ui []
+    (loop []
+        (println "0 - Resync (quick), 1 - Resync (full), q - quit program, <ENVID> - To change the Mambu tenant")
+        (let [option (read-line)]
+          (condp = option
+            "0" (resync-dwh false)
+            "1" (resync-dwh true)
+            "q" (println "Goodbye!")
+            (try-setupenv option)
+            )
+          (if (not= option "q")
+            ;; Recurse into loop above again
+            (recur)
+            nil))))
+
 (comment  ;; Testing sandbox area
 
-  (SETENV "env5") ;; set to use https://markkershaw.mambu.com
+  (terminal-ui)
+
+  (SETENV "env5") ;; set to use europeshowcase.sandbox.mambu.com
+  (SETENV "env2") ;; set to use markkershaw.mambu.com
+
   (setup-debug false) ;; Turn off debug messages
   (setup-debug true) ;; Turn on debug messages
 
