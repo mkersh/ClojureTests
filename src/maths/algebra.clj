@@ -28,7 +28,7 @@
      :term-vlist sorted-vlist}))
 
 ;; Multiple a term by mult1, where mult1 is either a number of a variable
-(defn term-multiple [term1 mult1]
+(defn term-multiply [term1 mult1]
   (let [num (:term-num term1)
         vlist (:term-vlist term1)]
       (if (keyword? mult1)
@@ -48,12 +48,56 @@
         new_val  (+ curr_val num)]
     (assoc expr-map vlist (term new_val vlist))))
 
+;; Generates a fn to use in a reduce
+(defn multiply-and-add-to-expr [mult1]
+  (fn [expr-map term1]
+    (let [new-term (term-multiply term1 mult1)]
+      (add-to-expr expr-map new-term))))
 
 (defn expr [& term-list]
   (reduce add-to-expr {} term-list))
 
+(defn expr-multiply [expr mult1]
+  (reduce (multiply-and-add-to-expr mult1) {} (vals expr)))
+
+(defn replace-vars-in-term [term1 sub-map]
+  (let [num (:term-num term1)
+        vlist (:term-vlist term1)]
+    (reduce
+     (fn [new-term var1]
+       (let [var-val (get sub-map var1)]
+         (if var-val
+           (term-multiply new-term var-val) ;; if the var is in the sub-map multiply the value
+           (term-multiply new-term var1) ;; else just preserve the original variable
+           )))
+     (term num []) ;; start new term with just the num part
+     vlist ;; Then multiply the vlist into this new term
+     )))
+
+(defn apply-sub-to-expr [expr-map term1]
+  (let [new-term (replace-vars-in-term term1 (:sub-map expr-map))]
+    (add-to-expr expr-map new-term)))
+
+(defn expr-sub [expr sub-map]
+  (reduce apply-sub-to-expr {:sub-map sub-map} (vals expr)))
+
+(defn solve
+  ([expr var1] (solve expr var1 0))
+  ([expr var1 eq-amount]
+   (let [expr2 (dissoc expr :sub-map)
+         _ (prn "expr2 " expr2)
+         _ (assert (= (count expr2) 2) "ERROR: We can only solve when there is 1 unknown variable")
+         _ (assert (get expr [var1]) (str "ERROR: Unknown variable " var1))
+         val1 (:term-num (get expr []))
+         var-mult (- (:term-num (get expr [var1])))
+         eq-amount2 (- val1 eq-amount)]
+
+      (prn "eq-amount2 " eq-amount2 " var-mult " var-mult)
+     {var1 (with-precision 10 (/ eq-amount2 var-mult))} )))
 
 (comment
+
+
 
 (get nil :a)
 (keyword? 1)
@@ -62,11 +106,24 @@
 (def t3 (term 3 [:a :b :a]))
 (def t4 (term 115 []))
 (def t5 (term 30 [:a]))
+(def t7 (term 4 [:z]))
 
-(expr t1 t2 t3 t4 t5)
+(def t6 (expr t1 t2 t3 t4 t5))
 (add-to-expr (add-to-expr {} t1) t4)
+(vals (expr t1 t2 t3 t4 t5))
 
-(term-multiple t1 3434345.787)
+(def e1 (expr t2 t3 t7))
+(replace-vars-in-term t3 {:a 2})
+
+(def e2 (expr-sub e1 {:a 2 :z 1} ))
+e2
+(solve e2 :b 1000)
+
+t6
+(expr-multiply t6 3)
+(expr-multiply t6 :r)
+
+(term-multiply t1 3434345.787)
 
 (def map1 {[1 2] "hello"})
 
