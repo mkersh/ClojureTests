@@ -41,6 +41,9 @@
 (defn dwh-get-cache-path [root-dir object-type]
   (str root-dir (symbol object-type) "/.cache"))
 
+(defn dwh-get-settings-path [_]
+  (str "MAMBU-DWH/"  ".settings"))
+
 (defn save-to-file
   [file-name s]
   (spit file-name s))
@@ -87,6 +90,20 @@
 (defn read-cache [object-type]
   (let [root-dir (dwh-root-dir {})
         file-path (dwh-get-cache-path root-dir object-type)]
+    (read-object file-path)))
+
+(defn save-preferences [prefs-obj]
+  (let [root-dir (dwh-root-dir {})
+        file-path (dwh-get-settings-path root-dir)
+        ;;_ (prn "about to save prefs:" file-path)
+        ;;_ (prn "saving: " prefs-obj)
+        ]
+    (io/make-parents file-path)
+    (save-to-file file-path prefs-obj)))
+
+(defn load-preferences []
+  (let [root-dir (dwh-root-dir {})
+        file-path (dwh-get-settings-path root-dir)]
     (read-object file-path)))
 
 

@@ -180,6 +180,28 @@
 
 ;;; END --------------------------------------------------------------
 
+;;; ------------------------------------------------------------------
+;;; Functions for saving and loading App preferences
+;;; These will be stored in MAMBU-DWH/.settings file
+;;;
+;;; The key setting to save is the users Mambu tenant that were previously 
+;;; working on. Need to remember this across multiple sessions
+
+(declare try-setupenv) ;; forward ref to SETENV
+
+;; (:previous-env obj) should contain the previous ENV
+(defn save-preferences [obj]
+  (dwh/save-preferences obj))
+
+(defn load-preferences []
+  (let [prefs-obj (dwh/load-preferences)
+        prev-env (:previous-env prefs-obj)
+        ;;_ (prn "load-preferences:" prev-env)
+        ]
+    (if prev-env
+      (try-setupenv prev-env)
+      (println "WARNING: No Mambu Tenent currently selected"))))
+
 
 (defn save-object [obj context]
   (debug "In save-object:")
@@ -284,7 +306,7 @@
 
 
 (defn get-loan-account [context]
-  (let [api-call (fn [context0]
+  (let [api-call (fn [_]
                      {:url (str "{{*env*}}/loans/" (:accid context))
                       :method api/GET
                       :query-params {"detailsLevel" "FULL"}
@@ -591,54 +613,58 @@
    ;; NOTE: We want to do this when full-sync-installments=false
    (set-update-loan-acc-schedule-per-account (not full-sync-installments))
    (reset-per-account-schedule-updates 5) ;; Set a maximum number of per account schedule updates
-   (prn "Sync Branches")
+   (println "Sync Branches")
    (get-all-objects :branch {:page-size 100})
-   (prn "Sync Centres")
+   (println "Sync Centres")
    (get-all-objects :centre {:page-size 100})
-   (prn "Sync Clients")
+   (println "Sync Clients")
    (get-all-objects :client {:page-size 100})
-   (prn "Sync Groups")
+   (println "Sync Groups")
    (get-all-objects :group {:page-size 100})
-   (prn "Sync Deposit Accounts")
+   (println "Sync Deposit Accounts")
    (get-all-objects :deposit_account {:page-size 100})
-   (prn "Sync Loan Accounts")
+   (println "Sync Loan Accounts")
    (get-all-objects :loan_account {:page-size 100})
-   (prn "Sync Deposit Transactions")
+   (println "Sync Deposit Transactions")
    (get-all-objects :deposit_trans {:page-size 100})
-   (prn "Sync Loan Transactions")
+   (println "Sync Loan Transactions")
    (get-all-objects :loan_trans {:page-size 100})
-   (prn "Sync Journal Entries")
+   (println "Sync Journal Entries")
    (get-all-objects :gl_journal_entry {:page-size 100})
-   (prn "Sync GL Accounts")
+   (println "Sync GL Accounts")
    (get-all-objects :gl_account {:gl-type "ASSET" :page-size 100})
    (get-all-objects :gl_account {:gl-type "LIABILITY" :page-size 100})
    (get-all-objects :gl_account {:gl-type "EQUITY" :page-size 100})
    (get-all-objects :gl_account {:gl-type "INCOME" :page-size 100})
    (get-all-objects :gl_account {:gl-type "EXPENSE" :page-size 100})
    (when full-sync-installments
-     (prn "Sync Installments (Full)")
+     (println "Sync Installments (Full)")
      (get-all-objects :schedule_install {:page-size 1000}))
-   (prn "Sync Loan Products")
+   (println "Sync Loan Products")
    (get-all-objects :loan_product {:page-size 100})
-   (prn "Sync Deposit Products")
+   (println "Sync Deposit Products")
    (get-all-objects :deposit_product {:page-size 100})
-   (prn "Sync Users")
+   (println "Sync Users")
    (get-all-objects :user {:page-size 100})))  
 
-(defn SETENV [env]
+(defn SETENV 
+([env] (SETENV env false))
+([env store?]
   (api/setenv env)
-  (dwh/set-dwh-root-dir))
-
-;; setup the default env to use 
-(SETENV "env5")
+  (dwh/set-dwh-root-dir)
+  (when store? (save-preferences {:previous-env env}))))
 
 ;; Try and change the Mambu tenant. See (terminal-ui) below for how it is called.
 (defn try-setupenv [option]
-  (try (SETENV option)
+  (try (SETENV option true)
        (println "Mambu Tenant changed to: " (api/get-env-domain))
        (catch Exception _
          ;; The tenant identified or the option entered was invalid
          (println (str "ERROR: Unknown option " option " - please try again!!")))))
+
+;; setup the default env to use
+;; Not everyone will have this env defined so use try-setupenv
+(try-setupenv "env5")
 
 ;; Simple UI for a stdout Terminal
 ;; Runs indefinitely until you input a q (for quit)
@@ -650,19 +676,19 @@
 ;;
 ;; NOTE: (terminal-ui) is run when the App is started using lein run. See repl_start.clj for details.
 (defn terminal-ui []
-    (loop []
-        (println "0 - Resync (quick), 1 - Resync (full), q - quit program, <ENVID> - To change the Mambu tenant")
-        (let [option (read-line)]
-          (condp = option
-            "0" (resync-dwh false)
-            "1" (resync-dwh true)
-            "q" (println "Goodbye!")
-            (try-setupenv option)
-            )
-          (if (not= option "q")
+  (load-preferences)
+  (loop []
+    (println "0 - Resync (quick), 1 - Resync (full), q - quit program, <ENVID> - To change the Mambu tenant")
+    (let [option (read-line)]
+      (condp = option
+        "0" (resync-dwh false)
+        "1" (resync-dwh true)
+        "q" (println "Goodbye!")
+        (try-setupenv option))
+      (if (not= option "q")
             ;; Recurse into loop above again
-            (recur)
-            nil))))
+        (recur)
+        nil))))
 
 (comment  ;; Testing sandbox area
 
