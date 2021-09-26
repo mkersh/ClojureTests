@@ -40,13 +40,18 @@
 ;; An Expression consists of a number of Term parts
 ;; Represented as a map keyed by (:term-vlist term)
 
+(declare add-expr-to-expr)
+
 (defn add-to-expr [expr-map term1]
-  (let [num (:term-num term1)
-        vlist (:term-vlist term1)
-        curr_val (let [curr_term (get expr-map vlist)]
-                   (get curr_term :term-num 0))
-        new_val  (+ curr_val num)]
-    (assoc expr-map vlist (term new_val vlist))))
+  (if (:term-num term1) ;; check that term1 is a Term and not an Expr
+    (let [num (:term-num term1)
+          vlist (:term-vlist term1)
+          curr_val (let [curr_term (get expr-map vlist)]
+                     (get curr_term :term-num 0))
+          new_val  (+ curr_val num)]
+      (assoc expr-map vlist (term new_val vlist)))
+    ;; Else term1 is actually an Expression, so add differently
+    (add-expr-to-expr expr-map term1)))
 
 ;; Generates a fn to use in a reduce
 (defn multiply-and-add-to-expr [mult1]
@@ -56,6 +61,14 @@
 
 (defn expr [& term-list]
   (reduce add-to-expr {} term-list))
+
+(defn term-list-from-expr [expr1]
+  (let [expr2 (dissoc expr1 :sub-map)
+        term-list (vals expr2)]
+    term-list))
+
+(defn add-expr-to-expr [new-expr to-add-expr]
+  (reduce add-to-expr new-expr (term-list-from-expr to-add-expr)))
 
 (defn expr-multiply [expr mult1]
   (reduce (multiply-and-add-to-expr mult1) {} (vals expr)))
@@ -95,10 +108,28 @@
       (prn "eq-amount2 " eq-amount2 " var-mult " var-mult)
      {var1 (with-precision 10 (/ eq-amount2 var-mult))} )))
 
-(comment
 
+;;--------------------------------------------------------------------
+;; Loan Installments
+;; Testing my Algebraic functions out on a loan instalment example
+;; Taken from my orignal: https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb 
 
+(defn add-loan-instalment [install-list i]
+(let [previous-index (- i 1)
+      previous-principle_remaining (:principle_remaining (get install-list previous-index))
+      interest_expected (term-multiply previous-principle_remaining  :r)
+      principle_remaining (expr previous-principle_remaining (expr-multiply previous-principle_remaining :r) (term -1 :E))
+      nth-install {:num (+ i 1) :interest_expected interest_expected :principle_remaining principle_remaining}]
+  (conj install-list nth-install)))
 
+(defn loan-schedule [numInstalments]
+  (let [interest_expected (term-multiply (term 1 [:P]) :r)
+        principle_remaining (expr (term 1 [:P]) interest_expected (term -1 :E))
+        first-install {:num 1 :interest_expected interest_expected :principle_remaining principle_remaining}]
+    (reduce add-loan-instalment [first-install] (range 1 numInstalments))))
+
+(comment   ;; My REPL test area
+(conj [1 2] 3)
 (get nil :a)
 (keyword? 1)
 (def t1 (term 3 []))
@@ -119,6 +150,7 @@
 e2
 (solve e2 :b 1000)
 
+(expr t1 e1)
 t6
 (expr-multiply t6 3)
 (expr-multiply t6 :r)
