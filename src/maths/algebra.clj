@@ -4,7 +4,8 @@
 ;;; I am struggling to find a CAS (https://en.wikipedia.org/wiki/Computer_algebra_system) library for Clojure
 ;;; So have decided to implement a cutdown version of my own - Enough for my loan installment calculation
 
-(ns maths.algebra)
+(ns maths.algebra
+  (:require [clojure.pprint :as pp]))
 
 ;;--------------------------------------------------------------------
 ;; Term functions
@@ -94,18 +95,28 @@
 (defn expr-sub [expr sub-map]
   (reduce apply-sub-to-expr {:sub-map sub-map} (vals expr)))
 
+(defn expr-simplify [expr]
+  (let [_ (assert (= (count expr) 1) "ERROR: Cannot simplify (1)")
+        _ (assert (get expr []) (str "ERROR: Cannot simplify (2)"))
+        val (:term-num (get expr []))]
+    val))
+
+
+;; Tidyup and simplify expr
+(defn expr-sub2 [expr sub-map]
+  (let [expr1 (expr-sub expr sub-map)
+        expr2 (dissoc expr1 :sub-map)]
+    (expr-simplify expr2)))
+
 (defn solve
   ([expr var1] (solve expr var1 0))
   ([expr var1 eq-amount]
    (let [expr2 (dissoc expr :sub-map)
-         _ (prn "expr2 " expr2)
          _ (assert (= (count expr2) 2) "ERROR: We can only solve when there is 1 unknown variable")
          _ (assert (get expr [var1]) (str "ERROR: Unknown variable " var1))
          val1 (:term-num (get expr []))
          var-mult (- (:term-num (get expr [var1])))
          eq-amount2 (- val1 eq-amount)]
-
-      (prn "eq-amount2 " eq-amount2 " var-mult " var-mult)
      {var1 (with-precision 10 (/ eq-amount2 var-mult))} )))
 
 
@@ -117,18 +128,49 @@
 (defn add-loan-instalment [install-list i]
 (let [previous-index (- i 1)
       previous-principle_remaining (:principle_remaining (get install-list previous-index))
-      interest_expected (term-multiply previous-principle_remaining  :r)
-      principle_remaining (expr previous-principle_remaining (expr-multiply previous-principle_remaining :r) (term -1 :E))
+      interest_expected (expr-multiply previous-principle_remaining  :r)
+      principle_remaining (expr previous-principle_remaining (expr-multiply previous-principle_remaining :r) (term -1 [:E]))
       nth-install {:num (+ i 1) :interest_expected interest_expected :principle_remaining principle_remaining}]
   (conj install-list nth-install)))
 
 (defn loan-schedule [numInstalments]
-  (let [interest_expected (term-multiply (term 1 [:P]) :r)
-        principle_remaining (expr (term 1 [:P]) interest_expected (term -1 :E))
+  (let [interest_expected (expr-multiply (expr (term 1 [:P])) :r)
+        principle_remaining (expr (term 1 [:P]) interest_expected (term -1 [:E]))
         first-install {:num 1 :interest_expected interest_expected :principle_remaining principle_remaining}]
     (reduce add-loan-instalment [first-install] (range 1 numInstalments))))
 
+(defn expand-instalment [sub-values]
+(fn [instal-obj]
+  (let [num (:num instal-obj)
+        interest_expected (expr-sub2 (:interest_expected instal-obj) sub-values)
+        principle_remaining (expr-sub2 (:principle_remaining instal-obj) sub-values)]
+    {:num num :interest_expected interest_expected :principle_remaining principle_remaining}))
+)
+(defn expand-schedule [OrigPrinciple interestRatePerInstalment numInstalments]
+(let [loan-sched (loan-schedule numInstalments)
+      prin-remain-last (:principle_remaining (get loan-sched (- numInstalments 1)))
+      sub-values0 {:P OrigPrinciple :r (/ interestRatePerInstalment 100)}
+      prin-remain-last-expanded (expr-sub prin-remain-last sub-values0)
+      equal-month-amount (solve prin-remain-last-expanded :E)
+      sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
+      expand-sched (mapv (expand-instalment sub-values1) loan-sched)
+      ]
+  ;; Expr we need to solve to get E
+  {:equal-month-amount equal-month-amount
+   :instalments expand-sched})
+)
+
 (comment   ;; My REPL test area
+
+(def sched1 (loan-schedule 12))
+sched1
+
+(pp/pprint (expand-schedule 5000 1 5))
+(pp/pprint (expand-schedule 5000 10 12))
+
+(def prin-remain {[:P] {:term-num 1M, :term-vlist [:P]}, [:P :r] {:term-num 1M, :term-vlist [:P :r]}, [:E] {:term-num -1M, :term-vlist [:E]}})
+(expr-sub prin-remain {:P 5000 :r 0.1 :E 500.00})
+
 (conj [1 2] 3)
 (get nil :a)
 (keyword? 1)
