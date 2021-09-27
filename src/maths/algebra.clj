@@ -3,7 +3,8 @@
 ;;; https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb
 ;;; I am struggling to find a CAS (https://en.wikipedia.org/wiki/Computer_algebra_system) library for Clojure
 ;;; So have decided to implement a cutdown version of my own - Enough for my loan installment calculation
-
+;;; 
+;;; GitHub: https://github.com/mkersh/ClojureTests/blob/master/src/maths/algebra.clj 
 (ns maths.algebra
   (:require [clojure.pprint :as pp]))
 
