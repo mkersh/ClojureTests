@@ -28,7 +28,7 @@
     {:term-num (bigdec num)
      :term-vlist sorted-vlist}))
 
-;; Multiple a term by mult1, where mult1 is either a number of a variable
+;; Multiple a term by mult1, where mult1 is either a number or a variable
 (defn term-multiply [term1 mult1]
   (let [num (:term-num term1)
         vlist (:term-vlist term1)]
