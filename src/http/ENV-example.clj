@@ -9,7 +9,7 @@
 ;;; SO IT IS CRITICAL THAT YOU DO NOT STORE this file in Github
 ;;; ADD to .gitignore file to make sure it never gets saved
 
-(ns http.ENV-example)
+(ns http.ENV)
 
 
 (def ENV-MAP

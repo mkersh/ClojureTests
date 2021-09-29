@@ -25,6 +25,7 @@
                  [clj-wamp "1.0.0-rc1"]
                  [clj-http "3.10.1"]
                  [clj-pdf "2.5.7"]
+                 [clojure.java-time "0.3.2"]
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [dk.ative/docjure "1.14.0"]
                  [org.clojars.bpsm/big-ivan "0.1.0"]

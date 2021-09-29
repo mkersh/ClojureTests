@@ -58,6 +58,14 @@
 (defn get-env-key []
   (if *ENV* *ENV* ENV))
 
+(defn get-env-domain []
+  (let [url (:url (get env/ENV-MAP (get-env-key)))
+        uri (new java.net.URI url)
+        domain (.getHost uri)]
+    domain))
+
+(get-env-domain)
+
 ;; ------------------------------------------
 
 (defn set-show-only [b] ;; call this is just display the calls but not execute
