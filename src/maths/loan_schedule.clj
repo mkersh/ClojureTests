@@ -59,24 +59,6 @@
     {:equal-month-amount equal-month-amount
      :instalments expand-sched}))
 
-(comment 
-(def ex1 {:sub-map {:P 5000, :r 1/100}, [] {:term-num 50.00M, :term-vlist []}})
-(cas/expr-sub2 ex1 {:E 66})
-(pp/pprint (expand-schedule 5000 1 5))
-
-(loan-schedule 5 {:P 5000 :r (/ 1 100)})
-
-(let [
-sub-values  {:P 5000 :r (/ 1 100)}
-interest_expected0 (cas/expr-multiply (cas/expr (cas/term 1 [:P])) :r)
-interest_expected (cas/expr-sub interest_expected0 sub-values)
-principal_expected (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))
-principle_remaining (cas/expr (cas/term 1 [:P]) interest_expected (cas/term -1 [:E]))
-]
-principle_remaining
-)
-
-)
 ;;--------------------------------------------------------------------
 ;; Print to CSV functions
 ;; So that you can view in a spreadsheet tool
