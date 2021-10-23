@@ -1,5 +1,5 @@
 ;;; Experiments in calculating loan schedules from algebraic expressions
-;;; Uses a very simple algebraic library I created maths.algebra
+;;; Uses a very simple algebraic library I have created maths.algebra
 ;;; GitHub: https://github.com/mkersh/ClojureTests/blob/master/src/maths/loan_schedule.clj  
 
 (ns maths.loan-schedule
