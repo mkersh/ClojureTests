@@ -174,6 +174,7 @@ sched1
 ;; I need to change my functions to allow for expr to be expanded as we go along
 (pp/pprint (expand-schedule 100000 0.4 300)) ;; This one will blow the heap
 
+
 (def prin-remain {[:P] {:term-num 1M, :term-vlist [:P]}, [:P :r] {:term-num 1M, :term-vlist [:P :r]}, [:E] {:term-num -1M, :term-vlist [:E]}})
 (expr-sub prin-remain {:P 5000 :r 0.1 :E 500.00})
 
