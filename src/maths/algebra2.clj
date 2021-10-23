@@ -73,7 +73,8 @@
   (reduce add-to-expr new-expr (term-list-from-expr to-add-expr)))
 
 (defn expr-multiply [expr mult1]
-  (reduce (multiply-and-add-to-expr mult1) {} (vals expr)))
+  (let [expr0 (dissoc expr :sub-map)]
+    (reduce (multiply-and-add-to-expr mult1) {} (vals expr0))))
 
 (defn replace-vars-in-term [term1 sub-map]
   (let [num (:term-num term1)
@@ -94,7 +95,7 @@
     (add-to-expr expr-map new-term)))
 
 (defn expr-sub [expr sub-map]
-  (reduce apply-sub-to-expr {:sub-map sub-map} (vals expr)))
+  (dissoc (reduce apply-sub-to-expr {:sub-map sub-map} (vals expr)) :sub-map))
 
 (defn expr-simplify [expr]
   (let [_ (assert (= (count expr) 1) "ERROR: Cannot simplify (1)")
@@ -105,7 +106,7 @@
 
 ;; Tidyup and simplify expr
 (defn expr-sub2 [expr sub-map]
-  (let [expr1 (expr-sub expr sub-map)
+  (let [expr1 (expr-sub (dissoc expr :sub-map) sub-map)
         expr2 (dissoc expr1 :sub-map)]
     (expr-simplify expr2)))
 
