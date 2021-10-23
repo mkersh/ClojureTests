@@ -87,7 +87,7 @@
    The board is represent as the columns vector with 8 columns.
    Each item in the vector identified the row that the queen is on for the given column.
 
-   The solution works are follows:
+   The solution works as follows:
    1) Get all the permutations of (range 8). This gives you all the
    ways that the queens can be positioned without overlapping on any column or row
    2) queens-on-same-diagonals? then checks each permutation to see if they have queens on same diagonal."
