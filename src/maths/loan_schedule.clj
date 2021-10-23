@@ -16,7 +16,8 @@
         previous-principle_remaining (:principle_remaining (get install-list previous-index))
         interest_expected (cas/expr-multiply previous-principle_remaining  :r)
         principle_remaining (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E]))
-        nth-install {:num (+ i 1) :interest_expected interest_expected :principle_remaining principle_remaining}]
+        total_payment_due (cas/term 1 [:E])
+        nth-install {:num (+ i 1) :interest_expected interest_expected :principle_remaining principle_remaining :total_payment_due total_payment_due }]
     (conj install-list nth-install)))
 
 (defn loan-schedule [numInstalments]
@@ -29,8 +30,10 @@
   (fn [instal-obj]
     (let [num (:num instal-obj)
           interest_expected (cas/expr-sub2 (:interest_expected instal-obj) sub-values)
-          principle_remaining (cas/expr-sub2 (:principle_remaining instal-obj) sub-values)]
-      {:num num :interest_expected interest_expected :principle_remaining principle_remaining})))
+          principle_remaining (cas/expr-sub2 (:principle_remaining instal-obj) sub-values)
+          total_payment_due (cas/expr-sub2 (:total_payment_due instal-obj) sub-values)
+          ]
+      {:num num :interest_expected interest_expected :principle_remaining principle_remaining :total_payment_due total_payment_due})))
 (defn expand-schedule [OrigPrinciple interestRatePerInstalment numInstalments]
   (let [loan-sched (loan-schedule numInstalments)
         prin-remain-last (:principle_remaining (get loan-sched (- numInstalments 1)))
