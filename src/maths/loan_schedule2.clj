@@ -133,7 +133,7 @@
         (dump-sched-to-csv (:instalments sched))))))
 
 (def test-disbursement-date "2021-01-01")
-(def test-first-payment-date "2025-01-01")
+(def test-first-payment-date "2021-02-01")
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
   
