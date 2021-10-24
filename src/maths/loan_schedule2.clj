@@ -35,15 +35,6 @@
   (* daily-interest-rate days-diff))
 )
 
-(comment 
-
-(get-r0-interest-rate "2021-01-01" "2021-01-15" 1)
-(days-diff "2021-01-01" "2021-02-01")
-(months-diff "2021-01-01" "2021-10-15")
-
-;;
-)
-
 ;;--------------------------------------------------------------------
 ;; Loan Installments
 ;; Taken from my orignal: https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb 
