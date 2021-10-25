@@ -124,13 +124,13 @@
         (dump-sched-to-csv (:instalments sched))))))
 
 (def test-disbursement-date "2021-01-01")
-(def test-first-payment-date "2021-02-01")
+(def test-first-payment-date "2022-01-01")
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
   
-  (save-to-csv-file "test.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
+  (save-to-csv-file "real1-schedule1.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
-  (save-to-csv-file "test.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
+  (save-to-csv-file "real1-schedule2.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
 
 

@@ -22,3 +22,4 @@ MAMBU-DWH
 .lsp/.cache/data.mdb
 .lsp/.cache/lock.mdb
 .lsp/.cache/sqlite.db
+CSV-FILES/*

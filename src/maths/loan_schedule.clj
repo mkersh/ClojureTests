@@ -97,10 +97,10 @@
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
 
-  (save-to-csv-file "test.csv" (expand-schedule 5000 1 5))
+  (save-to-csv-file "simple-schedule1.csv" (expand-schedule 5000 1 5))
   (pp/pprint (expand-schedule 5000 1 5))
   (pp/pprint (expand-schedule 5000 10 12))
-  (save-to-csv-file "test.csv" (expand-schedule 100000 0.4 100))
+  (save-to-csv-file "simple-schedule2.csv" (expand-schedule 100000 0.4 100))
   (save-to-csv-file "test.csv" (expand-schedule 100 0.4 1000))
   (pp/pprint (expand-schedule 100000 0.4 100))
 
