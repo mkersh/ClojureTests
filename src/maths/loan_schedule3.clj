@@ -104,7 +104,8 @@
         expand-sched (mapv (expand-instalment sub-values1) loan-sched)
         loan-sched2 (mapv (check-for-remain-int-greater-zero loan-sched sub-values0) loan-sched expand-sched (range 1 numInstalments))]
     (if (need-to-recalcuate expand-sched)
-      (do (prn "Need to recurse:")
+      (do (prn "Need to recurse:" (count loan-sched2) (count loan-sched))
+      ;; TODO: The next line doesn't work at the moment
       (recur loan-sched2 numInstalments sub-values0))
       ;; Expr we need to solve to get E
       {:equal-month-amount equal-month-amount
