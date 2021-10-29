@@ -114,7 +114,7 @@
   ([expr var1] (solve expr var1 0))
   ([expr var1 eq-amount]
    (let [expr2 (dissoc expr :sub-map)
-         _ (assert (= (count expr2) 2) "ERROR: We can only solve when there is 1 unknown variable")
+         _ (assert (= (count expr2) 2) (str "ERROR: We can only solve when there is 1 unknown variable:" expr2))
          _ (assert (get expr [var1]) (str "ERROR: Unknown variable " var1))
          val1 (:term-num (get expr []))
          var-mult (- (:term-num (get expr [var1])))

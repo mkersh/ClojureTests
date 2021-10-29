@@ -86,9 +86,9 @@
   (fn [instal-obj expanded-instal-obj i]
     (if (> (:interest_remaining expanded-instal-obj) 0)
       (let [_  (prn "Interest remain is still +ve")
-            principal_expected (or (:principal_expected (get old-loan-sched (- i 1))) (:P sub-values0))
-            instal-obj1 (assoc instal-obj :principal_expected principal_expected)
-            instal-obj2 (assoc instal-obj1 :interest_remaining 0)]
+            principal_expected (or (:principle_remaining (get old-loan-sched (- i 1))) (:P sub-values0))
+            instal-obj1 (assoc instal-obj :principle_remaining principal_expected)
+            instal-obj2 (assoc instal-obj1 :interest_remaining (cas/expr (cas/term -99 [])))]
         instal-obj2)
       instal-obj)))
 
@@ -104,7 +104,7 @@
         expand-sched (mapv (expand-instalment sub-values1) loan-sched)
         loan-sched2 (mapv (check-for-remain-int-greater-zero loan-sched sub-values0) loan-sched expand-sched (range 1 numInstalments))]
     (if (need-to-recalcuate expand-sched)
-      (do (prn "Need to recurse")
+      (do (prn "Need to recurse:")
       (recur loan-sched2 numInstalments sub-values0))
       ;; Expr we need to solve to get E
       {:equal-month-amount equal-month-amount
