@@ -82,19 +82,47 @@
           total_payment_due (cas/expr-sub2 (:total_payment_due instal-obj) sub-values)]
       {:num num :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_payment_due total_payment_due})))
 
+(defn update-instalment [old-loan-sched sub-values instal-obj expanded-instal-obj i]
+  (let [previous-index (- i 1)
+        previous-principle_remaining (:principle_remaining (get old-loan-sched previous-index))
+        interest_expected0 (cas/expr-multiply previous-principle_remaining  :r)
+        ;; Try and simplify the expressions at every opportunity. That's why we are calling expr-sub
+        interest_expected (cas/expr-sub interest_expected0 sub-values)
+        interest_remaining0 (cas/expr interest_expected (cas/term -1 [:E]))
+        interest_remaining (cas/expr-sub interest_remaining0 sub-values)
+        total_payment_due (cas/expr (cas/term 1 [:E]))]
+
+        (if (> (:interest_remaining expanded-instal-obj) 0)
+          (let [principal_expected0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))
+                principal_expected (cas/expr-sub principal_expected0 sub-values)
+                principle_remaining0 (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E]))
+                principle_remaining (cas/expr-sub principle_remaining0 sub-values)
+                nth-install {:num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_payment_due total_payment_due}]
+            nth-install)
+          (let [principal_expected0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))
+                principal_expected (cas/expr-sub principal_expected0 sub-values)
+                principle_remaining0 (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E]))
+                principle_remaining (cas/expr-sub principle_remaining0 sub-values)
+                nth-install {:num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_payment_due total_payment_due}]
+            nth-install))))
+                         
+
 (defn check-for-remain-int-greater-zero [old-loan-sched sub-values0]
   (fn [instal-obj expanded-instal-obj i]
     (if (> (:interest_remaining expanded-instal-obj) 0)
       (let [_  (prn "Interest remain is still +ve")
-            principal_expected (or (:principle_remaining (get old-loan-sched (- i 1))) (cas/expr (cas/term (:P sub-values0) [])))
-            instal-obj1 (assoc instal-obj :principle_remaining principal_expected)
+            principle_remaining (or (:principle_remaining (get old-loan-sched (- i 1))) (cas/expr (cas/term (:P sub-values0) [])))
+            instal-obj1 (assoc instal-obj :principle_remaining principle_remaining)
             instal-obj2 (assoc instal-obj1 :interest_remaining (cas/expr (cas/term -99 [])))]
         instal-obj2)
       instal-obj)))
 
 (defn need-to-recalcuate [expand-sched]
-  (> (count (filter (fn [instal]
-            (> (:interest_remaining instal) 0)) expand-sched)) 0))
+  (> (count
+      (filter
+       (fn [instal] (> (:interest_remaining instal) 0))
+       expand-sched))
+     0))
 
 (defn expand-schedule0 [loan-sched numInstalments sub-values0]
   (let [prin-remain-last (:principle_remaining (get loan-sched (- numInstalments 1)))
@@ -115,9 +143,9 @@
           loan-sched (loan-schedule numInstalments sub-values0)]
       (expand-schedule0 loan-sched numInstalments sub-values0)))
      
-(comment
+(comment)
 (= [1 2 3] [1 2 3])
-)
+
 ;;--------------------------------------------------------------------
 ;; Print to CSV functions
 ;; So that you can view in a spreadsheet tool
@@ -162,8 +190,7 @@
   (save-to-csv-file "real2-schedule1b.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (save-to-csv-file "real2-schedule2b.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
-  (pp/pprint (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date)) 
+  (pp/pprint (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))) 
   
   
   ;;
-)
