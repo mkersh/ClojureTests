@@ -75,31 +75,33 @@
 (defn expand-instalment [sub-values]
   (fn [instal-obj]
     (let [num (:num instal-obj)
+          mod1-applied (:mod1-applied instal-obj)
           interest_expected (cas/expr-sub2 (:interest_expected instal-obj) sub-values)
           principal_expected (cas/expr-sub2 (:principal_expected instal-obj) sub-values)
           principle_remaining (cas/expr-sub2 (:principle_remaining instal-obj) sub-values)
           interest_remaining (cas/expr-sub2 (:interest_remaining instal-obj) sub-values)
           total_payment_due (cas/expr-sub2 (:total_payment_due instal-obj) sub-values)]
-      {:num num :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_payment_due total_payment_due})))
+      {:mod1-applied mod1-applied :num num :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_payment_due total_payment_due})))
 
 (defn update-instalment [old-loan-sched sub-values instal-obj expanded-instal-obj i]
   (let [previous-index (- i 1)
         previous-principle_remaining (:principle_remaining (get old-loan-sched previous-index))
         previous-interest_remaining (:interest_remaining (get old-loan-sched previous-index))
-        interest_expected0 (cas/expr-multiply previous-principle_remaining  :r)
+        interest_expected0 (if (= i 0)
+                             (:interest_expected instal-obj) ;; Get previous expression
+                             (cas/expr-multiply previous-principle_remaining  :r))
         ;; Try and simplify the expressions at every opportunity. That's why we are calling expr-sub
         interest_expected (cas/expr-sub interest_expected0 sub-values)
         interest_remaining0 (if previous-interest_remaining
                               (cas/expr previous-interest_remaining interest_expected (cas/term -1 [:E]))
-                              (cas/expr interest_expected (cas/term -1 [:E]))
-                              )
+                              (cas/expr interest_expected (cas/term -1 [:E])))
         interest_remaining (cas/expr-sub interest_remaining0 sub-values)
         total_payment_due (cas/expr (cas/term 1 [:E]))]
 
         (if (> (:interest_remaining expanded-instal-obj) 0)
           (let [principal_expected0 (cas/expr (cas/term 0 []))
                 principal_expected (cas/expr-sub principal_expected0 sub-values)
-                principle_remaining0 previous-principle_remaining
+                principle_remaining0 (or previous-principle_remaining (cas/expr (cas/term (:P sub-values) [])))
                 principle_remaining (cas/expr-sub principle_remaining0 sub-values)
                 ;; mark the instalment with :mod1-applied to prevent recursing on it again
                 nth-install {:mod1-applied true :num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_payment_due total_payment_due}]
@@ -124,7 +126,11 @@
 
 (defn check-for-remain-int-greater-zero [old-loan-sched sub-values0]
   (fn [instal-obj expanded-instal-obj i]
-    (update-instalment old-loan-sched sub-values0 instal-obj expanded-instal-obj i)))
+    (let [instal-obj (update-instalment old-loan-sched sub-values0 instal-obj expanded-instal-obj i)]
+    ;;(prn "InstalObj" instal-obj)
+    ;;(assert false "abort abort abort")
+    instal-obj
+    )))
 
 (defn need-to-recalcuate [expand-sched]
   (> (count
@@ -133,16 +139,24 @@
        expand-sched))
      0))
 
+(defonce recalc-count (atom 0)) ;; Using this for debugging purposes
+
 (defn expand-schedule0 [loan-sched numInstalments sub-values0]
   (let [prin-remain-last (:principle_remaining (get loan-sched (- numInstalments 1)))
         prin-remain-last-expanded (cas/expr-sub prin-remain-last sub-values0)
         equal-month-amount (cas/solve prin-remain-last-expanded :E)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
-        expand-sched (mapv (expand-instalment sub-values1) loan-sched)
-        loan-sched2 (mapv (check-for-remain-int-greater-zero loan-sched sub-values0) loan-sched expand-sched (range 0 numInstalments))]
+        expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
     (if (need-to-recalcuate expand-sched)
       ;; Recalculate the schedule based on the modified loan-sched2
-      (do (prn "recalculate schedule")(recur loan-sched2 numInstalments sub-values0))
+      (let
+       [_ (prn "recalculate schedule" @recalc-count)
+        ;; Debug code I used to figure out a problem
+        ;;_ (prn "Install-0:" (get expand-sched 0))
+        ;;_ (reset! recalc-count (+ @recalc-count 1))
+        ;;_ (assert (< @recalc-count 30) "abort abort abort")
+        loan-sched2 (mapv (check-for-remain-int-greater-zero loan-sched sub-values0) loan-sched expand-sched (range 0 numInstalments))]
+        (recur loan-sched2 numInstalments sub-values0))
       ;; Expr we need to solve to get E
       {:equal-month-amount equal-month-amount
        :instalments expand-sched})))
@@ -152,8 +166,10 @@
           loan-sched (loan-schedule numInstalments sub-values0)]
       (expand-schedule0 loan-sched numInstalments sub-values0)))
      
-(comment)
+(comment
 (= [1 2 3] [1 2 3])
+(reset! recalc-count 0)
+)
 
 ;;--------------------------------------------------------------------
 ;; Print to CSV functions
