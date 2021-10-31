@@ -83,6 +83,9 @@
           total_payment_due (cas/expr-sub2 (:total_payment_due instal-obj) sub-values)]
       {:mod1-applied mod1-applied :num num :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_payment_due total_payment_due})))
 
+;; something is not working think I need to do a reduce to calculate the new schedule
+;; in a similar way to how i create in the first place. This will allow me to get the correct previous
+;; see add-loan-instalment for how i am doing this
 (defn update-instalment [old-loan-sched sub-values instal-obj expanded-instal-obj i]
   (let [previous-index (- i 1)
         previous-principle_remaining (:principle_remaining (get old-loan-sched previous-index))
@@ -141,6 +144,16 @@
 
 (defonce recalc-count (atom 0)) ;; Using this for debugging purposes
 
+(defn expand-schedule-final [loan-sched numInstalments sub-values0]
+(let [prin-remain-last (:principle_remaining (get loan-sched (- numInstalments 1)))
+      prin-remain-last-expanded (cas/expr-sub prin-remain-last sub-values0)
+      equal-month-amount (cas/solve prin-remain-last-expanded :E)
+      sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
+      expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
+  {:equal-month-amount equal-month-amount
+   :instalments expand-sched}))
+
+
 (defn expand-schedule0 [loan-sched numInstalments sub-values0]
   (let [prin-remain-last (:principle_remaining (get loan-sched (- numInstalments 1)))
         prin-remain-last-expanded (cas/expr-sub prin-remain-last sub-values0)
@@ -150,16 +163,18 @@
     (if (need-to-recalcuate expand-sched)
       ;; Recalculate the schedule based on the modified loan-sched2
       (let
-       [_ (prn "recalculate schedule" @recalc-count)
+       [_ (prn "recalculate schedule" @recalc-count sub-values0)
         ;; Debug code I used to figure out a problem
         ;;_ (prn "Install-0:" (get expand-sched 0))
         ;;_ (reset! recalc-count (+ @recalc-count 1))
         ;;_ (assert (< @recalc-count 30) "abort abort abort")
-        loan-sched2 (mapv (check-for-remain-int-greater-zero loan-sched sub-values0) loan-sched expand-sched (range 0 numInstalments))]
+        loan-sched2 (mapv (check-for-remain-int-greater-zero loan-sched sub-values0) loan-sched expand-sched (range 0 numInstalments))
+        _ (prn "Install-0:" (get loan-sched2 0))
+        ]
         (recur loan-sched2 numInstalments sub-values0))
       ;; Expr we need to solve to get E
-      {:equal-month-amount equal-month-amount
-       :instalments expand-sched})))
+      (let [loan-sched2 (mapv (check-for-remain-int-greater-zero loan-sched sub-values0) loan-sched expand-sched (range 0 numInstalments))]
+        (expand-schedule-final loan-sched2 numInstalments sub-values0)))))
 
  (defn expand-schedule [OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date]
     (let [sub-values0 {:P OrigPrinciple :r (/ interestRatePerInstalment 100) :disbursement-date disbursement-date :first-payment-date first-payment-date}
@@ -189,6 +204,7 @@
     (println
      (str
       (:num next-instal) ","
+      (:mod1-applied next-instal) ","
       (round-num (:interest_expected next-instal)) ","
       (round-num (:principal_expected next-instal)) ","
       (round-num (:principle_remaining next-instal)) ","
@@ -204,7 +220,7 @@
     (spit fpath "" :append false)
     (with-open [out-data (io/writer fpath)]
       (binding [*out* out-data]
-        (println "#, Interest Expected, Principal Expected, Principle Remaining, Interest Remaining, Total Amount Due")
+        (println "#, ModFlag, Interest Expected, Principal Expected, Principle Remaining, Interest Remaining, Total Amount Due")
         (dump-sched-to-csv (:instalments sched))))))
 
 (def test-disbursement-date "2021-01-01")
