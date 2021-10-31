@@ -145,13 +145,13 @@
 (defonce recalc-count (atom 0)) ;; Using this for debugging purposes
 
 (defn expand-schedule-final [loan-sched numInstalments sub-values0]
-(let [prin-remain-last (:principle_remaining (get loan-sched (- numInstalments 1)))
-      prin-remain-last-expanded (cas/expr-sub prin-remain-last sub-values0)
-      equal-month-amount (cas/solve prin-remain-last-expanded :E)
-      sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
-      expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
-  {:equal-month-amount equal-month-amount
-   :instalments expand-sched}))
+  (let [prin-remain-last (:principle_remaining (get loan-sched (- numInstalments 1)))
+        prin-remain-last-expanded (cas/expr-sub prin-remain-last sub-values0)
+        equal-month-amount (cas/solve prin-remain-last-expanded :E)
+        sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
+        expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
+    {:equal-month-amount equal-month-amount
+     :instalments expand-sched}))
 
 
 (defn expand-schedule0 [loan-sched numInstalments sub-values0]
