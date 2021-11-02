@@ -1,5 +1,5 @@
 ;;; Experiments in calculating loan schedules from algebraic expressions
-;;; Uses a very simple algebraic library I have created maths.algebra
+;;; Uses a very simple algebraic library I have created maths.algebra2
 ;;; 
 ;;; This library is an enhanced version of maths.loan-schedule2. It adds support for:
 ;;; (1) If the interest due between (disbursement-date → first-pay-date) can not be
