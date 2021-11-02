@@ -98,7 +98,7 @@
   (dissoc (reduce apply-sub-to-expr {:sub-map sub-map} (vals expr)) :sub-map))
 
 (defn expr-simplify [expr]
-  (let [_ (assert (= (count expr) 1) (str "ERROR: Cannot simplify (1)" expr))
+  (let [_ (assert (= (count expr) 1) (str "ERROR: Cannot simplify (1)" (count expr)))
         _ (assert (get expr []) (str "ERROR: Cannot simplify (2)"))
         val (:term-num (get expr []))]
     val))
