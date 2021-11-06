@@ -157,8 +157,10 @@
   (api/setenv "env2")
 
   ;; Create a new clean customer for the LoyaltyPoint demo
-  (steps/process-collection (create-loyalty-customer 6)) ;; The number passed is used for the name ""Loyalty Tester n""
+  (steps/process-collection (create-loyalty-customer 7)) ;; The number passed is used for the name ""Loyalty Tester n""
   
+
+  ;; Use the previous function to create a new loyalty point customer
   (steps/apply-api createLoyaltyPointAccount {:cust-key "8a818fdc7a80c056017a85257f69441c" :loyalty-product "8a818f5f713625dd017144cb4df05106"})
 
   ;;
