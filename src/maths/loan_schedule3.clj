@@ -164,16 +164,17 @@
         equal-month-amount (cas/solve total-remain-last-expanded :E)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
         expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
+    ;; After expanding check to see if the last of the interest-only instalments is still valid
     (if-let [recalc-list (need-to-recalcuate expand-sched)]
       (let
-       [loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched recalc-list) [] (range 0 numInstalments))]
-        (let [total-remain-last (:total_remain (get loan-sched2 (- numInstalments 1)))
-              total-remain-last-expanded (cas/expr-sub total-remain-last sub-values0)
-              equal-month-amount (cas/solve total-remain-last-expanded :E)
-              sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
-              expand-sched (mapv (expand-instalment sub-values1) loan-sched2)]
-          {:equal-month-amount equal-month-amount
-           :instalments expand-sched}))
+       [loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched recalc-list) [] (range 0 numInstalments))
+        total-remain-last (:total_remain (get loan-sched2 (- numInstalments 1)))
+        total-remain-last-expanded (cas/expr-sub total-remain-last sub-values0)
+        equal-month-amount (cas/solve total-remain-last-expanded :E)
+        sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
+        expand-sched (mapv (expand-instalment sub-values1) loan-sched2)]
+        {:equal-month-amount equal-month-amount
+         :instalments expand-sched})
       ;; Else  
       {:equal-month-amount equal-month-amount
        :instalments expand-sched})))
@@ -241,6 +242,7 @@
 
 (def test-disbursement-date "2021-01-01")
 (def test-first-payment-date "2022-01-01")
+(def test-first-payment-date2 "2021-01-05")
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
   
@@ -248,7 +250,7 @@
   (pp/pprint (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (save-to-csv-file "real2-schedule2b.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
-  
+  (save-to-csv-file "real2-schedule1c.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date2))
   ;;
   ) 
   
