@@ -38,6 +38,7 @@
                                        "city" "Liverpool"}]
                          "notes" "Some Notes on this person"
                          "gender" "MALE"
+                         "creationDate" "2021-01-01T13:37:50+01:00"
                          "identificationDocumentTemplateKey" "8a81879867f40eff0167f45206e8002b"}}
         options (merge optdefs moreOpts)]
     (api/PRINT (api/POST "{{*env*}}/clients" options))))
