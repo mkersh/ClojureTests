@@ -135,13 +135,11 @@
             nth-install {:num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due}]
         nth-install))))
 
+;; Returns a function to use in a reduce
 (defn check-for-remain-int-greater-zero [old-loan-sched sub-values0 expand-sched recalc-list]
   (fn [install-list i]
     (let [instal-obj (update-instalment old-loan-sched sub-values0 install-list (get expand-sched i) i recalc-list)]
-    ;;(prn "InstalObj" instal-obj)
-    ;;(assert false "abort abort abort")
-    (conj install-list instal-obj)
-    )))
+      (conj install-list instal-obj))))
 
 (defn enumerate [c]
   (map
