@@ -92,21 +92,12 @@
   (some #{i} recalc-list))
 
 
-(defn update-instalment 
-;; The following if the standard entry point into this function
-([old-loan-sched sub-values install-list expanded-instal-obj i]
- (update-instalment old-loan-sched sub-values install-list expanded-instal-obj i []))
-;; This is the entry point that allows you to force force-prin-and-int, which we do in revert-last-instalment
-([old-loan-sched sub-values install-list expanded-instal-obj i recalc-list]
-  (when (and @debug (= i 4))
-    (prn "INstal-4 interest remain222:" (:interest_remaining expanded-instal-obj))
-    (prn "old-loan-sched type:" (type install-list))
-    )
+(defn update-instalment
+  [old-loan-sched sub-values install-list expanded-instal-obj i recalc-list]
   (let [previous-index (- i 1)
         previous-principle_remaining (if (= i 0)
                                        (cas/expr (cas/term (:P sub-values) []))
                                        (:principle_remaining (get install-list previous-index)))
-        _ (when (and @debug (= i 4)) (prn "XXXXXX" previous-principle_remaining))
         previous-interest_remaining (if (= i 0)
                                       (cas/expr (cas/term 0 []))
                                       (:interest_remaining (get install-list previous-index)))
@@ -121,28 +112,28 @@
         interest_remaining (cas/expr-sub interest_remaining0 sub-values)
         total_payment_due (cas/expr (cas/term 1 [:E]))]
 
-    (if (and (not (revert-install? recalc-list i )) (> (:interest_remaining expanded-instal-obj) 0))
+    (if (and (not (revert-install? recalc-list i)) (> (:interest_remaining expanded-instal-obj) 0))
       (let [principal_expected0 (cas/expr (cas/term 0 []))
-            _ (when (and @debug (= i 4)) (prn "HERE WE ARE11111"))
             principal_expected (cas/expr-sub principal_expected0 sub-values)
             principle_remaining0 (or previous-principle_remaining (cas/expr (cas/term (:P sub-values) [])))
             principle_remaining (cas/expr-sub principle_remaining0 sub-values)
             total_remain0 (cas/expr principle_remaining  interest_remaining)
             total_remain (cas/expr-sub total_remain0 sub-values)
-                ;; mark the instalment with :mod1-applied to prevent recursing on it again
+            ;; mark the instalment with :mod1-applied to prevent recursing on it again
             nth-install {:mod1-applied true :num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due}]
         nth-install)
-      (let [principal_expected0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))
-            _ (if (and @debug (= i 4)) (prn "HERE WE ARE2222") nil)
+      (let [
+        
+           principal_expected0 (if (revert-install? recalc-list i)
+                                 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1) (cas/expr-multiply interest_remaining -1))
+                                 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
             principal_expected (cas/expr-sub principal_expected0 sub-values)
             principle_remaining0 (cas/expr previous-principle_remaining interest_expected (cas/term -1 [:E]))
             principle_remaining (cas/expr-sub principle_remaining0 sub-values)
-                ;;_ (prn "update-instal" principle_remaining)
-                ;;_ (assert false "abort!!!")
             total_remain0 (cas/expr principle_remaining)
             total_remain (cas/expr-sub total_remain0 sub-values)
             nth-install {:num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due}]
-        nth-install)))))
+        nth-install))))
 
 (defn check-for-remain-int-greater-zero [old-loan-sched sub-values0 expand-sched recalc-list]
   (fn [install-list i]
@@ -151,26 +142,6 @@
     ;;(assert false "abort abort abort")
     (conj install-list instal-obj)
     )))
-
-(defn before-and-after-parts [c i]
-(prn "before-and-after-parts" i)
-  (let [before (vec (take i c))
-        after (vec (drop (+ i 1) c))]
-    [before after]))
-
-;; We may have to change some of the instalments from being interest only back to interest+principal
-(defn revert-last-instalment [old-loan-sched sub-values0 expand-sched recalc-list]
-  (assert (= (count recalc-list) 1) "revert-last-instalment: Has more than 1 item!!")
-  (let
-   [[i _] (first recalc-list)
-    [before-instal-list after-instal-list] (before-and-after-parts old-loan-sched i)
-    expanded-instal-obj (get expand-sched i)
-    updated-item (update-instalment old-loan-sched sub-values0 before-instal-list expanded-instal-obj i recalc-list)
-    ;;_ (prn "before-instal-list:" (count before-instal-list) )
-    ;;_ (prn "[updated-item]:" (count [updated-item]))
-    ;;_ (prn "after-instal-list:" (count after-instal-list))
-    ]
-    (vec (concat before-instal-list [updated-item] after-instal-list))))
 
 (defn enumerate [c]
   (map
@@ -187,8 +158,6 @@
       (mapv (fn [[i _]] i) recalc-needed)
       nil)))
 
-(defonce recalc-count (atom 0)) ;; Using this for debugging purposes
-
 (defn expand-schedule-final [loan-sched numInstalments sub-values0]
   (let [total-remain-last (:total_remain (get loan-sched (- numInstalments 1)))
         total-remain-last-expanded (cas/expr-sub total-remain-last sub-values0)
@@ -197,16 +166,7 @@
         expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
     (if-let [recalc-list (need-to-recalcuate expand-sched)]
       (let
-       [_ (prn "Huston we have a problem")
-        _ (prn "recalc-list:" recalc-list)
-        ;;_ (prn "INstal-4 AAA:" (:interest_remaining (get expand-sched 4)))
-        _ (prn "Instalment 04a:" (get loan-sched 4))
-        loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched recalc-list) [] (range 0 numInstalments))
-        ;;loan-sched2 (revert-last-instalment loan-sched sub-values0 expand-sched recalc-list)
-        _ (prn "Instalment 04b:" (get loan-sched2 4))
-        ;;_ (prn "Install-4 BBB:" (:interest_remaining (get loan-sched2 4)))
-        ]
-        ;;(expand-schedule-final loan-sched2 numInstalments sub-values0)
+       [loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched recalc-list) [] (range 0 numInstalments))]
         (let [total-remain-last (:total_remain (get loan-sched2 (- numInstalments 1)))
               total-remain-last-expanded (cas/expr-sub total-remain-last sub-values0)
               equal-month-amount (cas/solve total-remain-last-expanded :E)
@@ -214,11 +174,9 @@
               expand-sched (mapv (expand-instalment sub-values1) loan-sched2)]
           {:equal-month-amount equal-month-amount
            :instalments expand-sched}))
-        
-      (do 
-      (prn "Install-4 CCC:" (:interest_remaining (get expand-sched 4)))
+      ;; Else  
       {:equal-month-amount equal-month-amount
-       :instalments expand-sched}))))
+       :instalments expand-sched})))
 
 
 (defn expand-schedule0 [loan-sched numInstalments sub-values0]
@@ -242,11 +200,6 @@
     (let [sub-values0 {:P OrigPrinciple :r (/ interestRatePerInstalment 100) :disbursement-date disbursement-date :first-payment-date first-payment-date}
           loan-sched (loan-schedule numInstalments sub-values0)]
       (expand-schedule0 loan-sched numInstalments sub-values0)))
-     
-(comment
-(= [1 2 3] [1 2 3])
-(reset! recalc-count 0)
-)
 
 ;;--------------------------------------------------------------------
 ;; Print to CSV functions
@@ -296,21 +249,6 @@
   (save-to-csv-file "real2-schedule2b.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
   
-  
-  (defn enumerate [c]
-    (map
-     (fn [i obj] [i obj])
-     (iterate inc 0) c))
-  
-
-  (enumerate ["a" "b" "c"])
-
-  (last [1 2 3])
-  
-  (before-and-after-parts [1 2 3 4 5] 1)
-  (drop 1 [1 2 3])
-
-  (concat '(1 3) [7] [3 4])
   ;;
   ) 
   
