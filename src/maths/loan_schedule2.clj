@@ -132,7 +132,7 @@
   (pp/pprint (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (save-to-csv-file "real1-schedule2.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
-
+  (save-to-csv-file "testsch2-cap.csv" (expand-schedule 12550 (/ 19.4M 12.0) 78 "2020-07-08" "2020-10-18"))
 
 ;;
 

@@ -89,8 +89,8 @@
       {:mod1-applied mod1-applied :num num :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due})))
 
 (defn revert-install? [recalc-list i]
+  ;; is i in recalc-list
   (some #{i} recalc-list))
-
 
 (defn update-instalment
   [old-loan-sched sub-values install-list expanded-instal-obj i recalc-list]
@@ -112,6 +112,7 @@
         interest_remaining (cas/expr-sub interest_remaining0 sub-values)
         total_payment_due (cas/expr (cas/term 1 [:E]))]
 
+    ;; if recalc-list <> [] then always force principal+interest
     (if (and (not (revert-install? recalc-list i)) (> (:interest_remaining expanded-instal-obj) 0))
       (let [principal_expected0 (cas/expr (cas/term 0 []))
             principal_expected (cas/expr-sub principal_expected0 sub-values)
@@ -122,11 +123,10 @@
             ;; mark the instalment with :mod1-applied to prevent recursing on it again
             nth-install {:mod1-applied true :num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due}]
         nth-install)
-      (let [
-        
-           principal_expected0 (if (revert-install? recalc-list i)
-                                 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1) (cas/expr-multiply interest_remaining -1))
-                                 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
+      (let [principal_expected0 (if (revert-install? recalc-list i)
+                                  ;; If i is on recalc-list then need to clear some remaining interest_remaining
+                                  (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1) (cas/expr-multiply interest_remaining -1))
+                                  (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
             principal_expected (cas/expr-sub principal_expected0 sub-values)
             principle_remaining0 (cas/expr previous-principle_remaining interest_expected (cas/term -1 [:E]))
             principle_remaining (cas/expr-sub principle_remaining0 sub-values)
@@ -243,12 +243,26 @@
 (def test-first-payment-date2 "2021-01-05")
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
-  
+
   (save-to-csv-file "real2-schedule1b.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (save-to-csv-file "real2-schedule2b.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
   (save-to-csv-file "real2-schedule1c.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date2))
+
+
+  ;; Testing some specific loans examples
+  (save-to-csv-file "testsch1.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2021-04-14" "2021-06-15"))
+  (save-to-csv-file "testsch2.csv" (expand-schedule 12550 (/ 19.4M 12.0) 78 "2020-07-08" "2020-10-18"))
+
+  ;; Example from client P
+  (save-to-csv-file "testsch3.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
+  (save-to-csv-file "testsch3b.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-19")) ;; 67.05 emi example
+  (save-to-csv-file "testsch3c.csv" (expand-schedule 1000 4.24M 48 "2021-03-21" "2021-05-04")) ;; 49.94, 48m
+  (save-to-csv-file "testsch4.csv" (expand-schedule 1000 4.24M 24 "2021-08-01" "2021-09-14")) ;; 68.39 emi example
+  (save-to-csv-file "testsch5.csv" (expand-schedule 1000 4.24M 36 "2021-08-01" "2021-09-14")) ;; 55.60 emi example
+  (save-to-csv-file "testsch6.csv" (expand-schedule 1000 4.24M 48 "2021-08-01" "2021-09-14")) ;; 49.92 emi example
+  
   ;;
   ) 
   
