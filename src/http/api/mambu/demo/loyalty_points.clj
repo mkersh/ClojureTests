@@ -1,3 +1,4 @@
+;;; GiHub: https://github.com/mkersh/ClojureTests/blob/master/src/http/api/mambu/demo/loyalty_points.clj
 (ns http.api.mambu.demo.loyalty-points
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]))

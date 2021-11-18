@@ -256,13 +256,74 @@
   (save-to-csv-file "testsch2.csv" (expand-schedule 12550 (/ 19.4M 12.0) 78 "2020-07-08" "2020-10-18"))
 
   ;; Example from client P
-  (save-to-csv-file "testsch3.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
+  (save-to-csv-file "testsch3.csv" (expand-schedule 1000 4.2350610718397075M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
   (save-to-csv-file "testsch3b.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-19")) ;; 67.05 emi example
   (save-to-csv-file "testsch3c.csv" (expand-schedule 1000 4.24M 48 "2021-03-21" "2021-05-04")) ;; 49.94, 48m
   (save-to-csv-file "testsch4.csv" (expand-schedule 1000 4.24M 24 "2021-08-01" "2021-09-14")) ;; 68.39 emi example
   (save-to-csv-file "testsch5.csv" (expand-schedule 1000 4.24M 36 "2021-08-01" "2021-09-14")) ;; 55.60 emi example
   (save-to-csv-file "testsch6.csv" (expand-schedule 1000 4.24M 48 "2021-08-01" "2021-09-14")) ;; 49.92 emi example
   
+  (days-diff "2021-03-21" "2021-05-04")
+  (* 44 0.14)
+  ;; 6.16
+  (/ 6.16M 100.0M)
+  (* 1000.0M 0.0616M)
+
+  (defn calc-int [stdate edate dailyPercentageRate prin]
+  (let [days (days-diff stdate edate)
+        day-rate (/ dailyPercentageRate 100.0M)
+        period-rate (* days day-rate)
+        interest (* prin period-rate)]
+    interest)
+  )
+
+  (defn calc-int2 [stdate edate monthPercentageRate prin]
+    (let [days (days-diff stdate edate)
+          month-rate (/ monthPercentageRate 100.0M)
+          averageDaysPerMonth (/ 365 12.0)
+          daysToUse (/ days averageDaysPerMonth)
+          interest (* prin daysToUse month-rate)]
+      interest))
+
+(defn pow [b e] (Math/pow b e))
+
+;; MonthlyRate=(1+APR)^(1/12)-1
+
+(defn month-interest-from-apr [apr]
+(let [base (+ 1 apr)
+      exp (/ 1 12)
+      p (pow base exp)
+      ]
+      (- p 1)
+      )
+)
+
+;; (MonthlyRate+1)^12 -1=APR
+(defn apr-interest-from-monthly [monthly]
+  (let [base (+ 1 monthly)
+        exp 12
+        p (pow base exp)]
+    (- p 1)))
+
+
+(defn apr-calc [prin total-int n]
+(let [int-over-prin (/ total-int prin)
+      per-n (/ int-over-prin n )
+      per-year (* per-n 12) ;; assuming n is months
+      apr-percent (* per-year 100)
+      ]
+      apr-percent
+      )
+)
+
+(apr-calc 1000.0M 1396.03M 48.0)
+(month-interest-from-apr (/ 64.50M 100.0))
+(apr-interest-from-monthly 0.042350610718397075)
+
+(* 0.042350610718397075 12 100)
+(pow 2 (/ 1 2))
+  (calc-int "2021-08-01" "2021-09-14" 0.14 1000.0M)
+  (calc-int2 "2021-08-01" "2021-09-14" 4.2350610718397075M 1000.0M)
   ;;
   ) 
   
