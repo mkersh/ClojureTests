@@ -89,6 +89,17 @@
   (assoc prod-def :prod-instalment-calc-type
          calc-type))
 
+;; [STEP-9] (re)Payment Interval
+(defn prod-payment-interval-method [prod-def int-method int-period int-val fixed-days-list]
+  (assert (#{:interval :fixed} int-method) (str "ERROR: Invalid prod-payment-interval-method: " int-method))
+  (when (= int-method :interval)
+    (assert (#{:days :weeks :months :years} int-period) (str "ERROR: Invalid prod-payment-interval-method period: " int-period)))
+  (assoc prod-def :prod-payment-interval-method 
+         {:int-method int-method
+          :int-period int-period
+          :int-val int-val
+          :fixed-days-list fixed-days-list}))
+
 
 (comment
 
@@ -103,6 +114,8 @@
     (prod-under-ca-setting :no)
     (prod-instalment-calc-type :emi2)
     ;;(prod-instalment-calc-type :fixed-flat) ;; pre-conditions as to when this val is possible
+    (prod-payment-interval-method :interval :months 1 nil)
+    (prod-payment-interval-method :fixed nil nil [1 3 4])
     
     )
 
