@@ -89,6 +89,60 @@
   (assoc prod-def :prod-instalment-calc-type
          calc-type))
 
+;; [STEP-8b] Interest posting frequency
+(defn prod-interest-posting-freq [prod-def freq]
+  (assert (#{:on-repayment :on-disbursement } freq) (str "ERROR: Invalid prod-interest-posting-freq: " freq))
+  (DEP-CHECK ":fixed-flat pre-conditions" prod-def :prod-interest-posting-freq :on-disbursement freq
+             [[:prod-type #{:fixed-term}]])
+  (assoc prod-def :prod-interest-posting-freq
+         freq))
+
+;; [STEP-8c] Interest Type Settings
+(defn prod-interest-type [prod-def int-type-settings]
+  (let [int-rate-source (:int-rate-source int-type-settings)
+        int-rate-type (:int-rate-type int-type-settings)
+        int-rate-scope (:int-rate-scope int-type-settings)
+        index-source (:index-source int-type-settings)
+        index-spread-constrain (:index-spread-constrain int-type-settings)
+        index-floor (:index-floor int-type-settings)
+        index-ceiling (:index-ceiling int-type-settings)
+        index-review-frequency-type (:index-review-frequency-type int-type-settings)
+        index-review-frequency-val (:index-review-frequency-val int-type-settings)
+        day-count-model (:day-count-model int-type-settings)]
+
+    (assert (#{:fixed :index} int-rate-source) (str "ERROR: Invalid prod-interest-type int-rate-source: " int-rate-source))
+    (assert (#{:simple :capitalized :compound} int-rate-type) (str "ERROR: Invalid prod-interest-type int-type: " int-rate-type))
+    (assert (#{:year :month :4weeks :week :day} int-rate-scope) (str "ERROR: Invalid prod-interest-type int-rate-scope: " int-rate-scope))
+    (assert (#{:days :weeks :months} index-review-frequency-type) (str "ERROR: Invalid prod-interest-type index-review-frequency-type: " index-review-frequency-type))
+    (assert (#{:30E-360 :actual-365 :actual-360} day-count-model) (str "ERROR: Invalid prod-interest-type day-count-model: " day-count-model))
+
+   (-> prod-def
+       (assoc :int-rate-source int-rate-source)
+       (assoc :int-rate-type int-rate-type)
+       (assoc :int-rate-scope int-rate-scope)
+       (assoc :index-source index-source)
+       (assoc :index-spread-constrain index-spread-constrain)
+       (assoc :index-floor index-floor)
+       (assoc :index-ceiling index-ceiling)
+       (assoc :index-review-frequency-type index-review-frequency-type)
+       (assoc :index-review-frequency-val index-review-frequency-val)
+       (assoc :day-count-model day-count-model))))
+
+;; [STEP-8c] Interest Type Settings
+(defn prod-interest-rate-constrain [prod-def min-amount max-amount def-amount]
+  (assoc prod-def :interest-rate-constraint
+         {:min-amount min-amount
+          :max-amount max-amount
+          :def-amount def-amount}))
+
+;; [STEP-8d] Repayments Interest Calculation
+(defn prod-repayment-interest-calc [prod-def freq]
+  (assert (#{:repayment-periodicity :actual-days} freq) (str "ERROR: Invalid prod-repayment-interest-calc: " freq))
+  (assert (= (:product-type prod-def) :fixed-term) "ERROR: You can only set prod-repayment-interest-calc for :product-type = :fixed-term ")
+  (assoc prod-def :prod-repayment-interest-calc
+         freq))
+
+
 ;; [STEP-9] (re)Payment Interval
 (defn prod-payment-interval-method [prod-def int-method int-period int-val fixed-days-list]
   (assert (#{:interval :fixed} int-method) (str "ERROR: Invalid prod-payment-interval-method: " int-method))
@@ -99,6 +153,78 @@
           :int-period int-period
           :int-val int-val
           :fixed-days-list fixed-days-list}))
+
+
+;; [STEP-10] Specify Installments Constraints
+;; This step is optional. If not called then there will be no Instalment contraints
+(defn prod-installments-constrain [prod-def min-num max-num def-num]
+  (assoc prod-def :installments-constraint
+         {:min-num min-num
+          :max-num max-num
+          :def-num def-num}))
+
+;; [STEP-10b] Specify first-payment-date Constraints
+;; This step is optional. If not called then there will be no first-payment-date contraints
+(defn prod-first-payment-date-constrain [prod-def min-num max-num def-num]
+  (assoc prod-def :first-payment-date-constraint
+         {:min-num min-num
+          :max-num max-num
+          :def-num def-num}))
+
+;; [STEP-11] Collect principal every n Installments
+;; Normally should be set to 1 but can be less frequent
+(defn prod-principal-collect-frequency [prod-def num]
+  (assoc prod-def :prod-principal-collect-frequency num))
+
+;; [STEP-12] Grace period settings
+(defn prod-grace-period 
+([prod-def grace-type] (prod-grace-period prod-def grace-type nil nil nil))
+([prod-def grace-type grace-period-min grace-period-max grace-period-def ]
+  (assert (#{:none :principal :pure} grace-type) (str "ERROR: Invalid prod-grace-period: " grace-type))
+  (assoc prod-def :prod-grace-period
+         {:grace-type grace-type
+          :grace-period-constraint {:min grace-period-min :max grace-period-max :def grace-period-def}})))
+
+
+;; [STEP-13] Repayment Rounding
+(defn prod-repayment-rounding
+  [prod-def install-round currency-round]
+   (assert (#{:no-round :into-last} install-round) (str "ERROR: Invalid prod-repayment-rounding  install-round: " install-round))
+   (assert (#{:no-round :round :round-up} currency-round) (str "ERROR: Invalid prod-repayment-rounding  currency-round: " currency-round))
+   (assoc prod-def :prod-repayment-rounding
+          {:install-round install-round
+           :currency-round currency-round}))
+
+;; [STEP-14] Non working days reschedule
+(defn prod-non-working-days-reschedule
+  [prod-def setting]
+  (assert (#{:no :forward :backward :extend} setting) (str "ERROR: Invalid prod-non-working-days-reschedule: " setting))
+  (assoc prod-def :prod-non-working-days-reschedule setting))
+
+;; [STEP-15] Schedule Ediing
+(defn prod-schedule-edit
+  [prod-def edit-obj]
+  (let [product-type (:product-type prod-def)]
+    (when (not (= product-type :fixed-term))
+      (assert (not (:interest? edit-obj)) "Setting only available for :fixed-term")
+      (assert (not (:fee? edit-obj)) "Setting only available for :fixed-term")
+      (assert (not (:penalty? edit-obj)) "Setting only available for :fixed-term"))
+    (when (= product-type :tranched)
+      (assert (not (or (:dates? edit-obj) (:principal? edit-obj) (:num? edit-obj) (:holidays? edit-obj)
+                  (:interest? edit-obj) (:fee? edit-obj) (:penalty? edit-obj))) "edit schedule not available on :tranched"))
+    (when (= product-type :revolving-credit)
+      (assert (not (or (:principal? edit-obj) (:holidays? edit-obj)
+                        (:interest? edit-obj) (:fee? edit-obj) (:penalty? edit-obj))) "edit schedule not available on :tranched")))
+  (assoc prod-def :prod-schedule-edit 
+  {:dates? (:dates? edit-obj)
+   :principal? (:principal? edit-obj)
+   :num? (:num? edit-obj)
+   :holidays? (:holidays? edit-obj)
+   :interest? (:interest? edit-obj) 
+   :fee? (:fee? edit-obj) 
+   :penalty? (:penalty? edit-obj)
+   }))
+
 
 
 (comment
@@ -114,10 +240,36 @@
     (prod-under-ca-setting :no)
     (prod-instalment-calc-type :emi2)
     ;;(prod-instalment-calc-type :fixed-flat) ;; pre-conditions as to when this val is possible
+    (prod-interest-posting-freq :on-repayment)
+    (prod-interest-type
+     {:int-rate-source :fixed
+      :int-rate-type :simple
+      :index-source nil
+      :index-spread-constrain {:min-amount 0 :max-amount 0 :def-amount 0}
+      :index-floor 0
+      :index-ceiling 0
+      :index-review-frequency-type :months
+      :index-review-frequency-val 0
+      :int-rate-scope :year
+      :day-count-model :actual-365})
     (prod-payment-interval-method :interval :months 1 nil)
     (prod-payment-interval-method :fixed nil nil [1 3 4])
-    
-    )
+    (prod-installments-constrain 0 600 10)
+    (prod-first-payment-date-constrain 0 100 50)
+    (prod-principal-collect-frequency 1)
+    (prod-grace-period :none)
+    (prod-grace-period :pure nil nil nil)
+    (prod-grace-period :principal nil nil nil)
+    (prod-repayment-rounding :no-round :no-round)
+    (prod-non-working-days-reschedule :no)
+    (prod-schedule-edit {:dates? false
+                         :principal? false
+                         :num? false
+                         :holidays? false
+                         :interest? false ;; only available for :fixed-term
+                         :fee? false      ;; only available for :fixed-term
+                         :penalty? false  ;; only available for :fixed-term
+                         }))
 
 ;;
 )
