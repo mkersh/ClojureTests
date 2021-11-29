@@ -37,11 +37,11 @@
      (assoc prod-def4 :prod-id id))))
 
 ;; [STEP-2] Add the product-type to the prod-def
-;; prod-type = (:fixed-term|:dynamic-term|:interest-free|:tranched|:revolving-credit)
+;; product-type = (:fixed-term|:dynamic-term|:interest-free|:tranched|:revolving-credit)
 ;;
-(defn prod-type-def [prod-def prod-type]
-  (assert (#{:fixed-term :dynamic-term :interest-free :tranched :revolving-credit} prod-type) (str "ERROR: Invalid prod-type: " prod-type))
-  (assoc prod-def :prod-type prod-type))
+(defn product-type-def [prod-def product-type]
+  (assert (#{:fixed-term :dynamic-term :interest-free :tranched :revolving-credit} product-type) (str "ERROR: Invalid product-type: " product-type))
+  (assoc prod-def :product-type product-type))
 
 
 ;; [STEP-3] Add availability details to the prod-def
@@ -81,11 +81,11 @@
 ;; [STEP-8] Define the instalment calculation type
 ;; :db - declining balance, principal reduced by equal amounts each instalment
 ;; :emi2 - refers to DBEI + Optimized Payments
-;; :fixed-flat - only availble if prod-type-def=:fixed-term|
+;; :fixed-flat - only availble if product-type-def=:fixed-term|
 (defn prod-instalment-calc-type [prod-def calc-type]
   (assert (#{:db :emi :emi2 :fixed-flat} calc-type) (str "ERROR: Invalid prod-instalment-calc-type: " calc-type))
   (DEP-CHECK ":fixed-flat pre-conditions" prod-def :prod-instalment-calc-type :fixed-flat calc-type
-             [[:prod-type #{:fixed-term}]])
+             [[:product-type #{:fixed-term}]])
   (assoc prod-def :prod-instalment-calc-type
          calc-type))
 
@@ -93,7 +93,7 @@
 (defn prod-interest-posting-freq [prod-def freq]
   (assert (#{:on-repayment :on-disbursement } freq) (str "ERROR: Invalid prod-interest-posting-freq: " freq))
   (DEP-CHECK ":fixed-flat pre-conditions" prod-def :prod-interest-posting-freq :on-disbursement freq
-             [[:prod-type #{:fixed-term}]])
+             [[:product-type #{:fixed-term}]])
   (assoc prod-def :prod-interest-posting-freq
          freq))
 
@@ -153,6 +153,26 @@
           :int-period int-period
           :int-val int-val
           :fixed-days-list fixed-days-list}))
+
+;; [STEP-9b] Repayment Amount
+(defn prod-repayment-amount [prod-def repayment-amount-settings]
+  (let [repayment-amount-type (:repayment-amount-type repayment-amount-settings)
+        principal-amount-type (:principal-amount-type repayment-amount-settings)
+        total-amount-type (:total-amount-type repayment-amount-settings)
+        repayment-amount-constraint (:repayment-amount-constraint repayment-amount-settings)]
+
+    (assert (= (:product-type prod-def) :revolving-credit) "ERROR: prod-repayment-amount only available on :revolving-credit")
+    (assert (#{:principal :total} repayment-amount-type) (str "ERROR: Invalid prod-repayment-amount repayment-amount-type: " repayment-amount-type))
+    (when principal-amount-type (assert (#{:flat :outstanding :last} principal-amount-type) (str "ERROR: Invalid prod-repayment-amount principal-amount-type: " principal-amount-type)))
+    (when total-amount-type (assert (#{:flat :total :all} total-amount-type) (str "ERROR: Invalid prod-repayment-amount total-amount-type: " total-amount-type)))
+
+    (-> prod-def
+        (assoc  :repayment-amount-type repayment-amount-type)
+        (assoc  :principal-amount-type principal-amount-type)
+        (assoc  :total-amount-type total-amount-type)
+        (assoc  :repayment-amount-constraint repayment-amount-constraint))
+    
+    ))
 
 
 ;; [STEP-10] Specify Installments Constraints
@@ -225,14 +245,73 @@
    :penalty? (:penalty? edit-obj)
    }))
 
+;; [STEP-16] Repayment Collection
+(defn prod-repayment-collection [prod-def collect-settings]
+  (let [payment-allocation-method (:payment-allocation-method collect-settings)
+        payment-allocation-order (:payment-allocation-order collect-settings)
+        pre-payments-accept (:pre-payments-accept collect-settings)
+        pre-payments-apply-interest (:pre-payments-apply-interest collect-settings)
+        pre-payments-recalculation (:pre-payments-recalculation collect-settings)
+        overdue-payments (:overdue-payments collect-settings)
+        pre-payments-future-interest (:pre-payments-future-interest collect-settings)
+        allow-custom-repayment-allocation (:allow-custom-repayment-allocation collect-settings)]
 
+    ;;(assert (= (:product-type prod-def) :revolving-credit) "ERROR: prod-repayment-amount only available on :revolving-credit")
+    (assert (#{:horizontal :vertcal} payment-allocation-method) (str "ERROR: Invalid prod-repayment-collection payment-allocation-method: " payment-allocation-method))
+    (assert (#{:no :accept} pre-payments-accept) (str "ERROR: Invalid prod-repayment-collection pre-payments-accept: " pre-payments-accept))
+    (assert (#{:auto :manual} pre-payments-apply-interest) (str "ERROR: Invalid prod-repayment-collection pre-payments-apply-interest: " pre-payments-apply-interest))
+    (assert (#{:none :next-installments :reduce-term :reduce-amount} pre-payments-recalculation) (str "ERROR: Invalid prod-repayment-collection pre-payments-recalculation: " pre-payments-recalculation))
+    (assert (#{:increase-installments} overdue-payments) (str "ERROR: Invalid prod-repayment-collection overdue-payments: " overdue-payments))
+    (map (fn [order-item] (assert (#{:fee :penalty :interest :principal} order-item) (str "ERROR: Invalid prod-repayment-collection payment-allocation-order: " order-item))) payment-allocation-order)
+    (assert (= (count (into #{} payment-allocation-order)) 4) "ERROR :payment-allocation-order needs order of all :fee :penalty :interest :principal defining")
+    (assert (#{:none :accept} pre-payments-future-interest) (str "ERROR: Invalid prod-repayment-collection pre-payments-future-interest: " pre-payments-future-interest))
+    (assert (#{true false} allow-custom-repayment-allocation) (str "ERROR: Invalid prod-repayment-collection allow-custom-repayment-allocation: " allow-custom-repayment-allocation))
+
+    (-> prod-def
+        (assoc  :payment-allocation-method payment-allocation-method)
+        (assoc  :payment-allocation-order payment-allocation-order)
+        (assoc  :pre-payments-accept pre-payments-accept)
+        (assoc  :pre-payments-apply-interest pre-payments-apply-interest)
+        (assoc  :pre-payments-recalculation pre-payments-recalculation)
+        (assoc  :overdue-payments overdue-payments)
+        (assoc  :pre-payments-future-interest pre-payments-future-interest)
+        (assoc  :allow-custom-repayment-allocation allow-custom-repayment-allocation))))
+
+;; [STEP-17] Arrears Tollerance Period Consraints
+(defn prod-arrears-tolerance-period-constrain [prod-def min-num max-num def-num]
+  (assoc prod-def :prod-arrears-tolerance-period-constrain
+         {:min-num min-num
+          :max-num max-num
+          :def-num def-num}))
+
+;; [STEP-18] Arrears Tollerance Consraints
+(defn prod-arrears-tolerance-amount-constrain [prod-def min-num max-num def-num]
+  (assoc prod-def :prod-arrears-tolerance-amount-constrain
+         {:min-num min-num
+          :max-num max-num
+          :def-num def-num}))
+
+;; [STEP-19] Arrears Processing
+(defn prod-arrears-settings [prod-def collect-settings]
+  (let [arrears-days-calculated-from (:arrears-days-calculated-from collect-settings)
+        non-working-days (:non-working-days collect-settings)
+        arrears-floor (:arrears-floor collect-settings)]
+    
+    ;;(assert (= (:product-type prod-def) :revolving-credit) "ERROR: prod-repayment-amount only available on :revolving-credit")
+    (assert (#{:first :oldest} arrears-days-calculated-from) (str "ERROR: Invalid prod-repayment-collection payment-allocation-method: " arrears-days-calculated-from))
+    (assert (#{:include :exclude} non-working-days) (str "ERROR: Invalid prod-repayment-collection payment-allocation-method: " non-working-days))
+
+    (-> prod-def
+        (assoc  :arrears-days-calculated-from arrears-days-calculated-from)
+        (assoc  :non-working-days non-working-days)
+        (assoc  :pre-payments-accept arrears-floor))))
 
 (comment
 
 (-> {}
     (prod-name-id-desc "Product name XXX" "PROD1a" "")
-    (prod-type-def :dynamic-term)
-    ;;(prod-type-def :fixed-term)
+    (product-type-def :dynamic-term)
+    ;;(product-type-def :fixed-term)
     (prod-avail :client [])
     (prod-accid :random-pattern "@@@@###")
     (prod-initial-state :pend-approval) ;; Optional step
@@ -255,6 +334,11 @@
     (prod-payment-interval-method :interval :months 1 nil)
     (prod-payment-interval-method :fixed nil nil [1 3 4])
     (prod-installments-constrain 0 600 10)
+    ;; (prod-repayment-amount  ;; Only available on :product-type = :revolving-credit
+    ;;  {:repayment-amount-type :principal
+    ;;   :principal-amount-type :flat
+    ;;   :total-amount-type :flat
+    ;;   :repayment-amount-constraint {:min-amount 0 :max-amount 0 :def-amount 0}})
     (prod-first-payment-date-constrain 0 100 50)
     (prod-principal-collect-frequency 1)
     (prod-grace-period :none)
@@ -269,7 +353,23 @@
                          :interest? false ;; only available for :fixed-term
                          :fee? false      ;; only available for :fixed-term
                          :penalty? false  ;; only available for :fixed-term
-                         }))
+                         })
+    (prod-repayment-collection {:payment-allocation-method :horizontal
+                                :payment-allocation-order [:fee :penalty :interest :principal]
+                                :pre-payments-accept :accept
+                                :pre-payments-apply-interest :auto
+                                :pre-payments-recalculation :next-installments
+                                :overdue-payments :increase-installments
+                                :pre-payments-future-interest :accept
+                                :allow-custom-repayment-allocation true})
+
+    (prod-arrears-tolerance-period-constrain 0 0 0)
+    (prod-arrears-tolerance-amount-constrain 0 0 0)
+    (prod-arrears-settings {:arrears-days-calculated-from  :first
+                            :non-working-days :include
+                            :arrears-floor 1000}))
 
 ;;
+
+(* 12 60)
 )
