@@ -12,11 +12,6 @@
    :body 
    
    {"repayments" [
-    ;; {"dueDate" "2022-01-01"
-    ;;  "encodedKey" "8a818ff17d470d02017d4815600c1a5e"
-    ;;  "parentAccountKey" "8a818ff17d470d02017d4814072c19fe"
-    ;;  "principalDue" 90.00
-    ;;  }
      {"dueDate" "2022-01-04"
       "encodedKey" "8a818ef67d8012b4017d871724c14276"
       "parentAccountKey" "8a818ef67d8012b4017d871446da41af"
