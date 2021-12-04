@@ -31,12 +31,25 @@
     (t/time-between :months date1-local date2-local)))
 
 (defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
-(let [
-      ;; Keeping it simple and assuming that the monthly-interest-rate is for 31 days
+  (let [;; Keeping it simple and assuming that the monthly-interest-rate is for 31 days
       ;; NOTE: Really need to see how the 30/360 daycount-method would properly handle this
-      daily-interest-rate (/ monthly-interest-rate 31.0) ;; Force to a decimal else we get an error later
-      days-diff (days-diff disburement-date first-payment-date)]
-  (* daily-interest-rate days-diff)))
+        daily-interest-rate (/ monthly-interest-rate 31.0) ;; Force to a decimal else we get an error later
+        days-diff (days-diff disburement-date first-payment-date)]
+    (* daily-interest-rate days-diff)))
+
+;; This below matches Excels DAYS360
+(defn get-r0-interest-rate1 [disburement-date first-payment-date monthly-interest-rate]
+  (let [months-diff (months-diff disburement-date first-payment-date)]
+    (* monthly-interest-rate months-diff)))
+
+(comment
+(let [r0 (get-r0-interest-rate "2019-09-25" "2019-12-25" 5.00M)]
+(* 1000000.0M (/ r0 100))
+
+)
+
+;;
+)
 
 
 ;;--------------------------------------------------------------------
@@ -263,8 +276,14 @@
   (save-to-csv-file "testsch5.csv" (expand-schedule 1000 4.24M 36 "2021-08-01" "2021-09-14")) ;; 55.60 emi example
   (save-to-csv-file "testsch6.csv" (expand-schedule 1000 4.24M 48 "2021-08-01" "2021-09-14")) ;; 49.92 emi example
   
-  (days-diff "2021-03-21" "2021-05-04")
-  (* 44 0.14)
+
+(save-to-csv-file "testsch7b.csv" (expand-schedule 1000000 5.00M 24 "2019-09-25" "2019-12-25")) ;; Simar's eg
+
+(get-r0-interest-rate "2019-09-25" "2019-12-25" 5.00M)
+
+  (days-diff "2019-09-25" "2019-12-25")
+  (/ 60 365)
+  (* 1000000 14.67741935483871M)
   ;; 6.16
   (/ 6.16M 100.0M)
   (* 1000.0M 0.0616M)

@@ -31,7 +31,8 @@
                  [org.clojars.bpsm/big-ivan "0.1.0"]
                  [org.clojure/test.check "1.1.0"]
                  ]
-  :profiles {:dev {:resource-paths ["resources-dev"]
+  :profiles {:replxx {:plugins [[cider/cider-nrepl "0.27.2"]]}
+    :dev {:resource-paths ["resources-dev"]
                    :dependencies [[org.clojure/tools.namespace "0.2.3"]]
                    :jvm-opts ["-Xmx1g" "-server"
                               "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"]}
