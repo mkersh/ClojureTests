@@ -10,17 +10,15 @@
    :method api/PATCH
    :query-params {}
    :body 
-   
    {"repayments" [
-     {"dueDate" "2022-01-04"
+     {"dueDate" "2022-02-04"
       "encodedKey" "8a818ef67d8012b4017d871724c14276"
       "parentAccountKey" "8a818ef67d8012b4017d871446da41af"
-      "principalDue" 100.00
+      "principalDue" 70.77
       }
   ]}
-   :headers {"Content-Type" "application/json"}
-   
-   
+   :headers {
+     "Content-Type" "application/json"}
    })
 
 (comment
