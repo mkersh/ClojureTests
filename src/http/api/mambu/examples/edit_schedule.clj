@@ -5,10 +5,10 @@
             [java-time :as t]
             ))
 
-
+(defonce NUM_MONTHS (atom 1))
 (defn add-month [date1]
   (let [date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
-    (str (t/adjust date1-local t/plus (t/months 1)))))
+    (str (t/adjust date1-local t/plus (t/months @NUM_MONTHS)))))
 
 (defn get-loan-schedule [context]
   {:url (str "{{*env*}}/loans/" (:accid context) "/schedule")
@@ -96,9 +96,10 @@
 (comment
   (api/setenv "env2")
   (def accid "NMMZ161")
+  (reset! NUM_MONTHS 3) ;; used by distribute-dates-instalments
 
   (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-03-07"})))
-  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 13})))
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 10})))
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 13 :amount 5000.00})))
   
   (api/PRINT (:last-call (steps/apply-api test-edit-loan-schedule {:accid accid})))
@@ -109,7 +110,9 @@
 
   ;; 
   (api/setenv "env11")
-  (def accid "POGP216")
+  (def accid "POGP216") ;; LOAN2
+  (def accid "YFJW588") ;; LOAN1 - Balloon
+  
   
   
   ;;
