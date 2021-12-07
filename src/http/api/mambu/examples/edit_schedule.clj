@@ -1,8 +1,14 @@
 (ns http.api.mambu.examples.edit-schedule
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [java-time :as t]
+            ))
 
+
+(defn add-month [date1]
+  (let [date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
+    (str (t/adjust date1-local t/plus (t/months 1)))))
 
 (defn get-loan-schedule [context]
   {:url (str "{{*env*}}/loans/" (:accid context) "/schedule")
@@ -13,23 +19,6 @@
              "Content-Type" "application/json"}})
 
 ;; See doc https://api.mambu.com/v1/index.html#loan-accounts-update-loan-repayments 
-(defn edit-loan-schedule2 [context]
-  {:url (str "{{*env*}}/loans/" (:accid context) "/repayments")
-   :method api/PATCH
-   :query-params {}
-   :body 
-   {"repayments" [
-     {"dueDate" "2022-02-04"
-      "encodedKey" "8a818ef67d8012b4017d871724c14276"
-      "parentAccountKey" "8a818ef67d8012b4017d871446da41af"
-      "principalDue" 70.77
-      }
-  ]}
-   :headers {
-             "Content-Type" "application/json"}
-   })
-
-
 (defn edit-loan-schedule [context]
      {:url (str "{{*env*}}/loans/" (:accid context) "/repayments")
       :method api/PATCH
@@ -37,16 +26,45 @@
       :body (:body context)
       :headers {"Content-Type" "application/json"}})
 
+(defn distribute-dates-instalments [context]
+  (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
+        start-date (atom (:start-date context))
+        rep-list (mapv
+                  (fn [instal-obj]
+                    (let [result {"dueDate" @start-date
+                     "encodedKey" (get instal-obj "encodedKey")
+                     "parentAccountKey" (get instal-obj "parentAccountKey")}
+                     _ (reset! start-date (add-month @start-date)) ;; Move date on for next one
+                     ]
+                     result
+                     ))
+                  sched-list)
+        rep-body {"repayments" rep-list}
+        context1 (assoc context :body rep-body)]
+    (edit-loan-schedule context1)))
 
 (defn reduce-to-n-instalments [context]
   (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
+        last-instal (get sched-list (- (:num-instal context) 1))
+        last-instal-date (subs (get last-instal "dueDate") 0 10) ;; strip the timezone away
         sched-list2 (subvec sched-list (:num-instal context))
         rep-list (mapv
                   (fn [instal-obj]
-                    {"dueDate" "2022-05-04"
+                    {"dueDate" last-instal-date 
                      "encodedKey" (get instal-obj "encodedKey")
                      "parentAccountKey" (get instal-obj "parentAccountKey")})
                   sched-list2)
+        rep-body {"repayments" rep-list}
+        context1 (assoc context :body rep-body)]
+    (edit-loan-schedule context1)
+    ))
+
+(defn edit-principal-on-instalment [context]
+  (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
+        last-instal (get sched-list (- (:num-instal context) 1))
+        rep-list  [{"principalDue" (:amount context)
+                    "encodedKey" (get last-instal "encodedKey")
+                    "parentAccountKey" (get last-instal "parentAccountKey")}]
         rep-body {"repayments" rep-list}
         context1 (assoc context :body rep-body)]
     (edit-loan-schedule context1)
@@ -78,11 +96,22 @@
 (comment
   (api/setenv "env2")
   (def accid "NMMZ161")
-  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 5})))
+
+  (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-03-07"})))
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 13})))
+  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 13 :amount 5000.00})))
+  
   (api/PRINT (:last-call (steps/apply-api test-edit-loan-schedule {:accid accid})))
   (api/PRINT (:last-call (steps/apply-api get-loan-schedule {:accid accid})))
   (api/PRINT (:last-call (steps/apply-api get-account {:accid accid})))
-  (* 23 6)
+  
+
+
+  ;; 
+  (api/setenv "env11")
+  (def accid "POGP216")
+  
+  
   ;;
   )
 
