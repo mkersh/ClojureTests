@@ -99,7 +99,7 @@
   (reset! NUM_MONTHS 3) ;; used by distribute-dates-instalments
 
   (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-03-07"})))
-  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 10})))
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 5})))
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 13 :amount 5000.00})))
   
   (api/PRINT (:last-call (steps/apply-api test-edit-loan-schedule {:accid accid})))
@@ -113,8 +113,10 @@
   (def accid "POGP216") ;; LOAN2
   (def accid "YFJW588") ;; LOAN1 - Balloon
   
+  (def accid "WOAT914") ;; Capitalised Loan
   
   
+  (* 365 (/ (/ 332.87 50000) 27))
   ;;
   )
 

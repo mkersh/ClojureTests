@@ -29,6 +29,13 @@
         date-minus-offset (subs dateStr 0 (- (count dateStr) 6))]
     (str date-minus-offset zone-offset)))
 
+ (defn adjust-timezone2 [dateStr timezone]
+  (let [date-local (t/zoned-date-time dateStr)
+        date2 (t/with-zone date-local timezone)
+        zone-offset (str (t/zone-offset date2))
+        date-minus-offset (subs dateStr 0 (- (count dateStr) 6))]
+    (str date-minus-offset zone-offset)))
+
 (defn get-all-loans-api [context]
   {:url (str "{{*env*}}/loans")
    :method api/GET
@@ -139,17 +146,27 @@
    (map
     (fn [obj]
          (reset! LOANID (get obj "id"))
+         (prn "Zapping: " @LOANID)
          (zap-a-loan))
     acc-list)))
 
 (defn zap-all-loans []
   (let
-   [active-list (api/extract-attrs ["id"] (:last-call (steps/apply-api get-all-loans-api {:cust-key @CUSTKEY :status "ACTIVE_IN_ARREARS"})))
+   [active-list (api/extract-attrs ["id"] (:last-call (steps/apply-api get-all-loans-api {:cust-key @CUSTKEY :status "ACTIVE"})))
     active-in-arrears-list (api/extract-attrs ["id"] (:last-call (steps/apply-api get-all-loans-api {:cust-key @CUSTKEY :status "ACTIVE_IN_ARREARS"})))]
   (prn "Zapping ACTIVE loans")
   (zap-all-loans-aux active-list)
   (prn "Zapping ACTIVE_IN_ARREARS loans")
   (zap-all-loans-aux active-in-arrears-list)))
+
+  (defn zap-all-loans2 [cust-key]
+    (let
+     [active-list (api/extract-attrs ["id"] (:last-call (steps/apply-api get-all-loans-api {:cust-key cust-key :status "ACTIVE"})))
+      active-in-arrears-list (api/extract-attrs ["id"] (:last-call (steps/apply-api get-all-loans-api {:cust-key cust-key :status "ACTIVE_IN_ARREARS"})))]
+      (prn "Zapping ACTIVE loans")
+      (zap-all-loans-aux active-list)
+      (prn "Zapping ACTIVE_IN_ARREARS loans")
+      (zap-all-loans-aux active-in-arrears-list)))
 
 (defn get-cust-api [context]
   {:url (str "{{*env*}}/clients/" (:cust-id context))
@@ -162,10 +179,12 @@
   {:cust-key @CUSTKEY
    :prod-key @PRODUCT_KEY})
 
+
+
+(comment ;; Run functions in this section manually
 ;; Define the environment to use for testing
 (api/setenv "env2") ;; https://markkershaw.mambu.com
 
-(comment ;; Run functions in this section manually
 
 ;------------------------
 ;; [1] Get Customer details

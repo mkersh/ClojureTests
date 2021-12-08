@@ -1,3 +1,5 @@
+;; See also ../http/api/mambu/demo/custom_fields_account_aliases.clj
+
 (ns http.api.mambu.examples.custom-fields
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]))
