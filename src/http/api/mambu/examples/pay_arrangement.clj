@@ -63,6 +63,7 @@
 
 
 (reset! LOAN_PRODUCT_KEY "8a19cf397d98c717017d99999e660768") ;; MK-loan-account (cap. int)
+;;(reset! LOAN_PRODUCT_KEY "8a19b6a07d94027d017d944b03ab3c34") ;; MK-loan-account
 (reset! PA_PRODUCT_KEY "8a19cf397d98c717017d994ce29102ce") ;; MK-payment-arrangement2
 (reset! CUSTKEY "8a19cf397d98c717017d9af99735271f") ;; MK Tester2
 (reset! LOANAMOUNT 50000)
@@ -173,11 +174,11 @@
 ;; create a new set of linked loan + pa accounts
 (set-dates 2021) ;; Call to set the dates that will be used - This was the example dates given
 (set-dates 2016) ;; This will allow us to test
-(create-loan-and-pa "EXAM3")
+(create-loan-and-pa "EXAM4")
 
 ;; Repay instalments
 (reset! LOANID "OJKN485") ;; create-loan-and-pa will reset
-(repay-instalment @LOANID 1)
+(repay-instalment @LOANID 3)
 (repay-instalments @LOANID 2 20)
 ;; next function will remove all active accounts
 (ext/zap-all-loans2 @CUSTKEY)
