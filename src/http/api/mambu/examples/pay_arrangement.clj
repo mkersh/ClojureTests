@@ -75,7 +75,7 @@
   (reset! LOAN-FIRST_DATE (ext/adjust-timezone2 (str year "-12-15T13:37:50+00:00") "Europe/London"))
   (reset! PA-FIRST_DATE (ext/adjust-timezone2 (str (+ year 1) "-01-01T13:37:50+00:00") "Europe/London")))
 
-(set-dates 2021) ;; default year
+(set-dates 2016) ;; default year
 
 (defn create-loan-account [accname]
   (let [res (steps/apply-api create-installment-loan-api
@@ -119,6 +119,7 @@
 (defn create-loan-and-pa [acc-name]
   (let [pa-accid (create-pa-account (str acc-name "-PA"))
         loan-accid (create-loan-account acc-name)
+         _ (reset! LOANID pa-accid)
         link-details {"LinkedLoanAccount" loan-accid}]
     (steps/apply-api patch-account-aliases-api {:accountId pa-accid :value link-details})
     (steps/apply-api ext/approveLoanAccount {:loanAccountId pa-accid})
@@ -167,19 +168,19 @@
 
 (comment
 (api/setenv "env11") ;; AL sandbox env
-(def accid "XCXJ627")
+(def accid "OJKN485") ;; Identify the PA account 
 
 ;; create a new set of linked loan + pa accounts
 (set-dates 2021) ;; Call to set the dates that will be used - This was the example dates given
 (set-dates 2016) ;; This will allow us to test
-(create-loan-and-pa "EXAM6")
+(create-loan-and-pa "EXAM3")
 
 ;; Repay instalments
-(repay-instalment accid 5)
-(repay-instalments accid 1 5)
+(reset! LOANID "OJKN485") ;; create-loan-and-pa will reset
+(repay-instalment @LOANID 1)
+(repay-instalments @LOANID 2 20)
 ;; next function will remove all active accounts
 (ext/zap-all-loans2 @CUSTKEY)
-
 
 ;;; Low level test function call
 (steps/apply-api ext/disburse-loan-api {:loanAccountId "LMPV876" :value-date @VALUE_DATE :first-date @LOAN-FIRST_DATE})
