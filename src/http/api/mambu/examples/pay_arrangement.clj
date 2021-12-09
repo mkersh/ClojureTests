@@ -3,7 +3,9 @@
             [http.api.api_pipe :as steps]
             [http.api.mambu.experiments.loan_schedule :as ext]
             [clojure.string :as str]
-            [java-time :as t]))
+            [java-time :as t]
+            [clojure.pprint :as pp]
+            ))
 
 ;; Some atoms that will hold IDs/data used in multiple places
 (defonce PRODUCT_ID (atom nil))
@@ -124,16 +126,57 @@
     (steps/apply-api ext/disburse-loan-api {:loanAccountId pa-accid :value-date @VALUE_DATE :first-date @PA-FIRST_DATE})
     (steps/apply-api ext/disburse-loan-api {:loanAccountId loan-accid :value-date @VALUE_DATE :first-date @LOAN-FIRST_DATE})))
 
+(defn get-loan-schedule [context]
+  {:url (str "{{*env*}}/loans/" (:accid context) "/schedule")
+   :method api/GET
+   :query-params {}
+   :body {}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn repayment-loan-api [context]
+  {:url (str "{{*env*}}/loans/" (:loanAccountId context) "/repayment-transactions")
+   :method api/POST
+   :body {"amount" (:amount context)
+          ;;"externalId" (:externalId context)
+          ;;"installmentEncodedKey" (:installmentEncodedKey context)
+          "valueDate" (:value-date context)
+          "notes" "#NO-MIRROR"}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn repay-instalment [pa-accid inst-num]
+  (let [inst-list (get-in (steps/apply-api get-loan-schedule {:accid pa-accid}) [:last-call "installments"])
+        _ (assert (and (> inst-num 0) (> (count inst-list) inst-num)) "ERROR: repay-instalment")
+        inst-obj (get inst-list (- inst-num 1))
+        amount (get-in inst-obj ["principal" "amount" "expected"]) ;; could have used "due" rather than expected
+        due-date (get inst-obj "dueDate")
+        pa-acc (steps/apply-api get-account {:accid pa-accid})
+        loan-accid (get-in pa-acc [:last-call "_PaymentArrangement" "LinkedLoanAccount"])]
+    (prn "Repay PA" pa-accid amount)
+    (steps/apply-api repayment-loan-api {:loanAccountId pa-accid :amount amount :value-date due-date})
+    (prn "Repay Loan" loan-accid amount)
+    ;;(pp/pprint pa-acc)
+    (steps/apply-api repayment-loan-api {:loanAccountId loan-accid :amount amount :value-date due-date})))
+
+(defn repay-instalments [pa-accid start-num end-num]
+  (map (fn [num]
+  (prn "Repay instalment:" num)
+         (repay-instalment pa-accid num))
+       (range start-num (+ end-num 1))))
 
 (comment
 (api/setenv "env11") ;; AL sandbox env
-(def accid "GYDN163")
+(def accid "XCXJ627")
 
 ;; create a new set of linked loan + pa accounts
 (set-dates 2021) ;; Call to set the dates that will be used - This was the example dates given
 (set-dates 2016) ;; This will allow us to test
-(create-loan-and-pa "EXAM5")
+(create-loan-and-pa "EXAM6")
 
+;; Repay instalments
+(repay-instalment accid 5)
+(repay-instalments accid 1 5)
 ;; next function will remove all active accounts
 (ext/zap-all-loans2 @CUSTKEY)
 
@@ -153,5 +196,8 @@
 
 (api/PRINT (:last-call (steps/apply-api get-account {:accid accid})))
 
+(api/PRINT (:last-call (steps/apply-api get-loan-schedule {:accid accid})))
 
+
+;; "2017-11-01T00:00:00Z"
 )
