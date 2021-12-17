@@ -45,6 +45,7 @@
         context1 (assoc context :body rep-body)]
     (edit-loan-schedule context1)))
 
+;; Function to change all the instalments after :num-instal to have the same dueDate as :num-instal
 (defn reduce-to-n-instalments [context]
   (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
         last-instal (get sched-list (- (:num-instal context) 1))
@@ -72,9 +73,10 @@
     (edit-loan-schedule context1)
     ))
 
+;; Similar to edit-principal-on-instalment above but changes principal on multiple instalments 
+;; Details of the instalments to change passed in via :instal-list
 (defn edit-principal-on-instalments [context]
   (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
-        
         instal-list (:instal-list context)
         rep-list  (mapv (fn [instal-obj]
                           (let [last-instal (get sched-list (- (:num-instal instal-obj) 1))]
@@ -86,6 +88,7 @@
         context1 (assoc context :body rep-body)]
     (edit-loan-schedule context1)))
 
+;; Function to change all the instalments after :num-instal to be 0 and modify :num-instal to contain a final bullet
 (defn reduce-to-n-instalments2 [context]
   (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
         last-install-num (:num-instal context)
@@ -119,7 +122,7 @@
              "Content-Type" "application/json"}})
 
 
-;; Next function will copy the instalmnts from a product-schedule-preview to another loan account 
+;; Next function will copy the instalments from a product-schedule-preview to another loan account 
 (defn copy-instalments-from-product-preview [context]
   (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
         other-product-schedule (get-in (steps/apply-api get-product-schedule-preview context) [:last-call "installments"])
@@ -163,8 +166,8 @@
   (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-03-07"})))
   (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 5})))
   ;; [1] This next one converts into a bullet loan
-  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid accid :num-instal 4})))
-  
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid accid :num-instal 5})))
+
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 5 :amount 6000.00})))
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list [{:num-instal 4 :amount 0.00}
                                                                                                     {:num-instal 5 :amount 1000.00}]})))
@@ -177,7 +180,7 @@
                                            :first-payment-date "2022-03-07T13:37:50+01:00"
                                            :amount 10000.00
                                            :interest-rate 20.0
-                                           :periodic-amount 777.00
+                                           :periodic-amount 888.00
                                            :num-instalments 12})))
   
   
