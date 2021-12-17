@@ -1,6 +1,8 @@
 (ns http.api.mambu.examples.edit-schedule
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
+            [http.api.mambu.experiments.loan_schedule :as ext]
+            [clojure.pprint :as pp]
             [clojure.string :as str]
             [java-time :as t]
             ))
@@ -98,6 +100,38 @@
         context1 (merge {:instal-list changes} context)]
     (edit-principal-on-instalments context1)))
 
+(defn get-product-schedule-preview [context]
+  {:url (str "{{*env*}}/loans:previewSchedule")
+   :method api/POST
+   :query-params {}
+   :body {"disbursementDetails" {"expectedDisbursementDate" (:disbursement-date context)
+                                 "firstRepaymentDate" (:first-payment-date context)}
+          "loanAmount" (:amount context)
+          "productTypeKey" (:template-product context)
+          "interestSettings" {"interestRate" (:interest-rate context)},
+          "scheduleSettings" {"gracePeriod" 0
+                              "periodicPayment" (:periodic-amount context)
+                              "repaymentInstallments" (:num-instalments context)
+                              "repaymentPeriodCount" 1
+                              "repaymentPeriodUnit" "MONTHS"}
+          }
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+
+;; Next function will copy the instalmnts from a product-schedule-preview to another loan account 
+(defn copy-instalments-from-product-preview [context]
+  (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
+        other-product-schedule (get-in (steps/apply-api get-product-schedule-preview context) [:last-call "installments"])
+        _ (assert (= (count sched-list) (count other-product-schedule)) "ERROR: template-product has different number of instalments")
+        changes (mapv (fn [i preview-obj]
+                        {:num-instal i :amount (get-in preview-obj ["principal" "amount" "due"])})
+                      ;; NOTE: Do not update the final instalment. Let Mambu calculate this
+                      (range 1 (count sched-list)) other-product-schedule)
+        ;;_ (pp/pprint changes)
+        context1 (merge {:instal-list changes} context)]
+    (edit-principal-on-instalments context1)))
+
 ;; Simple test of the edit-loan-schedule
 ;; NOTE: You need to change the encodedKey and parentAccountKey to relate to keys on your account
 (defn test-edit-loan-schedule [context]
@@ -128,27 +162,49 @@
 
   (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-03-07"})))
   (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 5})))
-  ;; This next one converts into a bullet loan
+  ;; [1] This next one converts into a bullet loan
   (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid accid :num-instal 4})))
+  
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 5 :amount 6000.00})))
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list [{:num-instal 4 :amount 0.00}
                                                                                                     {:num-instal 5 :amount 1000.00}]})))
+  
+  ;; [2] This next one copies the schedule from a balloon-payments product into a dynamic-term loan to simulate the bullet/balloon
+  (api/PRINT (:last-call (steps/apply-api copy-instalments-from-product-preview
+                                          {:accid accid
+                                           :template-product "8a818e2a7d1e84c5017d1ec09e79013c"
+                                           :disbursement-date "2021-12-04T13:37:50+01:00"
+                                           :first-payment-date "2022-03-07T13:37:50+01:00"
+                                           :amount 10000.00
+                                           :interest-rate 20.0
+                                           :periodic-amount 777.00
+                                           :num-instalments 12})))
+  
+  
+  (api/PRINT (:last-call (steps/apply-api get-product-schedule-preview
+                                          {:template-product "8a818e2a7d1e84c5017d1ec09e79013c"
+                                           :disbursement-date "2021-12-04T13:37:50+01:00"
+                                           :first-payment-date "2022-03-07T13:37:50+01:00"
+                                           :amount 50000.00
+                                           :interest-rate 1.5
+                                           :periodic-amount 1567.00
+                                           :num-instalments 12})))
 
   (let [changes0 (mapv (fn [i] {:num-instal i :amount 0}) (range 6 11))
         changes (into [] (cons {:num-instal 5 :amount 6000.00} changes0))]
     (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list changes}))))
 
 
-(let [changes (mapv (fn [i] {:num-instal i :amount 1000}) (range 1 11))]
-  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list changes}))))
+  (let [changes (mapv (fn [i] {:num-instal i :amount 1000}) (range 1 11))]
+    (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list changes}))))
 
 
   (api/PRINT (:last-call (steps/apply-api test-edit-loan-schedule {:accid accid})))
   (api/PRINT (:last-call (steps/apply-api get-loan-schedule {:accid accid})))
   (api/PRINT (:last-call (steps/apply-api get-account {:accid accid})))
 
-(cons 1 [2 3])
-(range 1 11)
+  (cons 1 [2 3])
+  (range 1 11)
   ;; 
   (api/setenv "env11")
   (def accid "POGP216") ;; LOAN2
