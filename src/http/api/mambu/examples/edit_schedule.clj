@@ -70,6 +70,34 @@
     (edit-loan-schedule context1)
     ))
 
+(defn edit-principal-on-instalments [context]
+  (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
+        
+        instal-list (:instal-list context)
+        rep-list  (mapv (fn [instal-obj]
+                          (let [last-instal (get sched-list (- (:num-instal instal-obj) 1))]
+                            {"principalDue" (:amount instal-obj)
+                             "encodedKey" (get last-instal "encodedKey")
+                             "parentAccountKey" (get last-instal "parentAccountKey")}))
+                        instal-list)
+        rep-body {"repayments" rep-list}
+        context1 (assoc context :body rep-body)]
+    (edit-loan-schedule context1)))
+
+(defn reduce-to-n-instalments2 [context]
+  (let [sched-list (get-in (steps/apply-api get-loan-schedule context) [:last-call "installments"])
+        last-install-num (:num-instal context)
+        last-install-num-minus1 (- last-install-num 1)
+        bullet-amount (reduce (fn [total item]
+                                (let [prin-amount (get-in item ["principal" "amount" "due"])]
+                                  (+ total prin-amount)))
+                              0
+                              (subvec sched-list last-install-num-minus1 (count sched-list)))
+        changes0 (mapv (fn [i] {:num-instal i :amount 0}) (range (+ last-install-num 1) (count sched-list)))
+        changes (into [] (cons {:num-instal last-install-num :amount bullet-amount} changes0))
+        context1 (merge {:instal-list changes} context)]
+    (edit-principal-on-instalments context1)))
+
 ;; Simple test of the edit-loan-schedule
 ;; NOTE: You need to change the encodedKey and parentAccountKey to relate to keys on your account
 (defn test-edit-loan-schedule [context]
@@ -96,26 +124,39 @@
 (comment
   (api/setenv "env2")
   (def accid "NMMZ161")
-  (reset! NUM_MONTHS 3) ;; used by distribute-dates-instalments
+  (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
 
   (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-03-07"})))
   (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 5})))
-  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 13 :amount 5000.00})))
-  
+  ;; This next one converts into a bullet loan
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid accid :num-instal 4})))
+  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 5 :amount 6000.00})))
+  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list [{:num-instal 4 :amount 0.00}
+                                                                                                    {:num-instal 5 :amount 1000.00}]})))
+
+  (let [changes0 (mapv (fn [i] {:num-instal i :amount 0}) (range 6 11))
+        changes (into [] (cons {:num-instal 5 :amount 6000.00} changes0))]
+    (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list changes}))))
+
+
+(let [changes (mapv (fn [i] {:num-instal i :amount 1000}) (range 1 11))]
+  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list changes}))))
+
+
   (api/PRINT (:last-call (steps/apply-api test-edit-loan-schedule {:accid accid})))
   (api/PRINT (:last-call (steps/apply-api get-loan-schedule {:accid accid})))
   (api/PRINT (:last-call (steps/apply-api get-account {:accid accid})))
-  
 
-
+(cons 1 [2 3])
+(range 1 11)
   ;; 
   (api/setenv "env11")
   (def accid "POGP216") ;; LOAN2
   (def accid "YFJW588") ;; LOAN1 - Balloon
-  
+
   (def accid "WOAT914") ;; Capitalised Loan
-  
-  
+
+
   (* 365 (/ (/ 332.87 50000) 27))
   ;;
   )
