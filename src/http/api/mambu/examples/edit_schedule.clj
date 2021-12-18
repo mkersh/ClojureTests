@@ -160,6 +160,7 @@
 
 (comment
   (api/setenv "env2")
+  (api/get-env-domain)
   (def accid "NMMZ161")
   (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
 
