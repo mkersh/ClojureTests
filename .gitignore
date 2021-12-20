@@ -23,3 +23,10 @@ MAMBU-DWH
 .lsp/.cache/lock.mdb
 .lsp/.cache/sqlite.db
 CSV-FILES/*
+CC-Purchase.clj
+CCPAY_DATA.clj
+DEPOSIT-PROD.edn
+DEPOSIT-PROD.json
+LOAN-PROD.edn
+LOAN-PROD.json
+PayIn3.clj
