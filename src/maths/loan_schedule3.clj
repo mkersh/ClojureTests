@@ -30,7 +30,7 @@
         date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
     (t/time-between :months date1-local date2-local)))
 
-(defn get-r0-interest-rate0 [disburement-date first-payment-date monthly-interest-rate]
+(defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
   (let [;; Keeping it simple and assuming that the monthly-interest-rate is for 31 days
       ;; NOTE: Really need to see how the 30/360 daycount-method would properly handle this
         daily-interest-rate (/ monthly-interest-rate 31.0) ;; Force to a decimal else we get an error later
@@ -38,7 +38,7 @@
     (* daily-interest-rate days-diff)))
 
 ;; This below matches Excels DAYS360
-(defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
+(defn get-r0-interest-rate1 [disburement-date first-payment-date monthly-interest-rate]
   (let [months-diff (months-diff disburement-date first-payment-date)]
     (* monthly-interest-rate months-diff)))
 
@@ -140,9 +140,10 @@
                                   ;; If i is on recalc-list then need to clear some remaining interest_remaining
                                   (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1) (cas/expr-multiply interest_remaining -1))
                                   (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
-            ;; MK: This is where we need the fix
+            
             prev-instal-mod1 (:mod1-applied (get install-list previous-index))
-            ;;principal_expected (cas/expr-sub principal_expected0 sub-values)
+            ;; principal expected+remaining is different if the previous instalment had previous-interest_remaining > 0
+            ;; If this is the case then prev-instal-mod1 will equal true as well
             principal_expected (if prev-instal-mod1
                                  (cas/expr-sub (cas/expr principal_expected0 (cas/expr-multiply previous-interest_remaining -1)) sub-values)
                                  (cas/expr-sub principal_expected0 sub-values))
@@ -276,7 +277,9 @@
   (save-to-csv-file "testsch2.csv" (expand-schedule 12550 (/ 19.4M 12.0) 78 "2020-07-08" "2020-10-18"))
 
   ;; Example from client P
-  (save-to-csv-file "testsch3.csv" (expand-schedule 1000 4.2350610718397075M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
+  (save-to-csv-file "testsch3-v2.csv" (expand-schedule 1000 4.2350610718397075M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
+ (get-r0-interest-rate1 "2021-03-21" "2021-04-04" 4.2350610718397075M)
+ (months-diff "2021-03-21" "2021-05-04")
   (save-to-csv-file "testsch3b.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-19")) ;; 67.05 emi example
   (save-to-csv-file "testsch3c.csv" (expand-schedule 1000 4.24M 48 "2021-03-21" "2021-05-04")) ;; 49.94, 48m
   (save-to-csv-file "testsch4.csv" (expand-schedule 1000 4.24M 24 "2021-08-01" "2021-09-14")) ;; 68.39 emi example
