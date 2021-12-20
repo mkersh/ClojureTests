@@ -30,7 +30,7 @@
         date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
     (t/time-between :months date1-local date2-local)))
 
-(defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
+(defn get-r0-interest-rate0 [disburement-date first-payment-date monthly-interest-rate]
   (let [;; Keeping it simple and assuming that the monthly-interest-rate is for 31 days
       ;; NOTE: Really need to see how the 30/360 daycount-method would properly handle this
         daily-interest-rate (/ monthly-interest-rate 31.0) ;; Force to a decimal else we get an error later
@@ -38,7 +38,7 @@
     (* daily-interest-rate days-diff)))
 
 ;; This below matches Excels DAYS360
-(defn get-r0-interest-rate1 [disburement-date first-payment-date monthly-interest-rate]
+(defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
   (let [months-diff (months-diff disburement-date first-payment-date)]
     (* monthly-interest-rate months-diff)))
 
@@ -140,8 +140,16 @@
                                   ;; If i is on recalc-list then need to clear some remaining interest_remaining
                                   (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1) (cas/expr-multiply interest_remaining -1))
                                   (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
-            principal_expected (cas/expr-sub principal_expected0 sub-values)
-            principle_remaining0 (cas/expr previous-principle_remaining interest_expected (cas/term -1 [:E]))
+            ;; MK: This is where we need the fix
+            prev-instal-mod1 (:mod1-applied (get install-list previous-index))
+            ;;principal_expected (cas/expr-sub principal_expected0 sub-values)
+            principal_expected (if prev-instal-mod1
+                                 (cas/expr-sub (cas/expr principal_expected0 (cas/expr-multiply previous-interest_remaining -1)) sub-values)
+                                 (cas/expr-sub principal_expected0 sub-values))
+            principle_remaining0 (if prev-instal-mod1
+                                   (cas/expr previous-principle_remaining interest_expected previous-interest_remaining (cas/term -1 [:E]))
+                                   (cas/expr previous-principle_remaining interest_expected (cas/term -1 [:E]))
+                                   )
             principle_remaining (cas/expr-sub principle_remaining0 sub-values)
             total_remain0 (cas/expr principle_remaining)
             total_remain (cas/expr-sub total_remain0 sub-values)
@@ -158,7 +166,6 @@
   (map
    (fn [i obj] [i obj])
    (iterate inc 0) c))
-
 
 (defn need-to-recalcuate [expand-sched]
   (let [expand-sched1 (enumerate expand-sched)
