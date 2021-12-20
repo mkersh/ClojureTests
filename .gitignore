@@ -33,3 +33,8 @@ LOAN-PROD.json
 PayIn3.clj
 PROMO.clj
 BNPL.clj 
+CasC-customFields-export-all-orig.yaml
+CasC-customFields-export-all.yaml
+CasC-customFields-export-part.yaml
+CasC-customFields-import.yaml
+CasC-customFields-template.yaml

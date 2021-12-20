@@ -46,18 +46,18 @@
 
 
 (write-yaml-file (:last-call (steps/apply-api get-customfields-yaml-template-api {}))
-                 "CasC-customFields-template.yaml")
+                 "tmp/CasC-customFields-template.yaml")
 
 (write-yaml-file (:last-call (steps/apply-api get-customfields-yaml-api {}))
-                 "CasC-customFields-export-all.yaml")
+                 "tmp/CasC-customFields-export-all.yaml")
 
 ;; Filter for a specific entity DEPOSIT_ACCOUNT LOAN_ACCOUNT CLIENT GROUP
 (write-yaml-file (:last-call (steps/apply-api get-customfields-yaml-api {:availableFor "DEPOSIT_ACCOUNT"})) 
-                 "CasC-customFields-export-part.yaml")
+                 "tmp/CasC-customFields-export-part.yaml")
   
 ;; Update CustomFields from a YAML fiel
-(steps/apply-api put-customfields-yaml-api {:yaml-str (slurp "CasC-customFields-import.yaml")})
+(steps/apply-api put-customfields-yaml-api {:yaml-str (slurp "tmp/CasC-customFields-import.yaml")})
 
-(slurp "CasC-customFields-export-all.yaml")
+(slurp "tmp/CasC-customFields-export-all.yaml")
   ;;
 )

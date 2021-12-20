@@ -1,4 +1,4 @@
----
+--- 
 customFieldSets:
 - id: "_UK_BACS_ACCOUNT_Deposit_Account"
   name: "UK_BACS_ACCOUNT"
