@@ -1,4 +1,4 @@
-TRACECLIENT.env
+TRACECLIENT.env 
 .idea/**
 .cache/**
 .clj-kondo/**
