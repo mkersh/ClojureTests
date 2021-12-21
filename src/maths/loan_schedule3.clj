@@ -27,54 +27,83 @@
 
 (defn months-diff [date1 date2]
   (let [date2-local (t/local-date "yyyy-MM-dd" (subs date2 0 10))
-        date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
-    (t/time-between :months date1-local date2-local)))
+        date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))
+        months-diff  (t/time-between :months date1-local date2-local)
+        date1-day (.getDayOfMonth date1-local)
+        last-day1 (.lengthOfMonth date1-local)
+        date2-day (.getDayOfMonth date2-local)
+        date2-month (.getMonthValue date2-local)
+        last-day2 (.lengthOfMonth date2-local)]
+    ;; This next if is handling an anomaly with (t/time-between :months ...)
+    ;; without it the following were returning wrong number of months:
+    ;;        (months-diff "2020-12-31" "2021-02-28")
+    ;;        (months-diff "2021-01-31" "2021-02-28")
+    (if (and (= date2-month 2)
+             (= date1-day last-day1)
+             (= date2-day last-day2))
+      (+ months-diff 1)
+      months-diff))
+     )
 
+;; The next function tries to replicate the EXCEL DAYS360 function 
+;; NOTE: I still don't have a 100% match when dates involve 28/29 February
 (defn days360 [date1 date2]
   (let [date2-local (t/local-date "yyyy-MM-dd" (subs date2 0 10))
         date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))
-        date1-year (.getYear date1-local)
-        date2-year (.getYear date2-local)
+        date1-day0 (.getDayOfMonth date1-local)
+        date1-last-dayofmonth (= date1-day0 (.lengthOfMonth date1-local))
+        date1-day  (if date1-last-dayofmonth
+                     30
+                     date1-day0)
         date1-month (.getMonthValue date1-local)
-        date2-month (.getMonthValue date2-local)
-        date1-day (.getDayOfMonth date1-local)
-        date2-day (.getDayOfMonth date2-local)
+        date2-day0 (.getDayOfMonth date2-local)
+        date2-day  (if (and (= date2-day0 (.lengthOfMonth date2-local))
+                            (or (not= date1-month 2)
+                                date1-last-dayofmonth))
+                     30
+                     date2-day0)
         months-diff (months-diff date1 date2)]
-    (if (and false (= date1-year date2-year) (= date1-month date2-month))
-      (let [days-diff (days-diff date1 date2)
-            _ (prn "days-diff1" days-diff)]
-        days-diff)
       (if (>= date2-day date1-day)
         (let [days-diff (- date2-day  date1-day)
-              _ (prn "days-diff2" days-diff)]
+         ;;_ (prn "here1" date1-day date2-day date1-month  date1-last-dayofmonth (not= date1-month 2))
+        ]
           (+ (* months-diff 30) days-diff))
         (let [date1-day0 (- 30 (.getDayOfMonth date1-local))
               date1-day (if (< date1-day0 0) 0 date1-day0)
               days-diff0 (+ date2-day date1-day)
-              days-diff (if (> days-diff0 30) 30 days-diff0)
-              _ (prn "days-diff3" days-diff)]
-          (+ (* months-diff 30) days-diff))))))
+              _ (prn "here")
+              days-diff (if (> days-diff0 30) 30 days-diff0)]
+          (+ (* months-diff 30) days-diff)))))
 
 
 (defn months-diff2 [date1 date2]
-  (let [date2-local (t/local-date "yyyy-MM-dd" (subs date2 0 10))
-        date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))
-        days360 (days360 date1-local date2-local)
-        ]
-    (t/time-between :months date1-local date2-local)))
+  (let [days360 (days360 date1 date2)]
+    (/ days360 30.00)))
 
 
 (comment
-(* 7653.00 0.03)
-(* 229.59 0.20)
-(- 229.59 45.91)
-
+;; See also Test EXCEL spreadsheet - https://docs.google.com/spreadsheets/d/1GgzUK3_hvQxvqPUNpGUcmMueUX_FyiYd6_uspmTPeJc/edit#gid=0 
 (days360 "2021-03-21" "2021-04-04")
 (days360 "2021-03-22" "2021-05-22")
-(days360 "2021-02-29" "2021-03-31")
+(days360 "2021-02-28" "2021-03-31")
 (days360 "2021-01-01" "2021-04-30")
-(months-diff "2021-01-01" "2021-04-30")
 (days360 "2021-02-01" "2021-02-28")
+(days360 "2021-02-27" "2021-03-31")
+(days360 "2020-02-29" "2020-03-31")
+(days360 "2020-02-28" "2020-03-31")
+(days360 "2020-02-01" "2020-02-29")
+(days360 "2020-01-31" "2020-02-29")
+(days360 "2021-01-31" "2021-02-28")
+(days360 "2020-12-31" "2021-02-28")
+(months-diff "2020-12-31" "2021-02-28" )
+(months-diff "2021-01-31" "2021-02-28")
+(months-diff "2020-11-30" "2020-12-29")
+(days360 "2020-11-30" "2020-12-29")
+(months-diff2 "2021-02-28" "2021-03-31")
+(months-diff2 "2021-03-21" "2021-04-04")
+(months-diff2 "2021-01-01" "2021-04-30")
+(days360 "2021-03-21" "2021-04-04")
+(days-diff "2021-03-21" "2021-04-04")
 ;;;
 )
 
@@ -87,7 +116,7 @@
 
 ;; This below matches Excels DAYS360
 (defn get-r0-interest-rate1 [disburement-date first-payment-date monthly-interest-rate]
-  (let [months-diff (months-diff disburement-date first-payment-date)]
+  (let [months-diff (months-diff2 disburement-date first-payment-date)]
     (* monthly-interest-rate months-diff)))
 
 (comment
@@ -326,7 +355,6 @@
 
   ;; Example from client P
   (save-to-csv-file "testsch3-v2.csv" (expand-schedule 1000 4.2350610718397075M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
- (get-r0-interest-rate1 "2021-03-21" "2021-04-04" 4.2350610718397075M)
  (months-diff "2021-03-21" "2021-04-04")
   (save-to-csv-file "testsch3b.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-19")) ;; 67.05 emi example
   (save-to-csv-file "testsch3c.csv" (expand-schedule 1000 4.24M 48 "2021-03-21" "2021-05-04")) ;; 49.94, 48m
@@ -335,7 +363,9 @@
   (save-to-csv-file "testsch6.csv" (expand-schedule 1000 4.24M 48 "2021-08-01" "2021-09-14")) ;; 49.92 emi example
   
 
-(save-to-csv-file "testsch7b.csv" (expand-schedule 1000000 5.00M 24 "2019-09-25" "2019-12-25")) ;; Simar's eg
+(save-to-csv-file "testsch7b.csv" (expand-schedule 1000000 5.00M 24 "2019-09-25" "2019-12-25")) ;; Simar's eg1 - "Interest is more than 1st Inst Amt"
+(save-to-csv-file "testsch7c.csv" (expand-schedule 1000000 0.50M 12 "2019-09-25" "2020-01-25")) ;; Simar's eg2 - "Intrest Less than the 1st Inst Amount"
+(save-to-csv-file "testsch7d.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-04")) ;; Simar's egn - Pr one
 
 (get-r0-interest-rate "2019-09-25" "2019-12-25" 5.00M)
 
