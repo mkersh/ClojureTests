@@ -30,6 +30,54 @@
         date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
     (t/time-between :months date1-local date2-local)))
 
+(defn days360 [date1 date2]
+  (let [date2-local (t/local-date "yyyy-MM-dd" (subs date2 0 10))
+        date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))
+        date1-year (.getYear date1-local)
+        date2-year (.getYear date2-local)
+        date1-month (.getMonthValue date1-local)
+        date2-month (.getMonthValue date2-local)
+        date1-day (.getDayOfMonth date1-local)
+        date2-day (.getDayOfMonth date2-local)
+        months-diff (months-diff date1 date2)]
+    (if (and false (= date1-year date2-year) (= date1-month date2-month))
+      (let [days-diff (days-diff date1 date2)
+            _ (prn "days-diff1" days-diff)]
+        days-diff)
+      (if (>= date2-day date1-day)
+        (let [days-diff (- date2-day  date1-day)
+              _ (prn "days-diff2" days-diff)]
+          (+ (* months-diff 30) days-diff))
+        (let [date1-day0 (- 30 (.getDayOfMonth date1-local))
+              date1-day (if (< date1-day0 0) 0 date1-day0)
+              days-diff0 (+ date2-day date1-day)
+              days-diff (if (> days-diff0 30) 30 days-diff0)
+              _ (prn "days-diff3" days-diff)]
+          (+ (* months-diff 30) days-diff))))))
+
+
+(defn months-diff2 [date1 date2]
+  (let [date2-local (t/local-date "yyyy-MM-dd" (subs date2 0 10))
+        date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))
+        days360 (days360 date1-local date2-local)
+        ]
+    (t/time-between :months date1-local date2-local)))
+
+
+(comment
+(* 7653.00 0.03)
+(* 229.59 0.20)
+(- 229.59 45.91)
+
+(days360 "2021-03-21" "2021-04-04")
+(days360 "2021-03-22" "2021-05-22")
+(days360 "2021-02-29" "2021-03-31")
+(days360 "2021-01-01" "2021-04-30")
+(months-diff "2021-01-01" "2021-04-30")
+(days360 "2021-02-01" "2021-02-28")
+;;;
+)
+
 (defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
   (let [;; Keeping it simple and assuming that the monthly-interest-rate is for 31 days
       ;; NOTE: Really need to see how the 30/360 daycount-method would properly handle this
@@ -279,7 +327,7 @@
   ;; Example from client P
   (save-to-csv-file "testsch3-v2.csv" (expand-schedule 1000 4.2350610718397075M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
  (get-r0-interest-rate1 "2021-03-21" "2021-04-04" 4.2350610718397075M)
- (months-diff "2021-03-21" "2021-05-04")
+ (months-diff "2021-03-21" "2021-04-04")
   (save-to-csv-file "testsch3b.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-19")) ;; 67.05 emi example
   (save-to-csv-file "testsch3c.csv" (expand-schedule 1000 4.24M 48 "2021-03-21" "2021-05-04")) ;; 49.94, 48m
   (save-to-csv-file "testsch4.csv" (expand-schedule 1000 4.24M 24 "2021-08-01" "2021-09-14")) ;; 68.39 emi example
