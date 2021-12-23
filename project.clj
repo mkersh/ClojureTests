@@ -40,5 +40,5 @@
   :test-paths ["test" "src"]
   ; Setting this to ClojureNotebook breaks the REPL load
   :xaot :all
-  :main tools.repl-navigate
+  :main repl_start
   )
