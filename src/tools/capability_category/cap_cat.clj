@@ -93,6 +93,7 @@
    (map #(println %2 %1) (keys-and-sort capmap) (iterate inc 0))))
 
 (defn terminal-ui []
+  (when (= @CAT-MAP {})(read-cat-index))
   (reset! UI-CATMAP @CAT-MAP) ;; set to the toplevel map
   (reset! UI-CATSTACK [])
   (loop []
@@ -111,6 +112,7 @@
 
 
 (comment
+(terminal-ui)
 (pop [])
 (sort [1 6 7 8 2 3 4])
 (Integer/parseInt "1g")
@@ -119,7 +121,6 @@
 @UI-CATMAP
 @CAT-MAP
 (keys @CAT-MAP)
-(terminal-ui)
 
 (show-options @CAT-MAP)
 

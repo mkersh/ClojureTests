@@ -11,7 +11,8 @@
 ;; is the startup function for us.
 ;;
 (defn -main []
- (sh/sh "ls" "-aul" "src/http")
+  ;;(prn (sh/sh "ls" "-aul" "CAPCAT"))
+  ;;(prn "PWD:" (sh/sh "pwd"))
   ;; Start a simple terminal based UI
   (cc/terminal-ui))
 
