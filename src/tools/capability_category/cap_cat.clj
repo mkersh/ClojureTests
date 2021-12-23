@@ -1,12 +1,102 @@
 (ns tools.capability-category.cap-cat
   (:require [clojure.string :as str]
-            [clojure.pprint :as pp]))
+            [clojure.pprint :as pp]
+            [clojure.java.io :as io]
+            ))
+
+(import java.util.UUID)
 
 (defonce CATFILE "CAPCAT/all-categories.txt")
+(defonce ANSWERS-DIR "CAPCAT/Answers/")
 (defonce ALLCATS (atom []))
 (defonce CAT-MAP (atom {}))
 (defonce UI-CATMAP (atom {}))
 (defonce UI-CATSTACK (atom []))
+
+
+(defn delete-directory-recursive
+  "Recursively delete a directory."
+  [^java.io.File file]
+  ;; when `file` is a directory, list its entries and call this
+  ;; function with each entry. can't `recur` here as it's not a tail
+  ;; position, sadly. could cause a stack overflow for many entries?
+  (when (.isDirectory file)
+    (doseq [file-in-dir (.listFiles file)]
+      (delete-directory-recursive file-in-dir)))
+  ;; delete the file or directory. if it it's a file, it's easily
+  ;; deletable. if it's a directory, we already have deleted all its
+  ;; contents with the code above (remember?)
+  (io/delete-file file))
+
+;; WARNING: This next function will delete the entire answers directory
+;;          only use this when debgging/testing
+(defn delete-ANSWERS-DIR []
+  (try (delete-directory-recursive (clojure.java.io/file ANSWERS-DIR))
+       (catch Exception _ "Nothing to DELETE")))
+
+(defn save-to-file
+  [file-name s]
+  (spit file-name s))
+
+;; Get the string format to save to the file
+;; NOTE: Planning to save as Clojure EDN format (at least initially)
+(defn get-object-str [object]
+  (let [out (java.io.StringWriter.)]
+    (pp/pprint object out)
+    (.toString out)))
+
+(defn save-question-answer [que-ans-map]
+  (let [root-dir ANSWERS-DIR
+        file-name (str (UUID/randomUUID) ".txt")
+        file-path (str root-dir file-name)
+        question (:question que-ans-map)
+        answer (:answer que-ans-map)
+        tags (:tags que-ans-map)
+        sep0a "----"
+        sep0b "----------------------"
+        sep1 (str sep0a "[Question]" sep0b)
+        sep2 (str sep0a "[Answer]" sep0b)
+        sep3 (str sep0a "[Tags]" sep0b)
+        object-str (str sep1 "\n"
+                        question "\n"
+                        sep2 "\n"
+                        answer "\n"
+                        sep3 "\n"
+                        tags "\n")]
+    (io/make-parents file-path)
+    (save-to-file file-path object-str)))
+
+(defn create-question-answer []
+ (loop []
+    
+    (let [_ (println "Question:")
+          question (read-line)
+          _ (println "Answer:")
+          answer (read-line)
+          _ (println "Category Tags:")
+          cat-tags (read-line)]
+          (save-question-answer {:question question :answer answer :cat-tags cat-tags})
+          )
+
+    (println "q - quit program, <anykey> - to add another question+answer")
+    (let [option (read-line)]
+      (condp = option
+        "q" (println "Goodbye!")
+        nil 
+        )
+      (if (not= option "q")
+            ;; Recurse into loop above again
+        (recur)
+        nil))))
+
+(comment
+(UUID/randomUUID)
+(java.io.File/createTempFile "filename" ".txt")
+(gensym)
+(create-question-answer)
+(delete-ANSWERS-DIR)
+;;;
+)
 
 (defn get-or-create-submap [catmap part]
   (let [submap1 (get catmap part)]
