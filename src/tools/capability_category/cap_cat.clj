@@ -9,10 +9,128 @@
 (defonce CATFILE "CAPCAT/all-categories.txt")
 (defonce ANSWERS-DIR "CAPCAT/Answers/")
 (defonce ALLCATS (atom []))
+(defonce ALLCATSMAP (atom {}))
 (defonce CAT-MAP (atom {}))
 (defonce UI-CATMAP (atom {}))
 (defonce UI-CATSTACK (atom []))
 
+(declare save-question-answer delete-ANSWERS-DIR)
+
+(defn subs-or-nil [str st en]
+(try
+  (subs str st en)
+  (catch Exception _ nil))
+)
+
+(defn invalid-tag? [tag]
+  (if (= tag "")
+    false
+    (if (get @ALLCATSMAP tag)
+      false
+      (do (prn "ERROR: Invalid tag" tag)
+          true))))
+
+(defn validate-tags [tag-list]
+  (let [invalid-tags (filter invalid-tag? tag-list)]
+    (if (= (count invalid-tags) 0)
+      true
+      false)))
+
+;;str/index-of
+
+(defn tidy-tag [tag-str]
+  (let [stpos (str/index-of tag-str "/capability-category")]
+    (if stpos
+      (subs tag-str stpos)
+      tag-str)))
+
+(defn validate-tags-section [tags-str]
+  (if tags-str
+    (let [tags-list (mapv tidy-tag (str/split-lines tags-str))]
+      (if (validate-tags tags-list)
+        tags-list
+        nil
+        )
+      )
+    [] ;; if tags-str was nil then return []
+    ))
+
+(defn get-next-section [all-lines start-pos]
+  (let [max-pos (count all-lines)]
+    (if start-pos ;; if start-pos=nil then just return nil
+      (loop [i start-pos
+             res-str ""]
+        (let [line (get all-lines i)
+              ;;_ (prn "line" line)
+              next-line-pos (+ i 1)]
+          (if (< next-line-pos  max-pos)
+            (if (not= (subs-or-nil line 0 4) "----")
+              (recur next-line-pos (str res-str "\n" line))
+              res-str)
+            res-str)))
+      nil)))
+
+(defn get-next-deliminator [all-lines start-pos]
+  (let [max-pos (count all-lines)]
+    (if start-pos ;; if start-pos=nil then just return nil
+      (loop [i start-pos]
+        ;;(prn "here" i)
+        (let [line (get all-lines i)
+              ;;_ (prn "line" line)
+              next-line-pos (+ i 1)]
+          (if (= (subs-or-nil line 0 4) "----")
+            next-line-pos
+            (if (< next-line-pos  max-pos)
+              (recur next-line-pos)
+              nil))))
+      nil)))
+
+(defn linelist-to-str [res-str it]
+  (when (not= it "")(str res-str "\n" it)))
+
+(defn process-next-entry [all-lines start-pos]
+  (let [question-start (get-next-deliminator all-lines start-pos)
+        question (get-next-section all-lines question-start)
+        answer-start (get-next-deliminator all-lines question-start)
+        answer (get-next-section all-lines answer-start)
+        tags-start (get-next-deliminator all-lines answer-start)
+        tags (get-next-section all-lines tags-start)
+        tags-list-or-nil (validate-tags-section tags) ;; will be nil if any invalid
+        tags-str (reduce linelist-to-str "" tags-list-or-nil)
+        _ (assert tags-list-or-nil (str "ERROR: Invalid tag"))]
+    (when question-start
+      ;; (prn "question-start:" question-start)
+      ;; (prn "question:" question)
+      ;; (prn "answer-start:" answer-start)
+      ;; (prn "answer:" answer)
+      ;; (prn "tags-start:" tags-start)
+      ;; (prn "tags:" tags)
+
+      (when (and answer-start question-start tags-start)
+        (save-question-answer {:question question :answer answer :tags tags-str})
+
+        ;; Recurse to the next entry
+        (process-next-entry all-lines tags-start))
+      )))
+
+;; Originally I was using a single answers.txt file with multiple (question+answer+tags) triple sections in it
+;; This functions reads this file and converts into individual (question+answer+tags) file(s)
+(defn process-original-answers-file []
+  (let [answers-file-path (str "CAPCAT/ANSWERS.txt")
+        answers-str (slurp answers-file-path)
+        all-lines (str/split-lines answers-str)]
+    (process-next-entry all-lines 0)))
+
+(comment
+(str/index-of "/Users/mkersh/gdrive/capability-category/support/release-management" "Xcapability-category/")
+(subs "/Users/mkersh/gdrive/capability-category/support/release-management" 21)
+
+(get-next-deliminator ["sh" "sgsg"] 0)
+
+(process-original-answers-file)
+(delete-ANSWERS-DIR)
+;;
+)
 
 (defn delete-directory-recursive
   "Recursively delete a directory."
@@ -75,7 +193,7 @@
           answer (read-line)
           _ (println "Category Tags:")
           cat-tags (read-line)]
-          (save-question-answer {:question question :answer answer :cat-tags cat-tags})
+          (save-question-answer {:question question :answer answer :tags cat-tags})
           )
 
     (println "q - quit program, <anykey> - to add another question+answer")
@@ -123,6 +241,8 @@
     ;;(prn "parts:" parts)
     (add-parts cat-map parts)))
 
+(defn map-from-vector [map item]
+  (assoc map item true))
 
 (defn read-cat-index []
   (let [fileStr (slurp CATFILE)
@@ -130,6 +250,7 @@
         chars-to-remove (count "/capability-category")
         all-cats1 (mapv (fn [obj] (subs obj chars-to-remove)) all-cats)
         _ (reset! ALLCATS all-cats)
+        _ (reset! ALLCATSMAP (reduce map-from-vector {} all-cats))
         catmap (reduce add-to-hierarchy {} all-cats1)
         _ (reset! CAT-MAP catmap)]
 
@@ -202,7 +323,9 @@
 
 
 (comment
+(read-cat-index)
 (terminal-ui)
+@ALLCATSMAP
 (pop [])
 (sort [1 6 7 8 2 3 4])
 (Integer/parseInt "1g")
