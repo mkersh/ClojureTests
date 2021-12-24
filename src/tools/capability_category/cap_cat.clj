@@ -14,7 +14,7 @@
 (defonce UI-CATMAP (atom {}))
 (defonce UI-CATSTACK (atom []))
 
-(declare save-question-answer delete-ANSWERS-DIR)
+(declare save-question-answer delete-ANSWERS-DIR number-or-nil terminal-ui backup-stack)
 
 (defn subs-or-nil [str st en]
 (try
@@ -132,6 +132,48 @@
 ;;
 )
 
+
+(defn search-tags [part]
+(let [part-upper (str/upper-case part)
+      matches (filter (fn [item]
+                        (let [item-upper (str/upper-case item)
+                              pos (str/index-of item-upper part-upper)]
+                          (if pos item nil)))
+                      @ALLCATS)
+      sorted-matches (sort matches)]
+  (into [] sorted-matches)))
+
+(defn select-tag [part]
+  (let [matches (search-tags part)]
+    (println "Tags Matches:")
+    (doall
+     (map #(println %2 "-" %1) matches (iterate inc 0)))
+    (println "b - goback, <number> - select category number")
+    (let [option (number-or-nil (read-line))]
+      (condp = option
+        "b" nil
+        (get matches option)))))
+
+(defn select-tags [part]
+  (let [first-tag (select-tag part)
+        tags-list (loop [tag-list [first-tag]]
+                    (println "b - goback, <part> - search for another")
+                    (let [option (read-line)]
+                      (condp = option
+                        "b" tag-list
+                        (recur (conj tag-list (select-tag option))))))
+        
+        tags-str (reduce linelist-to-str "" tags-list)]
+    tags-str))
+
+
+(comment
+(terminal-ui)
+(select-tags "arch")
+
+;;;
+)
+
 (defn delete-directory-recursive
   "Recursively delete a directory."
   [^java.io.File file]
@@ -192,9 +234,8 @@
           _ (println "Answer:")
           answer (read-line)
           _ (println "Category Tags:")
-          cat-tags (read-line)]
-          (save-question-answer {:question question :answer answer :tags cat-tags})
-          )
+          cat-tags (select-tags (read-line))]
+      (save-question-answer {:question question :answer answer :tags cat-tags}))
 
     (println "q - quit program, <anykey> - to add another question+answer")
     (let [option (read-line)]
@@ -264,19 +305,46 @@
     (Integer/parseInt opt)
     (catch Exception _ nil)))
 
+(defn jump-to-cat [cat]
+  (reset! UI-CATSTACK [])
+  (if (not cat) cat
+      (let [
+            cat-parts (str/split cat #"/")
+            new-submap (reduce (fn [map part]
+                                 (let [submap (get map part)]
+                                   (if submap
+                                     (do
+                                       (reset! UI-CATSTACK (conj @UI-CATSTACK part))
+                                       submap)
+                                     map)))
+                               @CAT-MAP cat-parts)]
+        
+        (reset! UI-CATMAP new-submap)
+        )))
+
+
+(comment
+(terminal-ui)
+(jump-to-cat "/capability-category/functional/product-core/mambu/optional-capabilities/")
+(backup-stack)
+@UI-CATMAP
+;;;
+)
+
 (defn drill-into [opt]
-  (let [
-      num-or-nil (number-or-nil opt)
-      part (if (number? num-or-nil)
-               (let [
-                   options (into [] (keys-and-sort @UI-CATMAP))
-                   cat (get options num-or-nil)]
+  (let [num-or-nil (number-or-nil opt)
+        part (if (number? num-or-nil)
+               (let [options (into [] (keys-and-sort @UI-CATMAP))
+                     cat (get options num-or-nil)]
                  cat)
                opt)
-        catmap (get @UI-CATMAP part)]
-    (when catmap
-      (reset! UI-CATSTACK (conj @UI-CATSTACK part))
-      (reset! UI-CATMAP catmap))))
+        catmap (get @UI-CATMAP part)
+        catmap2 (if catmap catmap
+                    (let [new-cat (select-tag part)]
+                      (jump-to-cat new-cat)))]
+    (when catmap (reset! UI-CATSTACK (conj @UI-CATSTACK part)))
+    (when catmap2
+      (reset! UI-CATMAP catmap2))))
 
 (defn popit [v]
   (try
@@ -288,7 +356,7 @@
     (reset! UI-CATSTACK newstack)
     (reset! UI-CATMAP @CAT-MAP) ;; Set back to top-level
     (mapv (fn [part]
-            (reset! UI-CATMAP (get @CAT-MAP part))) ;; Reset to previous level
+            (reset! UI-CATMAP (get @UI-CATMAP part))) ;; Reset to previous level
           newstack)))
 
 (defn show-uistack []
@@ -310,11 +378,12 @@
   (loop []
     (show-options @UI-CATMAP)
     (println "COMMANDS:")
-    (println "b - backup, q - quit program, <part> - to drill into")
+    (println "b - backup, c - create new entry, q - quit program, <part> - to drill into")
     (let [option (read-line)]
       (condp = option
         "q" (println "Goodbye!")
         "b" (backup-stack)
+        "c" (create-question-answer)
         (drill-into option))
       (if (not= option "q")
             ;; Recurse into loop above again
