@@ -18,10 +18,11 @@
                  [org.apache.cxf/cxf-xjc-plugin "3.2.0"]
                  [ring-server "0.2.8"]
                  [lib-noir "0.5.5"]
-                 [compojure "1.6.2"]
                  [clabango "0.5"]
                  [org.clojure/data.json "1.0.0"]
                  [http-kit "2.4.0"]
+                 [compojure "1.6.2"]
+                 [ring/ring-defaults "0.3.2"]
                  [clj-wamp "1.0.0-rc1"]
                  [clj-http "3.10.1"]
                  [clj-pdf "2.5.7"]
@@ -33,7 +34,8 @@
                  ]
   :profiles {:replxx {:plugins [[cider/cider-nrepl "0.27.2"]]}
     :dev {:resource-paths ["resources-dev"]
-                   :dependencies [[org.clojure/tools.namespace "0.2.3"]]
+                   :dependencies [[org.clojure/tools.namespace "0.2.3"]
+                                  ]
                    :jvm-opts ["-Xmx1g" "-server"
                               "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"]}
              :production {:resource-paths ["resources-prod"]}}
