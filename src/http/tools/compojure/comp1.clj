@@ -1,3 +1,5 @@
+;; Test creating a simple ring webserver using ring, jetty and compojure
+;; Compojure doc: https://github.com/weavejester/compojure/wiki/Getting-Started 
 (ns http.tools.compojure.comp1
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
@@ -7,6 +9,12 @@
 
 (defroutes app
   (GET "/" [] "<h1>Hello World!!!</h1>")
+  (GET "/about" request (str "<h1>Hello World!!!</h1>" request))
+  (GET "/api/get-all-customers" [] "<h1>These are all the customers</h1>")
+  (GET "/api/get-customer/:id" [id] (str "<h1>Getting Customer " id "</h1>"))
+  ;; The following inline regexprsessions don't work for me!! {[0-9]+}
+  (GET "/api/get-customer2/:id" [id] (str "<h1>Getting Customer " id "</h1>"))
+  (GET ["/api/get-customer3/:id", :id #"[0-9]+"] [id] (str "<h1>Getting Customer " id "</h1>"))  
   (route/not-found "<h1>Page not found</h1>"))
 
 ;; https://github.com/ring-clojure/ring/issues/104
