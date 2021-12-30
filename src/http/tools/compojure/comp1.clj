@@ -5,6 +5,8 @@
             [compojure.route :as route]
             [ring.adapter.jetty :as jet]
             [ring.middleware.reload :as reload]
+            [ring.middleware.params :as wrap]
+            
             ))
 
 (defroutes app
@@ -19,7 +21,8 @@
 
 ;; https://github.com/ring-clojure/ring/issues/104
 (def app-with-reload
-  (reload/wrap-reload #'app))
+  ;; Using two middleware handlers here
+  (wrap/wrap-params (reload/wrap-reload #'app)))
 
 (defonce server (jet/run-jetty #'app-with-reload {:join? false :port 3000}))
 
