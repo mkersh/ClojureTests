@@ -39,3 +39,8 @@ CasC-customFields-export-part.yaml
 CasC-customFields-import.yaml
 CasC-customFields-template.yaml
 CAPCAT/**
+resources-dev/public/test.txt
+resources-dev/public/test2.txt
+resources-dev/public/test3.html
+resources-dev/public/folder1/t1.txt
+resources-dev/public/folder1/t2.txt
