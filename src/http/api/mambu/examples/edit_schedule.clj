@@ -161,32 +161,35 @@
 (comment
   (api/setenv "env2")
   (api/get-env-domain)
+  
+  (def accid "RJDN161") ;; BN Test account1
   (def accid "NMMZ161")
   (def accid "BZGI031")
   
   (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
 
-  (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-01-20"})))
-  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 5})))
+  (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-02-26"})))
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 10})))
   ;; [1] This next one converts into a bullet loan
-  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid accid :num-instal 5})))
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid accid :num-instal 10})))
 
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 5 :amount 6000.00})))
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list [{:num-instal 4 :amount 0.00}
                                                                                                     {:num-instal 5 :amount 1000.00}]})))
   
   ;; [2] This next one copies the schedule from a balloon-payments product into a dynamic-term loan to simulate the bullet/balloon
+  ;;     NOTE: You can use to reset the action [1] above
   (api/PRINT (:last-call (steps/apply-api copy-instalments-from-product-preview
                                           {:accid accid
                                            :template-product "8a818e2a7d1e84c5017d1ec09e79013c"
                                            :xdisbursement-date "2021-12-04T13:37:50+01:00"
                                            :xfirst-payment-date "2022-03-07T13:37:50+01:00"
-                                           :disbursement-date "2021-12-20T13:37:50+01:00"
-                                           :first-payment-date "2022-01-20T13:37:50+01:00"
-                                           :amount 20000.00
-                                           :interest-rate 2.5
-                                           :periodic-amount 1689.32
-                                           :num-instalments 12})))
+                                           :disbursement-date "2022-01-25T13:37:50+01:00"
+                                           :first-payment-date "2022-02-25T13:37:50+01:00"
+                                           :amount 10000.00
+                                           :interest-rate 5.0
+                                           :periodic-amount 522.16
+                                           :num-instalments 20})))
   
   
   (api/PRINT (:last-call (steps/apply-api get-product-schedule-preview
