@@ -1,6 +1,7 @@
 (ns http.api.mambu.examples.edit-schedule
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
+            [http.api.mambu.experiments.loan_schedule :as ext]
             [java-time :as t]
             ))
 
@@ -184,38 +185,50 @@
         id (get-in res [:last-call "id"])]
     id))
 
+(defonce CUSTKEY (atom "8a818f3f7e910785017e925d290745e3")) ;; 313566992
+(defonce ACCID (atom nil))
+(defonce VALUE_DATE (atom nil))
+(defonce FIRST_DATE (atom nil))
+(defn set-dates [year]
+  (reset! VALUE_DATE (ext/adjust-timezone2 (str year "-01-26T00:00:50+01:00") "Europe/Berlin")) ;; Change these dates as required
+  (reset! FIRST_DATE (ext/adjust-timezone2 (str year "-02-26T13:37:50+01:00") "Europe/Berlin")))
+
+(set-dates 2022) ;; default year
 
 (comment
   (api/setenv "env2")
   (api/get-env-domain)
-  (create-loan-account "New Bullet Loan"
+  (reset! ACCID (create-loan-account "New Bullet Loan"
                        {:cust-key "8a818f3f7e910785017e925d290745e3"
                         :prod-key "8a818ff17d470d02017d4808aaf217e9"
                         :amount 10000.0
                         :periodic-payment nil
                         :interest-rate 5.0
                         :grace_period 0
-                        :num-installments 20})
+                        :num-installments 20}))
+  (steps/apply-api ext/approveLoanAccount {:loanAccountId @ACCID})
+  (steps/apply-api ext/disburse-loan-api {:loanAccountId @ACCID :value-date @VALUE_DATE :first-date @FIRST_DATE})
+  (ext/zap-all-loans2 @CUSTKEY)
 
-  (def accid "XXJG121") ;; BN Test account
-  (def accid "NMMZ161")
-  (def accid "BZGI031")
+  ;; To change @ACCID manually - Normally use a new one from create-loan-account
+  (reset! ACCID "XXJG121")
+  
 
   (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
 
-  (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-02-26"})))
-  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid accid :num-instal 10})))
+  (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid @ACCID :start-date "2022-02-26"})))
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid @ACCID :num-instal 10})))
   ;; [1] This next one converts into a bullet loan
-  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid accid :num-instal 10})))
+  (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid @ACCID :num-instal 10})))
 
-  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 5 :amount 6000.00})))
-  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list [{:num-instal 4 :amount 0.00}
+  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid @ACCID :num-instal 5 :amount 6000.00})))
+  (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid @ACCID :instal-list [{:num-instal 4 :amount 0.00}
                                                                                                     {:num-instal 5 :amount 1000.00}]})))
 
   ;; [2] This next one copies the schedule from a balloon-payments product into a dynamic-term loan to simulate the bullet/balloon
   ;;     NOTE: You can use to reset the action [1] above
   (api/PRINT (:last-call (steps/apply-api copy-instalments-from-product-preview
-                                          {:accid accid
+                                          {:accid @ACCID
                                            :template-product "8a818e2a7d1e84c5017d1ec09e79013c"
                                            :xdisbursement-date "2021-12-04T13:37:50+01:00"
                                            :xfirst-payment-date "2022-03-07T13:37:50+01:00"
@@ -238,16 +251,16 @@
 
   (let [changes0 (mapv (fn [i] {:num-instal i :amount 0}) (range 6 11))
         changes (into [] (cons {:num-instal 5 :amount 6000.00} changes0))]
-    (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list changes}))))
+    (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid @ACCID :instal-list changes}))))
 
 
   (let [changes (mapv (fn [i] {:num-instal i :amount 1000}) (range 1 11))]
-    (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list changes}))))
+    (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid @ACCID :instal-list changes}))))
 
 
-  (api/PRINT (:last-call (steps/apply-api test-edit-loan-schedule {:accid accid})))
-  (api/PRINT (:last-call (steps/apply-api get-loan-schedule {:accid accid})))
-  (api/PRINT (:last-call (steps/apply-api get-account {:accid accid})))
+  (api/PRINT (:last-call (steps/apply-api test-edit-loan-schedule {:accid @ACCID})))
+  (api/PRINT (:last-call (steps/apply-api get-loan-schedule {:accid @ACCID})))
+  (api/PRINT (:last-call (steps/apply-api get-account {:accid @ACCID})))
 
   (cons 1 [2 3])
   (range 1 11)
