@@ -1,9 +1,6 @@
 (ns http.api.mambu.examples.edit-schedule
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
-            [http.api.mambu.experiments.loan_schedule :as ext]
-            [clojure.pprint :as pp]
-            [clojure.string :as str]
             [java-time :as t]
             ))
 
@@ -157,15 +154,53 @@
    :headers {"Accept" "application/vnd.mambu.v2+json"
              "Content-Type" "application/json"}})
 
+(defn create-installment-loan-api [context]
+  {:url (str "{{*env*}}/loans")
+   :method api/POST
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}
+   :query-params {}
+   :body  {"loanAmount" (:amount context)
+           "loanName" (:acc-name context)
+           "accountHolderKey" (:cust-key context)
+           "productTypeKey" (:prod-key context)
+           "accountHolderType" "CLIENT"
+           "interestFromArrearsAccrued" 0.0
+           "interestSettings" {"interestRate" (:interest-rate context)}
+           "scheduleSettings" {"periodicPayment" (:periodic-payment context)
+                               "gracePeriod" (:grace_period context)
+                               "repaymentInstallments" (:num-installments context)}}})
+
+(defn create-loan-account [accname options]
+  (let [res (steps/apply-api create-installment-loan-api
+                             {:cust-key (:cust-key options)
+                              :prod-key (:prod-key options)
+                              :amount (:amount options)
+                              :periodic-payment nil
+                              :acc-name accname
+                              :interest-rate (:interest-rate options)
+                              :grace_period (:grace_period options)
+                              :num-installments (:num-installments options)})
+        id (get-in res [:last-call "id"])]
+    id))
+
 
 (comment
   (api/setenv "env2")
   (api/get-env-domain)
-  
-  (def accid "RJDN161") ;; BN Test account1
+  (create-loan-account "New Bullet Loan"
+                       {:cust-key "8a818f3f7e910785017e925d290745e3"
+                        :prod-key "8a818ff17d470d02017d4808aaf217e9"
+                        :amount 10000.0
+                        :periodic-payment nil
+                        :interest-rate 5.0
+                        :grace_period 0
+                        :num-installments 20})
+
+  (def accid "XXJG121") ;; BN Test account
   (def accid "NMMZ161")
   (def accid "BZGI031")
-  
+
   (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
 
   (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid accid :start-date "2022-02-26"})))
@@ -176,7 +211,7 @@
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid accid :num-instal 5 :amount 6000.00})))
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid accid :instal-list [{:num-instal 4 :amount 0.00}
                                                                                                     {:num-instal 5 :amount 1000.00}]})))
-  
+
   ;; [2] This next one copies the schedule from a balloon-payments product into a dynamic-term loan to simulate the bullet/balloon
   ;;     NOTE: You can use to reset the action [1] above
   (api/PRINT (:last-call (steps/apply-api copy-instalments-from-product-preview
@@ -190,8 +225,8 @@
                                            :interest-rate 5.0
                                            :periodic-amount 522.16
                                            :num-instalments 20})))
-  
-  
+
+
   (api/PRINT (:last-call (steps/apply-api get-product-schedule-preview
                                           {:template-product "8a818e2a7d1e84c5017d1ec09e79013c"
                                            :disbursement-date "2021-12-04T13:37:50+01:00"
