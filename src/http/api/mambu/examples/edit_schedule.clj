@@ -212,6 +212,7 @@
   (steps/apply-api ext/disburse-loan-api {:loanAccountId @ACCID :value-date @VALUE_DATE :first-date @FIRST_DATE}))
 
 (api/setenv "env2")
+
 (comment
   (api/get-env-domain)
 

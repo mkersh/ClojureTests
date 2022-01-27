@@ -45,9 +45,11 @@
 ;;            (print-client-page {:page-size 3, :page-num 0}))
 ;;
 (def ^:dynamic *ENV* nil)
+(declare get-env-domain)
 
 (defn setenv [envId]
-  (def ENV envId))
+  (def ENV envId)
+  (get-env-domain))
 (setenv "env1")
 
 (defmacro setenv-local [envId & body]
