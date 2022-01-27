@@ -16,8 +16,8 @@
 
 ;; Mambu API endpoint for downloading a previously triggered database download
 (defn download-db-backup-api [_context]
-  ;; TIP: https://api.mambu.com/#database-backup-downloadbackup implies you can provide a {databaseBackupVersion
-  ;; but if you read the doc close only allowed value (currently) is LATEST
+  ;; TIP: https://api.mambu.com/#database-backup-downloadbackup implies you can provide a {databaseBackupVersion}
+  ;;      but if you read the doc close only allowed value (currently) is LATEST
   {:url (str "{{*env*}}/database/backup/LATEST")
    :method api/GET
    :headers {"Accept" "application/vnd.mambu.v2+zip"} ;; TIP: Make sure this content-type is correct, its different from other Mambu V2 API endpoints!!
