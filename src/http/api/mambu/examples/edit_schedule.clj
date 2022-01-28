@@ -83,6 +83,7 @@
                              "parentAccountKey" (get last-instal "parentAccountKey")}))
                         instal-list)
         rep-body {"repayments" rep-list}
+        ;;_ (pp/pprint rep-body)
         context1 (assoc context :body rep-body)]
     (edit-loan-schedule context1)))
 
@@ -130,7 +131,9 @@
                       ;; NOTE: Do not update the final instalment. Let Mambu calculate this
                       (range 1 (count sched-list)) other-product-schedule)
         ;;_ (pp/pprint changes)
-        context1 (merge {:instal-list changes} context)]
+        context1 (merge {:instal-list changes} context)
+        ;;_ (pp/pprint context1)
+        ]
     (edit-principal-on-instalments context1)))
 
 ;; Simple test of the edit-loan-schedule
@@ -177,7 +180,7 @@
                              {:cust-key (:cust-key options)
                               :prod-key (:prod-key options)
                               :amount (:amount options)
-                              :periodic-payment nil
+                              :periodic-payment (:periodic-payment options)
                               :acc-name accname
                               :interest-rate (:interest-rate options)
                               :grace_period (:grace_period options)
@@ -187,10 +190,13 @@
 
 (defonce CUSTKEY (atom "8a818f3f7e910785017e925d290745e3")) ;; 313566992
 (defonce PRODKEY (atom "8a818ff17d470d02017d4808aaf217e9"))
+(defonce PRODKEY_BULLET (atom "8a818e2a7d1e84c5017d1ec09e79013c"))
 (defonce ACCID (atom nil))
+(defonce ACCID_BULLET (atom nil))
 (defonce NUM_INSTAL_AMORT (atom 20))
 (defonce NUM_INSTAL_BULLET (atom 10))
 (defonce AMOUNT (atom 10000.0))
+(defonce PERIODIC_AMOUNT (atom 522.16))
 (defonce INTEREST_RATE (atom 5.0))
 (defonce VALUE_DATE (atom nil))
 (defonce FIRST_DATE (atom nil))
@@ -198,6 +204,18 @@
   (reset! VALUE_DATE (ext/adjust-timezone2 (str year "-01-26T00:00:50+01:00") "Europe/Berlin")) ;; Change these dates as required
   (reset! FIRST_DATE (ext/adjust-timezone2 (str year "-02-26T13:37:50+01:00") "Europe/Berlin")))
 (set-dates 2022) ;; default year
+
+(defn create-new-bullet-loan [acc-nm]
+  (reset! ACCID_BULLET (create-loan-account acc-nm
+                                     {:cust-key @CUSTKEY
+                                      :prod-key @PRODKEY_BULLET
+                                      :amount @AMOUNT
+                                      :periodic-payment @PERIODIC_AMOUNT
+                                      :interest-rate @INTEREST_RATE
+                                      :grace_period 0
+                                      :num-installments @NUM_INSTAL_AMORT}))
+  (steps/apply-api ext/approveLoanAccount {:loanAccountId @ACCID_BULLET})
+  (steps/apply-api ext/disburse-loan-api {:loanAccountId @ACCID_BULLET :value-date @VALUE_DATE :first-date @FIRST_DATE}))
 
 (defn create-new-loan [acc-nm]
   (reset! ACCID (create-loan-account acc-nm
@@ -220,25 +238,31 @@
   (ext/zap-all-loans2 @CUSTKEY)
 
   ;; [1] Create a new Loan account - then jump to [2] below to convert into a bullet loan
-  (create-new-loan "New Bullet Loan")
-  
+  (create-new-loan "New Simulated Bullet Loan")
+
+  ;; [1b] (optional) Create an account using the product template we use in [3] below
+  ;; NOTE: Don't need to do this but allows you to check that the simulated bullet loan is the same
+  (create-new-bullet-loan "New Real Bullet Loan")
+
+
   ;; To Manually change values used by create-new-loan
   (reset! ACCID "XXJG121")
-  (reset! NUM_INSTAL_AMORT 40)
+  (reset! NUM_INSTAL_AMORT 20)
   (reset! NUM_INSTAL_BULLET 10)
   (reset! AMOUNT 10000.0)
+  (reset! PERIODIC_AMOUNT 300.16)
   (reset! INTEREST_RATE 5.0)
   (reset! VALUE_DATE (ext/adjust-timezone2 (str "2022" "-01-26T00:00:50+01:00") "Europe/Berlin")) ;; Change these dates as required
   (reset! FIRST_DATE (ext/adjust-timezone2 (str "2022" "-02-26T13:37:50+01:00") "Europe/Berlin"))
   (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
-  
+
   ;; [2] This next one converts into a bullet loan
   (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments2 {:accid @ACCID :num-instal @NUM_INSTAL_BULLET})))
 
   ;; Older functions to make other types of edit to the loan schedule
   (api/PRINT (:last-call (steps/apply-api distribute-dates-instalments {:accid @ACCID :start-date "2022-02-26"})))
   (api/PRINT (:last-call (steps/apply-api reduce-to-n-instalments {:accid @ACCID :num-instal @NUM_INSTAL_BULLET})))
-  
+
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalment {:accid @ACCID :num-instal 5 :amount 6000.00})))
   (api/PRINT (:last-call (steps/apply-api edit-principal-on-instalments {:accid @ACCID :instal-list [{:num-instal 4 :amount 0.00}
                                                                                                      {:num-instal 5 :amount 1000.00}]})))
@@ -247,15 +271,13 @@
   ;;     NOTE: You can use to reset the action [1] above
   (api/PRINT (:last-call (steps/apply-api copy-instalments-from-product-preview
                                           {:accid @ACCID
-                                           :template-product "8a818e2a7d1e84c5017d1ec09e79013c"
-                                           :xdisbursement-date "2021-12-04T13:37:50+01:00"
-                                           :xfirst-payment-date "2022-03-07T13:37:50+01:00"
-                                           :disbursement-date "2022-01-25T13:37:50+01:00"
-                                           :first-payment-date "2022-02-25T13:37:50+01:00"
-                                           :amount 10000.00
-                                           :interest-rate 5.0
-                                           :periodic-amount 522.16
-                                           :num-instalments 20})))
+                                           :template-product @PRODKEY_BULLET
+                                           :disbursement-date @VALUE_DATE
+                                           :first-payment-date @FIRST_DATE
+                                           :amount @AMOUNT
+                                           :interest-rate @INTEREST_RATE
+                                           :periodic-amount @PERIODIC_AMOUNT
+                                           :num-instalments @NUM_INSTAL_AMORT})))
 
 
   (api/PRINT (:last-call (steps/apply-api get-product-schedule-preview
