@@ -14,7 +14,6 @@
   (str "src/" (str/replace ns-id #"\." "/") ".clj"))
 
 (defn extract-requires-from-file [fp]
-  (prn "file:" fp)
   (let [file-str (slurp fp)
         require-expr (re-find #"\(:require[^)]*" file-str)]
         (if require-expr
