@@ -66,7 +66,7 @@
 (defn create-project-file [proj-root local-root]
   (fn [namespace-id-str]
     (let [
-        from-fp (convert-to-filepath local-root namespace-id-str)
+        from-fp (convert-to-filepath (str local-root "src/") namespace-id-str)
         to-fp (convert-to-filepath (str proj-root "src/") namespace-id-str)
         cmd-str (str from-fp " " to-fp)
         ]
@@ -75,18 +75,26 @@
       (prn "To:" to-fp)
       (prn "CMD:" cmd-str)
       (io/make-parents to-fp)
+      ;; Creating hardlinks to the files. NOTE: Needs to be hardlinks and not soft for GitHub to work on new mini project directory
+      ;; So in local file system the files in the mini project dir link to the originals
       (sh/sh "ln" from-fp to-fp)
       ))
   )
 
 (defn create-new-project [proj-root local-root ns-id]
-  (let [ns-set (find-local-ns-deps #{} ns-id)]
-    (io/make-parents (str proj-root "/src/"))
+  (let [ns-set (find-local-ns-deps #{} ns-id)
+        project-file "project.clj"
+        git-ignore-file ".gitignore"
+        ]
+    (io/make-parents (str proj-root "dummy.txt"))
+
+    (sh/sh "ln" (str local-root project-file) (str proj-root project-file))
+    (sh/sh "ln" (str local-root git-ignore-file) (str proj-root git-ignore-file))
     (doall (map (create-project-file proj-root local-root) ns-set))))
 
 (comment
   ;; [1] Function for creating a mini-project from a given namespace
-  (create-new-project "/Users/mkersh/clojure/Shared/NewProj/" "/Users/mkersh/clojure/ClojureTests/src/" "http.api.mambu.examples.edit_schedule")
+  (create-new-project "/Users/mkersh/clojure/Shared/NewProj/" "/Users/mkersh/clojure/ClojureTests/" "http.api.mambu.examples.edit_schedule")
 
   ;; Testing stuff whilst developing this library
   (delete-dir "/Users/mkersh/clojure/Shared/NewProj/")
@@ -99,6 +107,8 @@
 (sh/sh "ls" "-aul")
 (sh/sh "ln" "/Users/mkersh/clojure/ClojureTests/src/http/ENV.clj" "/Users/mkersh/clojure/Shared/NewProj/src/http/ENV.clj")
 
+(io/make-parents "/Users/mkersh/clojure/Shared/NewProj/tt.txt")
+(sh/sh "ln" "/Users/mkersh/clojure/ClojureTests/project.clj" "/Users/mkersh/clojure/Shared/NewProj/project.clj")
 
 
 
