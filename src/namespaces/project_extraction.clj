@@ -5,7 +5,9 @@
 ;;; 
 (ns namespaces.project_extraction
   (:require  [clojure.string :as str]
-             [clojure.java.io :as io]))
+             [clojure.java.io :as io]
+             [clojure.java.shell :as sh]
+             ))
 
 (defn file-exists? [fp]
   (.exists (io/file fp)))
@@ -42,59 +44,63 @@
       res-set)
     ))
 
+(defn delete-directory-recursive
+  "Recursively delete a directory."
+  [^java.io.File file]
+  ;; when `file` is a directory, list its entries and call this
+  ;; function with each entry. can't `recur` here as it's not a tail
+  ;; position, sadly. could cause a stack overflow for many entries?
+  (when (.isDirectory file)
+    (doseq [file-in-dir (.listFiles file)]
+      (delete-directory-recursive file-in-dir)))
+  ;; delete the file or directory. if it it's a file, it's easily
+  ;; deletable. if it's a directory, we already have deleted all its
+  ;; contents with the code above (remember?)
+  (io/delete-file file))
+
+(defn delete-dir [dir-path]
+  (try (delete-directory-recursive (clojure.java.io/file dir-path))
+       (catch Exception _ "Nothing to DELETE")))
+
 ;; next function returns a mapper functionm
-(defn create-project-file [proj-root]
+(defn create-project-file [proj-root local-root]
   (fn [namespace-id-str]
-    (let [from-fp (convert-to-filepath namespace-id-str)
-        to-fp (convert-to-filepath proj-root namespace-id-str)]
+    (let [
+        from-fp (convert-to-filepath local-root namespace-id-str)
+        to-fp (convert-to-filepath (str proj-root "src/") namespace-id-str)
+        cmd-str (str from-fp " " to-fp)
+        ]
       (prn "create project file:")
       (prn "From:" from-fp)
       (prn "To:" to-fp)
+      (prn "CMD:" cmd-str)
+      (io/make-parents to-fp)
+      (sh/sh "ln" from-fp to-fp)
       ))
   )
 
-(defn create-new-project [proj-root ns-id]
+(defn create-new-project [proj-root local-root ns-id]
   (let [ns-set (find-local-ns-deps #{} ns-id)]
-    (doall (map (create-project-file proj-root) ns-set))))
+    (io/make-parents (str proj-root "/src/"))
+    (doall (map (create-project-file proj-root local-root) ns-set))))
 
 (comment
   ;; [1] Function for creating a mini-project from a given namespace
-  (create-new-project "/Users/mkersh/clojure/Shared/" "http.api.mambu.examples.edit_schedule")
+  (create-new-project "/Users/mkersh/clojure/Shared/NewProj/" "/Users/mkersh/clojure/ClojureTests/src/" "http.api.mambu.examples.edit_schedule")
 
   ;; Testing stuff whilst developing this library
+  (delete-dir "/Users/mkersh/clojure/Shared/NewProj/")
   (find-local-ns-deps #{} "http.api.mambu.examples.edit_schedule")
   (re-find #":require[^)]*" "1112(:require [clojure.string :as str]\n[clojure.java.io :as io])")
   (re-seq #"\[.*\]" "[clojure.string :as str] \n [clojure.java.io :as io]")
+
+
+;;
+(sh/sh "ls" "-aul")
+(sh/sh "ln" "/Users/mkersh/clojure/ClojureTests/src/http/ENV.clj" "/Users/mkersh/clojure/Shared/NewProj/src/http/ENV.clj")
+
+
+
+
 ;;
   )
-
-(comment
-  ;; = re-find - Example 1 = 
-
-  user=> (def matcher (re-matcher #"\d+" "abc12345def"))
-  #'user/matcher
-
-  user=> (re-find matcher)
-  "12345"
-
-  ;; If you only want the first match, it is shorter to call re-find with the
-  ;; pattern and the string to search, rather than explicitly creating a matcher
-  ;; as above.
-  user=> (re-find #"\d+" "abc12345def")
-  "12345"
-
-  ;; If you want all matches as a sequence, use re-seq.  Creating a matcher
-  ;; explicitly with re-matcher and passing it to re-find is only the best way
-  ;; if you want to write a loop that iterates through all matches, and do not
-  ;; want to use re-seq for some reason.
-
-  ;; See also:
-  re-groups
-  re-matcher
-  re-pattern
-  re-seq
-  re-matches
-  subs
-  clojure.string/replace
-  )
-
