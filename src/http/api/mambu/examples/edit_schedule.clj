@@ -232,8 +232,6 @@
 (api/setenv "env2")
 
 (comment
-  (api/get-env-domain)
-
   ;; [0] Next function deletes/zaps all loans for @CUSTKEY
   (ext/zap-all-loans2 @CUSTKEY)
 

@@ -47,9 +47,13 @@
 (def ^:dynamic *ENV* nil)
 (declare get-env-domain)
 
+(defmacro ignore-exceptions [& body]
+  `(try ~@body (catch Exception e#)))
+
 (defn setenv [envId]
   (def ENV envId)
-  (get-env-domain))
+  (ignore-exceptions (get-env-domain))
+  )
 (setenv "env1")
 
 (defmacro setenv-local [envId & body]
@@ -65,6 +69,8 @@
         uri (new java.net.URI url)
         domain (.getHost uri)]
     domain))
+
+
 
 (get-env-domain)
 
