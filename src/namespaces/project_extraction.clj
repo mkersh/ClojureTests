@@ -94,7 +94,7 @@
 
 (comment
   ;; [1] Function for creating a mini-project from a given namespace
-  (create-new-project "/Users/mkersh/clojure/Shared/example-220130b/" "/Users/mkersh/clojure/ClojureTests/" "http.api.mambu.examples.edit_schedule")
+  (create-new-project "/Users/mkersh/clojure/Shared/example-220130/" "/Users/mkersh/clojure/ClojureTests/" "http.api.mambu.examples.edit_schedule")
 
   ;; Testing stuff whilst developing this library
   (delete-dir "/Users/mkersh/clojure/Shared/NewProj/")
