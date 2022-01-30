@@ -15,7 +15,7 @@
 ;;   This function is not needed use clojure standard get-in instead.
 ;; [5] extract-attrs - Extract attributes from an object or an array-of-objects 
 ;;
-;; Test
+
 (ns http.api.json_helper
   (:require
    [clojure.data.json :as json]
