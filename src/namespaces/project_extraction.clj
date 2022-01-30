@@ -85,11 +85,15 @@
   (let [ns-set (find-local-ns-deps #{} ns-id)
         project-file "project.clj"
         git-ignore-file ".gitignore"
+        repl-start-file (str "src/repl_start.clj")
         ]
     (io/make-parents (str proj-root "dummy.txt"))
 
     (sh/sh "ln" (str local-root project-file) (str proj-root project-file))
     (sh/sh "ln" (str local-root git-ignore-file) (str proj-root git-ignore-file))
+    ;; Probably shouldn't be linking repl-start-file, should be its own version
+    ;; BUT for now will ln
+    (sh/sh "ln" (str local-root repl-start-file) (str proj-root repl-start-file))
     (doall (map (create-project-file proj-root local-root) ns-set))))
 
 (comment

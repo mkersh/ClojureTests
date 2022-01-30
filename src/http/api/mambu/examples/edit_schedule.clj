@@ -196,7 +196,7 @@
 (defonce NUM_INSTAL_AMORT (atom 20))
 (defonce NUM_INSTAL_BULLET (atom 10))
 (defonce AMOUNT (atom 10000.0))
-(defonce PERIODIC_AMOUNT (atom 522.16))
+(defonce PERIODIC_AMOUNT (atom 300.16))
 (defonce INTEREST_RATE (atom 5.0))
 (defonce VALUE_DATE (atom nil))
 (defonce FIRST_DATE (atom nil))
@@ -236,7 +236,7 @@
   (ext/zap-all-loans2 @CUSTKEY)
 
   ;; [1] Create a new Loan account - then jump to [2] below to convert into a bullet loan
-  (create-new-loan "New Simulated Bullet Loan")
+  (create-new-loan "New Simulated Bullet Loan22")
 
   ;; [1b] (optional) Create an account using the product template we use in [3] below
   ;; NOTE: Don't need to do this but allows you to check that the simulated bullet loan is the same
