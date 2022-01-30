@@ -300,40 +300,6 @@
   (api/PRINT (:last-call (steps/apply-api get-loan-schedule {:accid @ACCID})))
   (api/PRINT (:last-call (steps/apply-api get-account {:accid @ACCID})))
 
-  (cons 1 [2 3])
-  (range 1 11)
-  ;; 
-  (api/setenv "env11")
-  (def accid "POGP216") ;; LOAN2
-  (def accid "YFJW588") ;; LOAN1 - Balloon
-
-  (def accid "WOAT914") ;; Capitalised Loan
-
-
-  (* 365 (/ (/ 332.87 50000) 27))
+ 
   ;;
   )
-
-
-  (comment
-
-    {;;"dueDate" "2022-01-01T01:00:00+01:00"
-     "dueDate" "2022-01-01"
-     "encodedKey" "8a818e3f7d56df38017d5801dc552afc"
-     "parentAccountKey" "8a818e3f7d56df38017d57ff74dd2a77"}
-
-
-
-    {"dueDate" "2020-12-01T01:00:00+01:00"
-     "encodedKey" "8a818e3f7d56df38017d5801dc462aee"
-     "feesDue" 0
-     "feesUnappliedDue" 0
-     "interestDue" 24.54
-     "isPaymentHoliday" false
-     "parentAccountKey" "8a818e3f7d56df38017d57ff74dd2a77"
-     "penaltyDue" 0
-     "principalDue" 0}
-
-
-;;;
-    )
