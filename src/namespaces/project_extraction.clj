@@ -86,6 +86,7 @@
         project-file "project.clj"
         git-ignore-file ".gitignore"
         repl-start-file (str "src/repl_start.clj")
+        repl-start-file-template (str "src/namespaces/repl_start_template.clj")
         ]
     (io/make-parents (str proj-root "dummy.txt"))
 
@@ -93,7 +94,7 @@
     (sh/sh "ln" (str local-root git-ignore-file) (str proj-root git-ignore-file))
     ;; Probably shouldn't be linking repl-start-file, should be its own version
     ;; BUT for now will ln
-    (sh/sh "ln" (str local-root repl-start-file) (str proj-root repl-start-file))
+    (sh/sh "ln" (str local-root repl-start-file-template) (str proj-root repl-start-file))
     (doall (map (create-project-file proj-root local-root) ns-set))))
 
 (comment
