@@ -237,6 +237,10 @@
 ;;    See src/http/ENV-example.clj for details on setting up your src/http/ENV.clj   
 (api/setenv "env2")
 
+;; ***[EXAMPLES]********************************************************
+;; Examples off how to use this library
+;;
+
 (comment
   ;; [0] Next function deletes/zaps all loans for @CUSTKEY
   (ext/zap-all-loans2 @CUSTKEY)
