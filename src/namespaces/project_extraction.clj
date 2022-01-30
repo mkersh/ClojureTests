@@ -93,16 +93,15 @@
     (io/make-parents (str proj-root "dummy.txt"))
     (io/make-parents (str proj-root "src/dummy.txt"))
 
-    (sh/sh "ln" (str local-root project-file) (str proj-root project-file))
+    (sh/sh "cp" (str local-root project-file-template) (str proj-root project-file))
     (sh/sh "ln" (str local-root git-ignore-file) (str proj-root git-ignore-file))
-    ;; TBD - This should be a cp rather than a ln
     (sh/sh "cp" (str local-root repl-start-file-template) (str proj-root repl-start-file))
     (sh/sh "ln" (str local-root ENV-template-file) (str proj-root ENV-template-file))
     (doall (map (create-project-file proj-root local-root) ns-set))))
 
 (comment
   ;; [1] Function for creating a mini-project from a given namespace
-  (create-new-project "/Users/mkersh/clojure/Shared/example-220130b/" "/Users/mkersh/clojure/ClojureTests/" "http.api.mambu.examples.edit_schedule")
+  (create-new-project "/Users/mkersh/clojure/Shared/example-220130/" "/Users/mkersh/clojure/ClojureTests/" "http.api.mambu.examples.edit_schedule")
 
   ;; Testing stuff whilst developing this library
   (delete-dir "/Users/mkersh/clojure/Shared/NewProj/")
