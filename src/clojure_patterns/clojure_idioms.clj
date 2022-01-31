@@ -1,5 +1,9 @@
 ;;; Plan to use this file to record less than obvious (for the beginner) tips and tricks when using closure
 ;;; see also my gotcha.clj
+;;;
+;;; 31 Jan 2022: This file has never really taken off as my single place for 
+;;;      recording less-than-obvious clojure-idioms, which was the original plan.
+
 (ns clojure-patterns.clojure-idioms)
 
 
