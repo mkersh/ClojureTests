@@ -4,11 +4,6 @@
   (:require [java-time :as t])
   )
 
-;;(t/time-between :days (t/local-date 2015) (t/local-date 2016))
-
-;;(refer-clojure :exclude [range iterate format max min])
-;;(use 'java-time)
-
 (defn adjust-timezone [dateStr timezone]
   (let [date-local (t/zoned-date-time dateStr)
         date2 (t/with-zone date-local timezone)
