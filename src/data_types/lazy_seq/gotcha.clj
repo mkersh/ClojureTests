@@ -37,6 +37,7 @@
 
 
 ;; This is what you need to do to force lazy seqs to be evaluated
+;; i.e. use doall or dorun
 (defn this-does-realise-the-map []
   (prn "start")
   (doall (map prn [1 2 3 4]))
