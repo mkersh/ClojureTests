@@ -1,5 +1,5 @@
 ;;; Testing the 3 essential functions get, assoc and update and their nested equivalents
-;;; Which are the ways to extract and update data in a clojure data structuure
+;;; Which are the ways to extract and update data in a clojure data structure
 (ns data-types.get-assoc-update)
 
 (def test-map {
