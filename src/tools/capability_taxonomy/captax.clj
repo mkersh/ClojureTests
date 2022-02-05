@@ -1,11 +1,15 @@
 ;;; Functions to create a capability-taxonomy folder structure
 ;;;
 
-(ns tools.capability-category.captax
+(ns tools.capability_taxonomy.captax
   (:require
    [clojure.string :as str]
    [clojure.java.io :as io]
    [clojure.java.shell :as sh]))
+
+;; This is the directory where the capability-hierarchy will be created
+;; 
+(defonce CAPTAX-DIR (atom "/Users/mkersh/captax/captax01"))
 
 (defn reform-cap-str [cap-parts]
   (let [first-part (first cap-parts)
@@ -18,7 +22,6 @@
   (str/split cap-dir #"\/"))
 
 (defn get-full-path [first-part rest-parts last-cap-dir]
-  (prn "Rest parts:" rest-parts)
   (let [rest-str (reform-cap-str rest-parts)]
     (condp = first-part
       ""  rest-str
@@ -32,6 +35,11 @@
             parent-str (if (= num-parts 2) "" (reform-cap-str parts3))]
         (str parent-str rest-str)))))
 
+(defn create-folders-and-files [cap-dir-full]
+  (prn "create-folders-and-files")
+  (let [full-path (str @CAPTAX-DIR cap-dir-full)
+        dummy-file (str full-path "/dummy.txt")]
+    (io/make-parents dummy-file)))
 
 (defn create-cap-dir [last-cap-dir cap-dir]
   (let [parts (str/split cap-dir #"\/")
@@ -39,9 +47,8 @@
         rest-parts (next parts)
         cap-dir-full (get-full-path first-part  rest-parts last-cap-dir)
         ]
-  (prn "Creating Dir")
-  (prn "Last Dir" last-cap-dir)
-  (prn "New Dir" cap-dir-full)
+  (prn cap-dir-full)
+  (create-folders-and-files cap-dir-full)
   cap-dir-full ;; This becomes the last-cap-dir for the next item in the reduce
   ))
 
@@ -51,16 +58,49 @@
 (defn create-taxonomy [cap-list]
   (reduce create-cap-dir "" cap-list))
 
+(defn delete-directory-recursive
+  "Recursively delete a directory."
+  [^java.io.File file]
+  ;; when `file` is a directory, list its entries and call this
+  ;; function with each entry. can't `recur` here as it's not a tail
+  ;; position, sadly. could cause a stack overflow for many entries?
+  (when (.isDirectory file)
+    (doseq [file-in-dir (.listFiles file)]
+      (delete-directory-recursive file-in-dir)))
+  ;; delete the file or directory. if it it's a file, it's easily
+  ;; deletable. if it's a directory, we already have deleted all its
+  ;; contents with the code above (remember?)
+  (io/delete-file file))
+
+(defn delete-dir [dir-path]
+  (try (delete-directory-recursive (clojure.java.io/file dir-path))
+       (catch Exception _ "Nothing to DELETE")))
+
+(defn create-taxonomy-from-file [filepath dest-root]
+  (let [file-str (slurp filepath)
+        cap-list (str/split-lines file-str)]
+  (create-taxonomy cap-list)
+  ))
+
+
 
 (comment
 
+;; [1] create a capability-taxonomy from a file definition
+;;
+(create-taxonomy-from-file (str @CAPTAX-DIR ".txt") @CAPTAX-DIR)
+
+;; [2] Delete an existing capability-taxonomy directory
+;;
+(delete-dir @CAPTAX-DIR)
+
+;; Functions used whilst testing
 (create-cap-dir "/channel/dd/ee/ff/gg/hh" "../self-service")
 (reform-cap-str ["gg" "channel"])
+(slurp "src/tools/capability_taxonomy/TEMPLATE-README.md")
 
 (create-taxonomy ["/channel"])
 (create-taxonomy ["/channel" "/onboarding-origination" "/customer"])
-
-
 
 (str/split "../customer/f2/f3" #"\/")
 (next [1 2 3])

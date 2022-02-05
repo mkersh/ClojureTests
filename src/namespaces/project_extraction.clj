@@ -62,7 +62,7 @@
   (try (delete-directory-recursive (clojure.java.io/file dir-path))
        (catch Exception _ "Nothing to DELETE")))
 
-;; next function returns a mapper functionm
+;; next function returns a mapper function
 (defn create-project-file [proj-root local-root]
   (fn [namespace-id-str]
     (let [
