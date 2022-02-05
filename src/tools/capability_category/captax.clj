@@ -19,17 +19,15 @@
   (prn "Rest parts:" rest-parts)
   (let [rest-str (reform-cap-str rest-parts)]
     (condp = first-part
-      "" (do (prn "root path") rest-str)
-      "." (do (prn "use current path") (str last-cap-dir rest-str))
+      ""  rest-str
+      "." (str last-cap-dir rest-str)
       ".."
       (let [parts (path-str-to-list last-cap-dir)
             parts1 (reverse parts)
             num-parts (count parts1) ;; if 2 then parent-str = "/"
             parts2 (next parts1) ;; Only remove if more than one real-part
             parts3 (reverse parts2)
-            parent-str (if (= num-parts 2) "" (reform-cap-str parts3))
-            _ (prn "Res = " parts3)]
-        (prn "use parent path")
+            parent-str (if (= num-parts 2) "" (reform-cap-str parts3))]
         (str parent-str rest-str)))))
 
 
@@ -54,7 +52,7 @@
 
 (comment
 
-(create-cap-dir "/channel" "./self-service")
+(create-cap-dir "/channel/dd/ee/ff/gg/hh" "../self-service")
 (reform-cap-str ["gg" "channel"])
 
 (create-taxonomy ["/channel"])
