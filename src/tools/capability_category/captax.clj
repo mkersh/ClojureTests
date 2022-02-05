@@ -3,7 +3,9 @@
 
 (ns tools.capability-category.captax
   (:require
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [clojure.java.io :as io]
+   [clojure.java.shell :as sh]))
 
 (defn reform-cap-str [cap-parts]
   (let [first-part (first cap-parts)
