@@ -9,7 +9,7 @@
 
 ;; This is the directory where the capability-hierarchy will be created
 ;; 
-(defonce CAPTAX-DIR (atom "/Users/mkersh/captax/captax01"))
+(defonce CAPTAX-DIR (atom "/Users/mkersh/captax/CAPTAX-Examples/captax01"))
 
 (defn reform-cap-str [cap-parts]
   (let [first-part (first cap-parts)
@@ -94,6 +94,8 @@
 
 
 (comment
+
+(reset! CAPTAX-DIR "/Users/mkersh/captax/CAPTAX-Examples/captax01")
 
 ;; [1] create a capability-taxonomy from a file definition
 ;;
