@@ -262,7 +262,7 @@
   (reset! NUM_INSTAL_BULLET 10)
   (reset! AMOUNT 10000.0)
   (reset! PERIODIC_AMOUNT 300.16)
-  (reset! INTEREST_RATE 5.0)
+  (reset! INTEREST_RATE 10.0)
   (reset! VALUE_DATE (ext/adjust-timezone2 (str "2022" "-01-26T00:00:50+01:00") "Europe/Berlin")) ;; Change these dates as required
   (reset! FIRST_DATE (ext/adjust-timezone2 (str "2022" "-02-26T13:37:50+01:00") "Europe/Berlin"))
   (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
