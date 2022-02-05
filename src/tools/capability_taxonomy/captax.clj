@@ -35,11 +35,20 @@
             parent-str (if (= num-parts 2) "" (reform-cap-str parts3))]
         (str parent-str rest-str)))))
 
+(defn file-exists? [fp]
+  (.exists (io/file fp)))
+
 (defn create-folders-and-files [cap-dir-full]
   (prn "create-folders-and-files")
   (let [full-path (str @CAPTAX-DIR cap-dir-full)
-        dummy-file (str full-path "/dummy.txt")]
-    (io/make-parents dummy-file)))
+        dummy-file (str full-path "/dummy.txt")
+        from-fp  "src/tools/capability_taxonomy/TEMPLATE-README.md"
+        to-fp (str full-path "/README.md")]
+    (io/make-parents dummy-file)
+    (when (not (file-exists? to-fp))
+      (sh/sh "cp" from-fp to-fp))
+    
+    ))
 
 (defn create-cap-dir [last-cap-dir cap-dir]
   (let [parts (str/split cap-dir #"\/")
