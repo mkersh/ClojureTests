@@ -125,17 +125,22 @@
         label-list (map
                     (fn [pos]
                       (get context2 (+ pos 1))) (range 0 cnt))
-        label-str (reform-cap-str2 label-list)]
-    (prn "save: " label-str it)
+        label-str (subs (reform-cap-str2 label-list) 1)]
+    (println (str label-str "," it))
     context2))
 
 (defn generate-ECM-file [cap-list save-root]
   (reduce save-cap-item {} cap-list))
 
 (defn create-ECM-from-file [filepath dest-root ecm-root]
-  (let [_ (create-taxonomy-from-file filepath dest-root)]
-    ;; building the @CAPTAX-LIST when calling create-taxonomy-from-file above
-    (generate-ECM-file @CAPTAX-LIST ecm-root)))
+  (let [_ (create-taxonomy-from-file filepath dest-root)
+        ecm-path (str ecm-root "/ECM.csv")]
+    (io/make-parents ecm-path)
+    ;; built the @CAPTAX-LIST when calling create-taxonomy-from-file above
+    (with-open [out-data (io/writer ecm-path)]
+      (binding [*out* out-data]
+        (println "ID, Component")
+        (generate-ECM-file @CAPTAX-LIST ecm-root)))))
 
 (comment
 
@@ -152,7 +157,7 @@
 (delete-dir @CAPTAX-DIR)
 
 ;; [3] Create an ECM CSV file
-(create-ECM-from-file (str @CAPTAX-DIR ".txt") @CAPTAX-DIR (str @CAPTAX-DIR "/..s"))
+(create-ECM-from-file (str @CAPTAX-DIR ".txt") @CAPTAX-DIR (str @CAPTAX-DIR "/.."))
 
 (conj @CAPTAX-LIST 3)
 
