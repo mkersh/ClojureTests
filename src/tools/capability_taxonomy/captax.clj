@@ -11,11 +11,20 @@
 ;; 
 (defonce CAPTAX-DIR (atom "/Users/mkersh/captax/CAPTAX-Examples/captax01"))
 
+(defonce CAPTAX-LIST (atom []))
+
 (defn reform-cap-str [cap-parts]
   (let [first-part (first cap-parts)
         cap-parts1 (if (= first-part "") (next cap-parts) cap-parts)]
     (reduce (fn [p it]
               (str p "/" it))
+            "" cap-parts1)))
+
+(defn reform-cap-str2 [cap-parts]
+  (let [first-part (first cap-parts)
+        cap-parts1 (if (= first-part "") (next cap-parts) cap-parts)]
+    (reduce (fn [p it]
+              (str p "." it))
             "" cap-parts1)))
 
 (defn path-str-to-list [cap-dir]
@@ -51,20 +60,24 @@
     ))
 
 (defn create-cap-dir [last-cap-dir cap-dir]
-  (let [parts (str/split cap-dir #"\/")
+  (let [parts (str/split (str/trim cap-dir) #"\/")
         first-part (first parts)
         rest-parts (next parts)
         cap-dir-full (get-full-path first-part  rest-parts last-cap-dir)
         ]
   (prn cap-dir-full)
   (create-folders-and-files cap-dir-full)
+  (prn "reset " CAPTAX-LIST)
+  (reset! CAPTAX-LIST (conj @CAPTAX-LIST cap-dir-full))
   cap-dir-full ;; This becomes the last-cap-dir for the next item in the reduce
   ))
 
 ;; Create a directory structure from the cap-list.
 ;;     cap-list items are strings identifying a capability.
 ;;     cap-item can start with "/", "." or ".."
+;;
 (defn create-taxonomy [cap-list]
+  (reset! CAPTAX-LIST []) 
   (reduce create-cap-dir "" cap-list))
 
 (defn delete-directory-recursive
@@ -91,9 +104,42 @@
   (create-taxonomy cap-list)
   ))
 
+(defn reset-counters [context cnt]
+  (let [context1 (if (< cnt 2) (assoc context 2 0) context)
+        context2 (if (< cnt 3) (assoc context1 3 0) context1)
+        context3 (if (< cnt 4) (assoc context2 4 0) context2)
+        context4 (if (< cnt 5) (assoc context3 5 0) context3)
+        context5 (if (< cnt 6) (assoc context4 6 0) context4)
+        context6 (if (< cnt 7) (assoc context5 7 0) context5)]
+        context6
+        ))
 
+(defn save-cap-item [context cap-item]
+  (let [parts (str/split (str/trim cap-item) #"\/")
+        parts1 (next parts)
+        parts2 (reverse parts1)
+        cnt (count parts2)
+        it (first parts2)
+        context1 (reset-counters context cnt)
+        context2 (if (get context1 cnt) (update context1 cnt inc) (assoc context1 cnt 1))
+        label-list (map
+                    (fn [pos]
+                      (get context2 (+ pos 1))) (range 0 cnt))
+        label-str (reform-cap-str2 label-list)]
+    (prn "save: " label-str it)
+    context2))
+
+(defn generate-ECM-file [cap-list save-root]
+  (reduce save-cap-item {} cap-list))
+
+(defn create-ECM-from-file [filepath dest-root ecm-root]
+  (let [_ (create-taxonomy-from-file filepath dest-root)]
+    ;; building the @CAPTAX-LIST when calling create-taxonomy-from-file above
+    (generate-ECM-file @CAPTAX-LIST ecm-root)))
 
 (comment
+
+(range 0 2)
 
 (reset! CAPTAX-DIR "/Users/mkersh/captax/CAPTAX-Examples/captax01")
 
@@ -104,6 +150,11 @@
 ;; [2] Delete an existing capability-taxonomy directory
 ;;
 (delete-dir @CAPTAX-DIR)
+
+;; [3] Create an ECM CSV file
+(create-ECM-from-file (str @CAPTAX-DIR ".txt") @CAPTAX-DIR (str @CAPTAX-DIR "/..s"))
+
+(conj @CAPTAX-LIST 3)
 
 ;; Functions used whilst testing
 (create-cap-dir "/channel/dd/ee/ff/gg/hh" "../self-service")
