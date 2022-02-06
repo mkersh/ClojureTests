@@ -67,7 +67,6 @@
         ]
   (prn cap-dir-full)
   (create-folders-and-files cap-dir-full)
-  (prn "reset " CAPTAX-LIST)
   (reset! CAPTAX-LIST (conj @CAPTAX-LIST cap-dir-full))
   cap-dir-full ;; This becomes the last-cap-dir for the next item in the reduce
   ))
