@@ -30,10 +30,30 @@
 (defn path-str-to-list [cap-dir]
   (str/split cap-dir #"\/"))
 
+(defonce MEM-MAP (atom {}))
+
+(defn expand-cap [mem-id cap-it]
+  (let [mem-map @MEM-MAP
+        parent-cap (get mem-map mem-id)]
+  (str parent-cap cap-it)))
+
+(defn remember-cap [mem-id cap-it last-cap-dir]
+  (reset! MEM-MAP (assoc @MEM-MAP mem-id (if (= cap-it "") last-cap-dir cap-it)))
+  cap-it)
+
+
 (defn get-full-path [first-part rest-parts last-cap-dir]
   (let [rest-str (reform-cap-str rest-parts)]
     (condp = first-part
       ""  rest-str
+      "[M1]"  (remember-cap "M1" rest-str last-cap-dir)
+      "[M2]"  (remember-cap "M2" rest-str last-cap-dir)
+      "[M3]"  (remember-cap "M3" rest-str last-cap-dir)
+      "[M4]"  (remember-cap "M4" rest-str last-cap-dir)
+      "@M1"  (expand-cap "M1" rest-str)
+      "@M2"  (expand-cap "M2" rest-str)
+      "@M3"  (expand-cap "M3" rest-str)
+      "@M4"  (expand-cap "M4" rest-str)
       "." (str last-cap-dir rest-str)
       ".."
       (let [parts (path-str-to-list last-cap-dir)
@@ -48,7 +68,6 @@
   (.exists (io/file fp)))
 
 (defn create-folders-and-files [cap-dir-full]
-  (prn "create-folders-and-files")
   (let [full-path (str @CAPTAX-DIR cap-dir-full)
         dummy-file (str full-path "/dummy.txt")
         from-fp  "src/tools/capability_taxonomy/TEMPLATE-README.md"
@@ -65,10 +84,13 @@
         rest-parts (next parts)
         cap-dir-full (get-full-path first-part  rest-parts last-cap-dir)
         ]
-  (prn cap-dir-full)
-  (create-folders-and-files cap-dir-full)
-  (reset! CAPTAX-LIST (conj @CAPTAX-LIST cap-dir-full))
-  cap-dir-full ;; This becomes the last-cap-dir for the next item in the reduce
+  (if cap-dir-full
+    (do (prn cap-dir-full)
+        (create-folders-and-files cap-dir-full)
+        (reset! CAPTAX-LIST (conj @CAPTAX-LIST cap-dir-full))
+        cap-dir-full ;; This becomes the last-cap-dir for the next item in the reduce
+        )
+    last-cap-dir)
   ))
 
 ;; Create a directory structure from the cap-list.
@@ -125,7 +147,7 @@
                     (fn [pos]
                       (get context2 (+ pos 1))) (range 0 cnt))
         label-str (subs (reform-cap-str2 label-list) 1)]
-    (println (str label-str "," it))
+    (println (str label-str "," it "," "," "," "," "," "," ))
     context2))
 
 (defn generate-ECM-file [cap-list save-root]
@@ -138,7 +160,7 @@
     ;; built the @CAPTAX-LIST when calling create-taxonomy-from-file above
     (with-open [out-data (io/writer ecm-path)]
       (binding [*out* out-data]
-        (println "ID, Component")
+        (println "ID, Component, Marketplace, Other, Option Chosen, Connector(s), Comments, Re-use v Build v Buy v SaaS,")
         (generate-ECM-file @CAPTAX-LIST ecm-root)))))
 
 (comment
@@ -161,6 +183,11 @@
 (conj @CAPTAX-LIST 3)
 
 ;; Functions used whilst testing
+(create-cap-dir "" "[M1]/root-cap")
+(create-cap-dir "" "@M1/child")
+(create-cap-dir "hello there" "[M2]")
+(create-cap-dir "hello there" "@M2/jjj")
+
 (create-cap-dir "/channel/dd/ee/ff/gg/hh" "../self-service")
 (reform-cap-str ["gg" "channel"])
 (slurp "src/tools/capability_taxonomy/TEMPLATE-README.md")
