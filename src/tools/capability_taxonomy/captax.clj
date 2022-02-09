@@ -55,14 +55,14 @@
       "@M3"  (expand-cap "M3" rest-str)
       "@M4"  (expand-cap "M4" rest-str)
       "." (str last-cap-dir rest-str)
-      ".."
-      (let [parts (path-str-to-list last-cap-dir)
-            parts1 (reverse parts)
-            num-parts (count parts1) ;; if 2 then parent-str = "/"
-            parts2 (next parts1) ;; Only remove if more than one real-part
-            parts3 (reverse parts2)
-            parent-str (if (= num-parts 2) "" (reform-cap-str parts3))]
-        (str parent-str rest-str)))))
+      ".." (let [parts (path-str-to-list last-cap-dir)
+                 parts1 (reverse parts)
+                 num-parts (count parts1) ;; if 2 then parent-str = "/"
+                 parts2 (next parts1) ;; Only remove if more than one real-part
+                 parts3 (reverse parts2)
+                 parent-str (if (= num-parts 2) "" (reform-cap-str parts3))]
+             (str parent-str rest-str))
+      (throw (Exception. (str "Unknown prefix " first-part " - " rest-str))))))
 
 (defn file-exists? [fp]
   (.exists (io/file fp)))
