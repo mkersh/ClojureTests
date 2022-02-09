@@ -13,6 +13,9 @@
 
 (defonce CAPTAX-LIST (atom []))
 
+;; Will contain options to filter ECM generation
+(defonce ECM-GEN-OPTIONS (atom {:remove-prefix [#"/component"]}))
+
 (defn reform-cap-str [cap-parts]
   (let [first-part (first cap-parts)
         cap-parts1 (if (= first-part "") (next cap-parts) cap-parts)]
@@ -66,6 +69,16 @@
 
 (defn file-exists? [fp]
   (.exists (io/file fp)))
+
+(defn create-ecm-patch-script []
+  (let [full-path (str @CAPTAX-DIR "/..")
+        dummy-file (str full-path "/dummy.txt")
+        from-fp  "src/tools/capability_taxonomy/ecm-patch-script-template.txt"
+        to-fp (str full-path "/ecm-patch-script.gs")
+        ]
+    (io/make-parents dummy-file)
+    (when (not (file-exists? to-fp))
+      (sh/sh "cp" from-fp to-fp))))
 
 (defn create-folders-and-files [cap-dir-full]
   (let [full-path (str @CAPTAX-DIR cap-dir-full)
@@ -134,9 +147,32 @@
         context6 (if (< cnt 7) (assoc context5 7 0) context5)]
         context6
         ))
+(defn filter-cap-label [label-str ecm-gen-options]
+  (let [remove-list (:remove-prefix ecm-gen-options)]
+    (reduce (fn [res it]
+              (str/replace res it "")) label-str remove-list)))
+
+(defonce GAS-LIST (atom [])) ;; save {:row :label} into this list
+(defonce ECM-ROW (atom 1)) ;; This will be updated with the row of the CSV
+
+;; The item to add to the ECM CSV file is line-item
+;; What we do in this function though is gather information needed for create-ecm-patch-script
+(defn save-ecm-line [label-str line-item]
+  (swap! ECM-ROW inc) ;; increment ECM-ROW
+  (reset! GAS-LIST (conj @GAS-LIST {:row @ECM-ROW :label label-str}))
+  (println line-item))
+
+(comment 
+(reset! ECM-ROW 1)
+(swap! ECM-ROW inc)
+(save-ecm-line "1" "line1")
+(save-ecm-line "1.1" "line2")
+@GAS-LIST
+)
 
 (defn save-cap-item [context cap-item]
-  (let [parts (str/split (str/trim cap-item) #"\/")
+  (let [cap-item2 (filter-cap-label cap-item @ECM-GEN-OPTIONS)
+        parts (str/split (str/trim cap-item2) #"\/")
         parts1 (next parts)
         parts2 (reverse parts1)
         cnt (count parts2)
@@ -146,8 +182,8 @@
         label-list (map
                     (fn [pos]
                       (get context2 (+ pos 1))) (range 0 cnt))
-        label-str (subs (reform-cap-str2 label-list) 1)]
-    (println (str label-str "," it "," "," "," "," "," "," ))
+        label-str (if (empty? label-list) nil (subs (reform-cap-str2 label-list) 1))]
+    (when label-str (save-ecm-line label-str (str label-str "," it "," "," "," "," "," "," )))
     context2))
 
 (defn generate-ECM-file [cap-list save-root]
@@ -161,7 +197,8 @@
     (with-open [out-data (io/writer ecm-path)]
       (binding [*out* out-data]
         (println "ID, Component, Marketplace, Other, Option Chosen, Connector(s), Comments, Re-use v Build v Buy v SaaS,")
-        (generate-ECM-file @CAPTAX-LIST ecm-root)))))
+        (generate-ECM-file @CAPTAX-LIST ecm-root)))
+    (create-ecm-patch-script)))
 
 (comment
 
@@ -179,6 +216,8 @@
 
 ;; [3] Create an ECM CSV file
 (create-ECM-from-file (str @CAPTAX-DIR ".txt") @CAPTAX-DIR (str @CAPTAX-DIR "/.."))
+;; [3b] Change the default gen options 
+(reset! ECM-GEN-OPTIONS {:remove-prefix [#"/component"]})
 
 (conj @CAPTAX-LIST 3)
 
@@ -206,5 +245,10 @@
   (reform-cap-str (next parts)))
 
 (create-cap-dir "/channel" "../self-service")
+
+
+
+(filter-cap-label "ababababab" {:remove-prefix [#"b" #"a"]})
+(filter-cap-label "/customer/reg-reporting" {:remove-prefix [#"/customer"]})
 ;;
 )
