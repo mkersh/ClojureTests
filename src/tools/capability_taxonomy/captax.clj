@@ -15,6 +15,8 @@
 
 ;; Will contain options to filter ECM generation
 (defonce ECM-GEN-OPTIONS (atom {:remove-prefix [#"/component"]}))
+(defonce GAS-LIST (atom [])) ;; save {:row :label} into this list
+(defonce ECM-ROW (atom 1)) ;; This will be updated with the row of the CSV
 
 (defn reform-cap-str [cap-parts]
   (let [first-part (first cap-parts)
@@ -70,9 +72,93 @@
 (defn file-exists? [fp]
   (.exists (io/file fp)))
 
+(defn label-str-to-list [cap-dir]
+  (str/split cap-dir #"\."))
+
+(defn parent-label [label level]
+  (let [label-parts (label-str-to-list label)]
+    (take (- level 1) label-parts)))
+
+
+;; Next function groups rows using the following rules:
+;; (1) Label with >= level are candicates for the group
+;; (2) Label(s) should share the same parent to (- level 1)
+;;
+(defn group-level [level row-label-list body-str]
+  ;; Loop through row-label-list and group all rows, with label >= level, that share the same parent 
+  (let [groupit-obj
+        (reduce (fn [context row-item]
+                  (let [row-start (:row-start context)
+                        row (:row row-item)
+                        label (:label row-item)
+                        prev-parent (:parent context)
+                        parent (parent-label label level)
+                        label-depth (+ (count parent) 1)
+                        res-buffer (:res-buffer context)
+                        _ (prn "group-level: level=" level " label " label " parent= " parent " prev-parent= " prev-parent " label-depth= " label-depth)
+                        ]
+                    (if (= prev-parent "")
+                      ;; 01 - option
+                      (do
+                        (prn "option-1")
+                        {:res-buffer res-buffer :level level :parent parent :row-start nil})
+                      (if (and (= parent prev-parent) (>= label-depth level))
+                      ;; 02 - option
+                        (do
+                          (prn "option-2")
+                          {:res-buffer res-buffer :level level :parent parent :row-start (or row-start row) :row-end row})
+                        (if row-start
+                        ;; 03 - option
+                          (let [_ (prn "option-3")
+                                range-str (str "'" row-start ":" (- row 1) "'")
+                                gr-str (str "groupIt(" range-str ");\n")
+                                new-buffer (str res-buffer gr-str)]
+                            {:res-buffer new-buffer :parent parent :row-start nil :row-end nil})
+                          {:res-buffer res-buffer :parent parent :row-start nil :row-end nil})))))
+                {:res-buffer "" :parent nil :row-start nil}
+                row-label-list)
+        row-start (:row-start groupit-obj)  
+        row-end (:row-end groupit-obj)   
+        body1 (:res-buffer groupit-obj) 
+        last-gr (if row-end
+                  (let [range-str (str "'" row-start ":" row-end "'")
+                        gr-str (str "groupIt(" range-str ");\n")]
+                        gr-str
+                        ) 
+                  nil)
+        body2 (str body1 last-gr)
+        new-body (str body-str body2)]
+    new-body)
+  )
+
+
+;; build up a string of "groupIt(range-str);" calls for rows in the ECM
+;; that need to be grouped together
+;; 
+(defn build-ecm-patch-body [row-label-list group-max-depth]
+  (loop [i 2
+         body-str ""]
+    (let [body2 (group-level i row-label-list body-str)]
+      (if (> i group-max-depth)
+        body2
+        (recur (inc i) body2)))))
+
+
+(comment
+  (build-ecm-patch-body (take 100 @GAS-LIST) 2)
+  (parent-label "1.2.1" 3) 
+(count @GAS-LIST)
+(take 23 @GAS-LIST)
+(str nil "shsh")
+;;
+  )
+
+;; @GAS-LIST contains all the info needed to create the ECM patch file
+;; This patch file needs to generate instructions to group rows
 (defn create-ecm-patch-script []
   (let [full-path (str @CAPTAX-DIR "/..")
         dummy-file (str full-path "/dummy.txt")
+        patch-body (build-ecm-patch-body @GAS-LIST (:group-max-depth @ECM-GEN-OPTIONS))
         from-fp  "src/tools/capability_taxonomy/ecm-patch-script-template.txt"
         to-fp (str full-path "/ecm-patch-script.gs")
         ]
@@ -152,9 +238,6 @@
     (reduce (fn [res it]
               (str/replace res it "")) label-str remove-list)))
 
-(defonce GAS-LIST (atom [])) ;; save {:row :label} into this list
-(defonce ECM-ROW (atom 1)) ;; This will be updated with the row of the CSV
-
 ;; The item to add to the ECM CSV file is line-item
 ;; What we do in this function though is gather information needed for create-ecm-patch-script
 (defn save-ecm-line [label-str line-item]
@@ -192,6 +275,8 @@
 (defn create-ECM-from-file [filepath dest-root ecm-root]
   (let [_ (create-taxonomy-from-file filepath dest-root)
         ecm-path (str ecm-root "/ECM.csv")]
+    (reset! ECM-ROW 1) ;; Reset the Row counter we are on
+    (reset! GAS-LIST []) ;; Reset GAS-LIST
     (io/make-parents ecm-path)
     ;; built the @CAPTAX-LIST when calling create-taxonomy-from-file above
     (with-open [out-data (io/writer ecm-path)]
@@ -217,7 +302,7 @@
 ;; [3] Create an ECM CSV file
 (create-ECM-from-file (str @CAPTAX-DIR ".txt") @CAPTAX-DIR (str @CAPTAX-DIR "/.."))
 ;; [3b] Change the default gen options 
-(reset! ECM-GEN-OPTIONS {:remove-prefix [#"/component"]})
+(reset! ECM-GEN-OPTIONS {:remove-prefix [#"/component"] :group-max-depth 7})
 
 (conj @CAPTAX-LIST 3)
 
