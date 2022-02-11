@@ -145,11 +145,12 @@
 
 
 (comment
-  (build-ecm-patch-body (take 100 @GAS-LIST) 2)
+  (build-ecm-patch-body (take 212 @GAS-LIST) 2)
   (parent-label "1.2.1" 3) 
 (count @GAS-LIST)
-(take 23 @GAS-LIST)
+(take 212 @GAS-LIST)
 (str nil "shsh")
+(str/replace "aaa@@BODYbbbb" "@@BODY" "This is my body")
 ;;
   )
 
@@ -160,11 +161,11 @@
         dummy-file (str full-path "/dummy.txt")
         patch-body (build-ecm-patch-body @GAS-LIST (:group-max-depth @ECM-GEN-OPTIONS))
         from-fp  "src/tools/capability_taxonomy/ecm-patch-script-template.txt"
-        to-fp (str full-path "/ecm-patch-script.gs")
-        ]
+        template-str (slurp from-fp)
+        patch-file-str (str/replace template-str "@@BODY" patch-body)
+        to-fp (str full-path "/ecm-patch-script.gs")]
     (io/make-parents dummy-file)
-    (when (not (file-exists? to-fp))
-      (sh/sh "cp" from-fp to-fp))))
+    (spit to-fp patch-file-str)))
 
 (defn create-folders-and-files [cap-dir-full]
   (let [full-path (str @CAPTAX-DIR cap-dir-full)

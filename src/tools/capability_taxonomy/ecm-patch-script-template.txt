@@ -14,5 +14,6 @@ function ungroupIt(str1) {
 
 function main() {
   @@BODY
+  spreadsheet.getActiveSheet().collapseAllRowGroups();
 }
 
