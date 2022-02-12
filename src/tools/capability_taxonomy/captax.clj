@@ -10,8 +10,8 @@
 ;; This is the directory where the capability-hierarchy will be created
 ;; 
 (defonce CAPTAX-DIR (atom "/Users/mkersh/captax/CAPTAX-Examples/captax01"))
-
 (defonce CAPTAX-LIST (atom []))
+(defonce CAPTAX-ROOT-CACHE (atom {}))
 
 ;; Will contain options to filter ECM generation
 (defonce ECM-GEN-OPTIONS (atom {:remove-prefix [#"/component"]}))
@@ -46,11 +46,45 @@
   (reset! MEM-MAP (assoc @MEM-MAP mem-id (if (= cap-it "") last-cap-dir cap-it)))
   cap-it)
 
+(defn get-$-item [num]
+  (let [count-keys-sorted (into [] (sort (keys @CAPTAX-ROOT-CACHE)))
+        key (get count-keys-sorted (- num 1))]
+    (get @CAPTAX-ROOT-CACHE key)))
+
+;; Store cap-path values in CAPTAX-ROOT-CACHE
+;; Can then be used with a $1/<cap-rel-path>, $2/<cap-rel-path>, $3/<cap-rel-path>
+;; Cap-path(s) will be automatically stored whenever an absolute path is used or a ./<cap-path> 
+(defn store-$-path [prefix cap-path]
+ (let [_ (when (= prefix "")
+            ;; See if we need to reset the CAPTAX-ROOT-CACHE
+           (let [current-$1 (get-$-item 1)
+                 contains? (if current-$1 (.contains cap-path current-$1) nil)]
+             (when (not contains?) (reset! CAPTAX-ROOT-CACHE {}))))
+       parts (path-str-to-list cap-path)
+       parts-count (count parts)]
+   (reset! CAPTAX-ROOT-CACHE (assoc @CAPTAX-ROOT-CACHE parts-count cap-path))
+   cap-path))
+
+(comment
+(get-$-item 1)
+(get-$-item 2)
+(store-$-path "" "/root/cap1")
+(store-$-path "" "/root/cap1/gg")
+(store-$-path "" "/root2/cap1/")
+(get '(3) 0)
+@CAPTAX-ROOT-CACHE
+;;
+)
+
+(defn expand-root-item [num rest-str]
+  (let [cap-item (str (get-$-item num) rest-str)]
+       (store-$-path "" cap-item)
+       cap-item))
 
 (defn get-full-path [first-part rest-parts last-cap-dir]
   (let [rest-str (reform-cap-str rest-parts)]
     (condp = first-part
-      ""  rest-str
+      ""  (store-$-path "" rest-str)
       "[M1]"  (remember-cap "M1" rest-str last-cap-dir)
       "[M2]"  (remember-cap "M2" rest-str last-cap-dir)
       "[M3]"  (remember-cap "M3" rest-str last-cap-dir)
@@ -59,7 +93,7 @@
       "@M2"  (expand-cap "M2" rest-str)
       "@M3"  (expand-cap "M3" rest-str)
       "@M4"  (expand-cap "M4" rest-str)
-      "." (str last-cap-dir rest-str)
+      "." (store-$-path "." (str last-cap-dir rest-str))
       ".." (let [parts (path-str-to-list last-cap-dir)
                  parts1 (reverse parts)
                  num-parts (count parts1) ;; if 2 then parent-str = "/"
@@ -67,14 +101,20 @@
                  parts3 (reverse parts2)
                  parent-str (if (= num-parts 2) "" (reform-cap-str parts3))]
              (str parent-str rest-str))
-       "..." (let [parts (path-str-to-list last-cap-dir)
+      "..." (let [parts (path-str-to-list last-cap-dir)
                   parts1 (reverse parts)
                   num-parts (count parts1) ;; if 2 then parent-str = "/"
                   parts2 (next (next parts1)) ;; Only remove if more than one real-part
                   parts3 (reverse parts2)
                   parent-str (if (= num-parts 2) "" (reform-cap-str parts3))]
               (str parent-str rest-str))
+      "$1" (expand-root-item 1 rest-str)
+      "$2" (expand-root-item 2 rest-str)
+      "$3" (expand-root-item 3 rest-str)
+      "$4" (expand-root-item 4 rest-str)
+      "$5" (expand-root-item 5 rest-str)
       (throw (Exception. (str "Unknown prefix " first-part " - " rest-str))))))
+      
 
 (defn file-exists? [fp]
   (.exists (io/file fp)))
@@ -206,6 +246,7 @@
 ;;
 (defn create-taxonomy [cap-list]
   (reset! CAPTAX-LIST []) 
+  (reset! CAPTAX-ROOT-CACHE {})
   (reduce create-cap-dir "" cap-list))
 
 (defn delete-directory-recursive
