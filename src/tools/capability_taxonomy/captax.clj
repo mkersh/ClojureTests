@@ -14,7 +14,7 @@
 (defonce CAPTAX-ROOT-CACHE (atom {}))
 
 ;; Will contain options to filter ECM generation
-(defonce ECM-GEN-OPTIONS (atom {:remove-prefix [#"/component"]}))
+(defonce ECM-GEN-OPTIONS (atom {:remove-prefix [#"/component"]} :group-max-depth 7))
 (defonce GAS-LIST (atom [])) ;; save {:row :label} into this list
 (defonce ECM-ROW (atom 1)) ;; This will be updated with the row of the CSV
 
@@ -34,6 +34,9 @@
 
 (defn path-str-to-list [cap-dir]
   (str/split cap-dir #"\/"))
+
+(defn label-str-to-list [label]
+  (str/split label #"\."))
 
 (defonce MEM-MAP (atom {}))
 
@@ -114,13 +117,10 @@
       "$4" (expand-root-item 4 rest-str)
       "$5" (expand-root-item 5 rest-str)
       (throw (Exception. (str "Unknown prefix " first-part " - " rest-str))))))
-      
+
 
 (defn file-exists? [fp]
   (.exists (io/file fp)))
-
-(defn label-str-to-list [cap-dir]
-  (str/split cap-dir #"\."))
 
 (defn parent-label [label level]
   (let [label-parts (label-str-to-list label)]
@@ -213,6 +213,60 @@
         to-fp (str full-path "/ecm-patch-script.gs")]
     (io/make-parents dummy-file)
     (spit to-fp patch-file-str)))
+
+(defonce LABEL-TO_CAP (atom {}))
+(defn build-springy-patch-body [label-list cap-list]
+  (reset! LABEL-TO_CAP {})
+  (let [nodes-str (reduce str (map (fn [label-obj cap]
+                                     (let [label (:label label-obj)
+                                           gensym1 (gensym)
+                                           cap1 (first (reverse (path-str-to-list cap)))]
+                                       (reset! LABEL-TO_CAP (assoc @LABEL-TO_CAP label gensym1))
+                                       (str "var " gensym1 " = graph.newNode({label: '" cap1 "'});\n")))
+                                   label-list cap-list))
+        edges-str (reduce str (map (fn [label-obj]
+                                     (let [label (:label label-obj)
+                                           parts (label-str-to-list label)
+                                           parent (if (> (count parts) 1)
+                                                    (subs (reform-cap-str2 (reverse (rest (reverse parts)))) 1)
+                                                    nil)]
+                                       (if parent
+                                         (let [cap-gensym (get @LABEL-TO_CAP label)
+                                               parent-gensym (get @LABEL-TO_CAP parent)]
+                                           (str "graph.newEdge(" parent-gensym "," cap-gensym "," "{color: '#00A0B0'});\n"))
+                                         "")))
+                                   label-list))]
+    (str nodes-str "\n\n" edges-str)))
+
+(defn create-springy-file []
+  (let [full-path (str @CAPTAX-DIR "/..")
+        dummy-file (str full-path "/springy/dummy.txt")
+        patch-body (build-springy-patch-body @GAS-LIST @CAPTAX-LIST)
+        from-fp  "src/tools/capability_taxonomy/springy/springy-template.html"
+        from-lib1 "src/tools/capability_taxonomy/springy/springy.js"
+        to-lib1 (str full-path "/springy/springy.js")
+        from-lib2 "src/tools/capability_taxonomy/springy/springyui.js"
+        to-lib2 (str full-path "/springy/springyui.js")
+        template-str (slurp from-fp)
+        patch-file-str (str/replace template-str "@@BODY" patch-body)
+        to-fp (str full-path "/springy/springy.html")]
+    (io/make-parents dummy-file)
+    (spit to-fp patch-file-str)
+    (sh/sh "cp" from-lib1 to-lib1)
+    (sh/sh "cp" from-lib2 to-lib2)
+    ))
+
+(comment
+(gensym)
+(subs "abcd" 1)
+(reform-cap-str2 (reverse (rest (reverse (label-str-to-list "1.2.3")))))
+@CAPTAX-LIST
+@GAS-LIST
+(build-springy-patch-body @GAS-LIST @CAPTAX-LIST)
+(create-springy-file)
+;;
+)
+
 
 (defn create-folders-and-files [cap-dir-full]
   (let [full-path (str @CAPTAX-DIR cap-dir-full)
