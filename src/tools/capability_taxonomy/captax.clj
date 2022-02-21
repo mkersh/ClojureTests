@@ -222,7 +222,7 @@
                                            gensym1 (gensym)
                                            cap1 (first (reverse (path-str-to-list cap)))]
                                        (reset! LABEL-TO_CAP (assoc @LABEL-TO_CAP label gensym1))
-                                       (str "var " gensym1 " = graph.newNode({label: '" cap1 "'});\n")))
+                                       (str "var " gensym1 " = graph.newNode({label: '" cap1 "', mass: '1.0'});\n")))
                                    label-list cap-list))
         edges-str (reduce str (map (fn [label-obj]
                                      (let [label (:label label-obj)
