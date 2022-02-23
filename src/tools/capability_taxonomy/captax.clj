@@ -5,11 +5,14 @@
   (:require
    [clojure.string :as str]
    [clojure.java.io :as io]
-   [clojure.java.shell :as sh]))
+   [clojure.java.shell :as sh]
+   [clojure.pprint :as pp]))
 
 ;; This is the directory where the capability-hierarchy will be created
 ;; 
 (defonce CAPTAX-DIR (atom "/Users/mkersh/captax/CAPTAX-Examples/captax01"))
+(defonce CAPTAX-DIR-INFO (atom "/Users/mkersh/captax/CAPTAX-Examples/generate/captax01-info.edn"))
+(defonce CAPTAX-INFO-DB (atom {}))
 (defonce CAPTAX-LIST (atom []))
 (defonce CAPTAX-ROOT-CACHE (atom {}))
 
@@ -266,6 +269,87 @@
 (create-springy-file)
 ;;
 )
+
+;; ****************************************
+;; Next section has functions for injecting info from the (@CAPTAX-DIR)-info.edn file into the ECM
+
+(defn save-to-file
+  [file-name s]
+  (spit file-name s))
+
+;; Get the string format to save to the file
+;; NOTE: Planning to save as Clojure EDN format (at least initially)
+(defn get-object-str [object]
+  (let [out (java.io.StringWriter.)]
+    (pp/pprint object out)
+    (.toString out)))
+
+;; Save object to a file
+(defn save-object [object fpath]
+  (let [object-str (get-object-str object)]
+    ;;(prn "save-object:" file-path)    
+    (io/make-parents fpath)
+    (save-to-file fpath object-str)))
+
+(defn read-object [fpath]
+  (read-string (slurp fpath)))
+
+(defn get-ECM-info-data []
+  (let [fpath (str @CAPTAX-DIR-INFO)
+        _ (prn "Reading ECM info from:" fpath)
+        info-obj (read-object fpath)]
+    (reset! CAPTAX-INFO-DB info-obj)))
+
+(defn get-smaller-cap-path [cap-path]
+  (let [parts (path-str-to-list cap-path)
+        parts1 (next (next parts))]
+    (reform-cap-str parts1)))
+
+(defn get-field-val [info-obj fieldkw]
+  (let [vals (fieldkw info-obj)]
+  (if (vector? vals)
+    ;; convert into a multiline string
+    (reduce (fn [res it] (str res "\n" it)) vals)
+    ;; else - single value, just return
+    vals)
+  ))
+
+;; Find best match for cap-path in the @CAPTAX-INFO-DB and return value for a specific fieldkw
+(defn get-ECM-info-field [cap-path fieldkw]
+  (loop [cap-path1 cap-path]
+    (when (not= cap-path1 "")
+      (let [info-obj (get @CAPTAX-INFO-DB cap-path1)]
+        (if info-obj (get-field-val info-obj fieldkw)
+            (recur (get-smaller-cap-path cap-path1)))))))
+
+(comment
+@CAPTAX-INFO-DB
+(get-ECM-info-data)
+
+(vector? 1)
+(get-ECM-info-field "/jjjj/jj/hh/channels" :marketplace)
+
+(get-field-val {:f1 "single line" :f2 ["line1" "line2"]} :f2)
+
+(get-smaller-cap-path "/channels")
+
+(let [fpath (str @CAPTAX-DIR-INFO )
+      obj {:this 1 :that 2}]
+(prn "saving to:" fpath)
+;;(save-object obj fpath)
+(get-in (read-object fpath) ["/channels" :other])
+
+)
+
+(path-str-to-list "/1/2/3")
+  (reform-cap-str (next ["" "1" "2" "3"]))
+(reform-cap-str (next [1 2 3]))
+;;
+)
+
+
+
+;; ****************************************
 
 
 (defn create-folders-and-files [cap-dir-full]
