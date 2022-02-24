@@ -17,7 +17,7 @@
 (defonce CAPTAX-ROOT-CACHE (atom {}))
 
 ;; Will contain options to filter ECM generation
-(defonce ECM-GEN-OPTIONS (atom {:remove-prefix [#"/component"]} :group-max-depth 7))
+(defonce ECM-GEN-OPTIONS (atom {:remove-prefix [#"/component"]} :group-max-depth 10))
 (defonce GAS-LIST (atom [])) ;; save {:row :label} into this list
 (defonce ECM-ROW (atom 1)) ;; This will be updated with the row of the CSV
 
@@ -427,10 +427,18 @@
 
 ;; The item to add to the ECM CSV file is line-item
 ;; What we do in this function though is gather information needed for create-ecm-patch-script
-(defn save-ecm-line [label-str line-item]
+(defn save-ecm-line0 [label-str line-item]
   (swap! ECM-ROW inc) ;; increment ECM-ROW
   (reset! GAS-LIST (conj @GAS-LIST {:row @ECM-ROW :label label-str}))
   (println line-item))
+
+(defn save-ecm-line [label-str line-obj]
+  (let [cap-id (:cap-id line-obj)
+        cap-name (:cap-name line-obj)
+        line-item (str cap-id "," cap-name "," "," "," "," "," ",")]
+    (swap! ECM-ROW inc) ;; increment ECM-ROW
+    (reset! GAS-LIST (conj @GAS-LIST {:row @ECM-ROW :label label-str}))
+    (println line-item)))
 
 (comment 
 (reset! ECM-ROW 1)
@@ -453,7 +461,8 @@
                     (fn [pos]
                       (get context2 (+ pos 1))) (range 0 cnt))
         label-str (if (empty? label-list) nil (subs (reform-cap-str2 label-list) 1))]
-    (when label-str (save-ecm-line label-str (str label-str "," it "," "," "," "," "," "," )))
+    (when label-str (save-ecm-line label-str {:cap-id label-str :cap-name it}))
+    ;;(when label-str (save-ecm-line label-str (str label-str "," it "," "," "," "," "," ",")))
     context2))
 
 (defn generate-ECM-file [cap-list save-root]
@@ -489,7 +498,7 @@
 ;; [3] Create an ECM CSV file
 (create-ECM-from-file (str @CAPTAX-DIR ".txt") @CAPTAX-DIR (str @CAPTAX-DIR "/.."))
 ;; [3b] Change the default gen options 
-(reset! ECM-GEN-OPTIONS {:remove-prefix [#"/component"] :group-max-depth 7})
+(reset! ECM-GEN-OPTIONS {:remove-prefix [#"/component"] :group-max-depth 10})
 
 (conj @CAPTAX-LIST 3)
 
