@@ -299,6 +299,30 @@ test-func
 ;;; https://stackoverflow.com/questions/13150568/deftype-vs-defrecord
 ;;; https://clojure.org/reference/datatypes
 
+;; [5.2] defprotocol approach - Using defrecord
+
+(defprotocol Fun-Time (drinky-drinky [_ n]))
+
+(defrecord Someone [nick-name preferred-drink]
+  Fun-Time
+  (drinky-drinky [_ n] (str nick-name "(having " preferred-drink "): uuumm" "- having " n)))
+
+(def dude (->Someone "Freddy" "daiquiri"))
+;; Use alternative way of creating a record
+(def dude2 (Someone. "John" "Whisky"))
+dude
+(ns-unmap *ns* 'Fun-Time)
+(drinky-drinky dude2 3)
+
+(defrecord Animal [type fav-drink]
+  Fun-Time
+  (drinky-drinky [_ _] (str type " drink " fav-drink)))
+(def cow (->Animal :cow "milk"))
+(def dog (->Animal :dog "milk"))
+(def cat (->Animal :cat "cream"))
+
+(drinky-drinky cat 3) 
+
 
 ;; [5.3] 3rd way of doing Polymorphism in Clojure
 ;; If the defmulti or defprotocol approaches above are not to your liking
