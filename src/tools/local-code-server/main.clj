@@ -1,3 +1,20 @@
+;;; ****************************************
+;;;
+;;; GotoFile Tool/App
+;;;
+;;; Creates a local webserver that can display files in your VSCode editor
+;;; Allows you to bookmark code URLs in your notes applications (OneNote, Miro etc) and when you click 
+;;; on them they display the code/file in VSCode
+;;;
+;;; Starting the Webserver: See [1] below
+;;;
+;;; Example URLS:
+;;; http://localhost:3000/goto-file2?file=<filepath>&line=<linenum>
+;;; NOTE: Passing line param is optional. If line not passed then line=1 will be assumed
+;;;
+;;; Supports a number of placeholders that can be added to the <filepath> to make them relative
+;;;     {{CLOJURE_TESTS}} - E.g  http://localhost:3000/goto-file2?file={{CLOJURE_TESTS}}/<filepath>&line=<linenum>
+
 (ns tools.local-code-server.main
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
@@ -57,11 +74,11 @@
 
 (comment
 ;; https://ring-clojure.github.io/ring/ring.adapter.jetty.html
-
 ;;(jet/run-jetty app {:join? false :port 3000})
+
+;; [1] Start/Stop the webserver
   (.start server) ;; http://localhost:3000
   (.stop server)
 
-  (resp/resource-response "public/test.txt")
 ;;
   )
