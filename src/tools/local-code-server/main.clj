@@ -34,7 +34,7 @@
 
 (defn goto-file [query-params]
   (let [file (expand-placeholder (get query-params "file"))
-        line (get query-params "line")]
+        line (or (get query-params "line") 1)]
     (sh/sh "code" "-g" (str file ":" line))
     (str "Jumping to File=" file " Line=" line)
     ))
