@@ -3,7 +3,7 @@
 ;;; GotoFile Tool/App
 ;;;
 ;;; Creates a local webserver that can display files in your VSCode editor
-;;; Allows you to bookmark code URLs in your notes applications (OneNote, Miro etc) and when you click 
+;;; Allows you to bookmark code URLs in your note applications (OneNote, Miro etc) and when you click 
 ;;; on them they display the code/file in VSCode
 ;;;
 ;;; Starting the Webserver: See [1] below
@@ -14,6 +14,8 @@
 ;;;
 ;;; Supports a number of placeholders that can be added to the <filepath> to make them relative
 ;;;     {{CLOJURE_TESTS}} - E.g  http://localhost:3000/goto-file2?file={{CLOJURE_TESTS}}/<filepath>&line=<linenum>
+;;;
+;;; NOTE: The placeholder values are stored in placeholder-list 
 
 (ns tools.local-code-server.main
   (:require [compojure.core :refer :all]
