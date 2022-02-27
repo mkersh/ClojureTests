@@ -37,7 +37,8 @@
   (let [file (expand-placeholder (get query-params "file"))
         line (or (get query-params "line") 1)]
     (sh/sh "code" "-g" (str file ":" line))
-    (str "Jumping to File=" file " Line=" line)
+    ;; Close the browser window 
+    (str "<script>window.close();</script>")
     ))
 
 (defroutes app
