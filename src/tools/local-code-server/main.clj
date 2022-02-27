@@ -10,7 +10,8 @@
             [clojure.string :as str]
             ))
 
-(def placeholder-list {"{{CLOJURE_TESTS}}" "/Users/mkersh/clojure/ClojureTests"})
+(def placeholder-list
+  {"{{CLOJURE_TESTS}}" "/Users/mkersh/clojure/ClojureTests"})
 
 (defn expand-placeholder [file]
   (let [placeholders (re-seq #"\{\{[^\}]*\}\}" file)]
