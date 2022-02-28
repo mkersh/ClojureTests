@@ -367,6 +367,9 @@
 (save-to-csv-file "testsch7c.csv" (expand-schedule 1000000 0.50M 12 "2019-09-25" "2020-01-25")) ;; Simar's eg2 - "Intrest Less than the 1st Inst Amount"
 (save-to-csv-file "testsch7d.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-04")) ;; Simar's egn - Pr one
 
+;; Test injecting into Mambu balloon loan
+(save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2022-02-26"))
+
 (get-r0-interest-rate "2019-09-25" "2019-12-25" 5.00M)
 
   (days-diff "2019-09-25" "2019-12-25")

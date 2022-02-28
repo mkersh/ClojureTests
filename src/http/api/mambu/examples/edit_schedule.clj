@@ -175,6 +175,15 @@
                                "gracePeriod" (:grace_period context)
                                "repaymentInstallments" (:num-installments context)}}})
 
+(defn change-periodic-payment-api [context]
+  {:url (str "{{*env*}}/loans/" (:accid context) ":changePeriodicPayment")
+   :method api/POST
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}
+   :query-params {}
+   :body  {"periodicPayment" (:amount context)
+           "valueDate" (:value-date context)}})
+
 (defn create-loan-account [accname options]
   (let [res (steps/apply-api create-installment-loan-api
                              {:cust-key (:cust-key options)
@@ -194,7 +203,8 @@
 ;; working on your own tenant
 (defonce CUSTKEY (atom "8a818f3f7e910785017e925d290745e3")) ;; 313566992
 (defonce PRODKEY (atom "8a818ff17d470d02017d4808aaf217e9"))
-(defonce PRODKEY_BULLET (atom "8a818e2a7d1e84c5017d1ec09e79013c"))
+;;(defonce PRODKEY_BULLET (atom "8a818e2a7d1e84c5017d1ec09e79013c"))
+(defonce PRODKEY_BULLET (atom "8a818e447f3c6cfc017f3f613f9659d2")) 
 (defonce ACCID (atom nil)) ;; This atom gets set by the (create-new-loan ...)
 (defonce ACCID_BULLET (atom nil)) ;; This atom gets set by the (create-new-bullet-loan ...)
 (defonce NUM_INSTAL_AMORT (atom 20))
@@ -266,6 +276,7 @@
   (reset! VALUE_DATE (ext/adjust-timezone2 (str "2022" "-01-26T00:00:50+01:00") "Europe/Berlin")) ;; Change these dates as required
   (reset! FIRST_DATE (ext/adjust-timezone2 (str "2022" "-02-26T13:37:50+01:00") "Europe/Berlin"))
   (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
+  (reset! PRODKEY_BULLET "8a818e447f3c6cfc017f3f613f9659d2")
 
   ;; [2] This next step converts into a bullet loan
   ;;    It will reduce the Term of the loans from @NUM_INSTAL_AMORT to @NUM_INSTAL_BULLET
@@ -318,5 +329,9 @@
   (api/PRINT (:last-call (steps/apply-api get-account {:accid @ACCID})))
 
 
+
+  ;; [7] Change the repayment amount of a balloon loan
+(let [value-date (ext/adjust-timezone2 "2022-02-26T00:00:50+01:00" "Europe/Berlin")]
+  (api/PRINT (:last-call (steps/apply-api change-periodic-payment-api {:accid @ACCID_BULLET :amount 522.16M :value-date value-date}))))
   ;;
   )
