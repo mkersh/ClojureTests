@@ -3,7 +3,7 @@
 ;;; GotoFile Tool/App
 ;;;
 ;;; Creates a local webserver that can display files in your VSCode editor
-;;; Allows you to bookmark code URLs in your note applications (OneNote, Miro etc) and when you click 
+;;; Allows you to linkto code URLs in your note applications (OneNote, Miro etc) and when you click 
 ;;; on them they display the code/file in VSCode
 ;;;
 ;;; Starting the Webserver: See [1] below
@@ -107,6 +107,19 @@
 ;;
 )
 
+;; ***********************************
+;; Apply a VSCode code command to open up a file in your VSCode App
+;; Which file to open and where to jumpto is passed in the query-params:
+;;
+;;     * file      - <filepath> to jump to, can contain {{<placeholder>}}
+;;     * line      - <line> to jumpto, if missing default=1
+;;     * bookmark  - <bookmark> to jumpto. Searches for #bookmark= <bookmark> and jumpto this line
+;;
+;; A number of special {{<placeholder>}}'s are supported:
+;;
+;;     * {{CLOJURE_TESTS}} - Expanded to the value in placeholder-list
+;;
+
 (defn goto-file [query-params]
   (let [file (expand-placeholder (get query-params "file"))
         line (or (get query-params "line") 1)
@@ -118,6 +131,7 @@
     (str "<script>window.close();</script>")
     ))
 
+;; Define the possible routes of our webserver
 (defroutes app
   (GET "/" [] (resp/resource-response "public/goto-file.html"))
   (GET "/gen-placeholder" [] (do (generate-placeholder) "<a href='/'>BACK</a>"))
@@ -135,10 +149,9 @@
 (defonce server (jet/run-jetty #'app-with-reload {:join? false :port 3000}))
 
 (comment
-;; https://ring-clojure.github.io/ring/ring.adapter.jetty.html
-;;(jet/run-jetty app {:join? false :port 3000})
+  ;; *********************************************
+  ;; [1] Start/Stop the webserver
 
-;; [1] Start/Stop the webserver
   (.start server) ;; http://localhost:3000
   (.stop server)
 
