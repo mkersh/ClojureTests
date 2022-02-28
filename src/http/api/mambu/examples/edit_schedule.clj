@@ -250,6 +250,7 @@
 ;; ***[EXAMPLES]********************************************************
 ;; Examples off how to use this library  
 ;;
+;; #bookmark= c6906f02-3c46-4919-ba7b-058831bd90f7
 
 (comment
   ;; [0] Next function deletes/zaps all loans for @CUSTKEY

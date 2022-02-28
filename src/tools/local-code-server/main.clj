@@ -33,6 +33,8 @@
 
 (import '[java.awt.datatransfer DataFlavor StringSelection Transferable])
 
+(defonce LAST-PLACEHOLDER (atom ""))
+
 (defn clipboard []
   (.getSystemClipboard (java.awt.Toolkit/getDefaultToolkit)))
 
@@ -41,6 +43,12 @@
     (.setContents (clipboard) selection selection)
     text
     ))
+
+(defn paste-from-clipboard []
+  (try
+    (.getTransferData (.getContents (clipboard) nil) (DataFlavor/stringFlavor))
+    (catch java.lang.NullPointerException _e nil)))
+
 
 (def placeholder-list
   {"{{CLOJURE_TESTS}}" "/Users/mkersh/clojure/ClojureTests"})
@@ -56,14 +64,15 @@
 
 (defn generate-placeholder []
   (let [uuid (UUID/randomUUID)]
+    (reset! LAST-PLACEHOLDER uuid)
     (copy-to-clipboard (str "#bookmark= " uuid))))
 
 (defn generate-temp-bookmark1 []
-  (let [url-str "http://localhost:3000/goto-file?file={{CLOJURE_TESTS}}/&bookmark=xxx"]
+  (let [url-str (str "http://localhost:3000/goto-file?file={{CLOJURE_TESTS}}/" (paste-from-clipboard) "&bookmark=" @LAST-PLACEHOLDER)]
     (copy-to-clipboard url-str)))
 
 (defn generate-temp-bookmark2 []
-  (let [url-str "http://localhost:3000/goto-file?file={{CLOJURE_TESTS}}/&line=1"]
+  (let [url-str (str "http://localhost:3000/goto-file?file={{CLOJURE_TESTS}}/" (paste-from-clipboard) "&line=1")]
     (copy-to-clipboard url-str)))
 
 ;; Find the placeholder in the file and return the line-number it is on
@@ -77,6 +86,7 @@
 
 (comment
 (clipboard)
+(paste-from-clipboard)
 (UUID/randomUUID) 
 ;; #bookmark= bcc294fe-03f0-4812-a326-2d552148c8f1
 (copy-to-clipboard "Copy this text to the clipboard")
@@ -112,7 +122,7 @@
   (GET "/" [] (resp/resource-response "public/goto-file.html"))
   (GET "/gen-placeholder" [] (do (generate-placeholder) "<a href='/'>BACK</a>"))
   (GET "/gen-temp-bookmark1" [] (do (generate-temp-bookmark1) "<a href='/'>BACK</a>"))
-  (GET "/gen-temp-bookmark2" [] (do (generate-temp-bookmark1) "<a href='/'>BACK</a>"))
+  (GET "/gen-temp-bookmark2" [] (do (generate-temp-bookmark2) "<a href='/'>BACK</a>"))
   (GET "/about" request (str "<h1>Hello World!!!</h1>" request))
   (GET "/goto-file" {query-params :query-params} (goto-file query-params))
   (route/not-found "<h1>Page not found</h1>"))

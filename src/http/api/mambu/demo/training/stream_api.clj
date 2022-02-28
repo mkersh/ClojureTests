@@ -178,6 +178,8 @@
 (def apiKey2 (get-auth2 "env6")) ;; Get apikey for europeshowcase.sandbox.mambu.com with core API consumer
 
 (comment
+  ;; #bookmark= 1989a54f-774f-46f0-a1da-5c50645c7394
+  ;;
   ;; [0] - PreRequisities - Needed before you can start to stream events
   ;; [0.1] Setup a StreamingAPI Topic in the Mambu UI
   ;; This is very similar to setting up a webhook
@@ -210,7 +212,7 @@
 
   ;; [4] Call next function to stop consume-sse-stream
   ;; NOTE: May take a little time. When complete you will see output "Stopping stream consumption" 
-  (stop-client) 
+  (stop-client)
 
   ;; [5] Make some changes to a customer - To generate streaming events
   (modify-customer apiKey2 "726497757" "Tester" 1 30) ;; Change middleName to Tester<n> - apply a number of times based on last 2 params
