@@ -274,7 +274,7 @@
   (reset! PERIODIC_AMOUNT 300.16)
   (reset! INTEREST_RATE 10.0)
   (reset! VALUE_DATE (ext/adjust-timezone2 (str "2022" "-01-26T00:00:50+01:00") "Europe/Berlin")) ;; Change these dates as required
-  (reset! FIRST_DATE (ext/adjust-timezone2 (str "2022" "-02-26T13:37:50+01:00") "Europe/Berlin"))
+  (reset! FIRST_DATE (ext/adjust-timezone2 (str "2024" "-01-26T13:37:50+01:00") "Europe/Berlin"))
   (reset! NUM_MONTHS 1) ;; used by distribute-dates-instalments
   (reset! PRODKEY_BULLET "8a818e447f3c6cfc017f3f613f9659d2")
 
@@ -332,6 +332,6 @@
 
   ;; [7] Change the repayment amount of a balloon loan
 (let [value-date (ext/adjust-timezone2 "2022-02-26T00:00:50+01:00" "Europe/Berlin")]
-  (api/PRINT (:last-call (steps/apply-api change-periodic-payment-api {:accid @ACCID_BULLET :amount 522.16M :value-date value-date}))))
+  (api/PRINT (:last-call (steps/apply-api change-periodic-payment-api {:accid @ACCID_BULLET :amount 571.90M :value-date value-date}))))
   ;;
   )

@@ -107,7 +107,7 @@
 ;;;
 )
 
-(defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
+(defn get-r0-interest-rate0 [disburement-date first-payment-date monthly-interest-rate]
   (let [;; Keeping it simple and assuming that the monthly-interest-rate is for 31 days
       ;; NOTE: Really need to see how the 30/360 daycount-method would properly handle this
         daily-interest-rate (/ monthly-interest-rate 31.0) ;; Force to a decimal else we get an error later
@@ -115,7 +115,7 @@
     (* daily-interest-rate days-diff)))
 
 ;; This below matches Excels DAYS360
-(defn get-r0-interest-rate1 [disburement-date first-payment-date monthly-interest-rate]
+(defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
   (let [months-diff (months-diff2 disburement-date first-payment-date)]
     (* monthly-interest-rate months-diff)))
 
@@ -355,26 +355,27 @@
 
   ;; Example from client P
   (save-to-csv-file "testsch3-v2.csv" (expand-schedule 1000 4.2350610718397075M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
- (months-diff "2021-03-21" "2021-04-04")
+  (months-diff "2021-03-21" "2021-04-04")
   (save-to-csv-file "testsch3b.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-19")) ;; 67.05 emi example
   (save-to-csv-file "testsch3c.csv" (expand-schedule 1000 4.24M 48 "2021-03-21" "2021-05-04")) ;; 49.94, 48m
   (save-to-csv-file "testsch4.csv" (expand-schedule 1000 4.24M 24 "2021-08-01" "2021-09-14")) ;; 68.39 emi example
   (save-to-csv-file "testsch5.csv" (expand-schedule 1000 4.24M 36 "2021-08-01" "2021-09-14")) ;; 55.60 emi example
   (save-to-csv-file "testsch6.csv" (expand-schedule 1000 4.24M 48 "2021-08-01" "2021-09-14")) ;; 49.92 emi example
-  
 
-(save-to-csv-file "testsch7b.csv" (expand-schedule 1000000 5.00M 24 "2019-09-25" "2019-12-25")) ;; Simar's eg1 - "Interest is more than 1st Inst Amt"
-(save-to-csv-file "testsch7c.csv" (expand-schedule 1000000 0.50M 12 "2019-09-25" "2020-01-25")) ;; Simar's eg2 - "Intrest Less than the 1st Inst Amount"
-(save-to-csv-file "testsch7d.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-04")) ;; Simar's egn - Pr one
+
+  (save-to-csv-file "testsch7b.csv" (expand-schedule 1000000 5.00M 24 "2019-09-25" "2019-12-25")) ;; Simar's eg1 - "Interest is more than 1st Inst Amt"
+  (save-to-csv-file "testsch7c.csv" (expand-schedule 1000000 0.50M 12 "2019-09-25" "2020-01-25")) ;; Simar's eg2 - "Intrest Less than the 1st Inst Amount"
+  (save-to-csv-file "testsch7d.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-04")) ;; Simar's egn - Pr one
 
 ;; Test injecting into Mambu balloon loan
-(save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2022-02-26"))
+  (save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2023-01-26"))
+  (save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2024-01-26"))
 
-(get-r0-interest-rate "2019-09-25" "2019-12-25" 5.00M)
+  (get-r0-interest-rate "2019-09-25" "2019-12-25" 5.00M)
 
   (days-diff "2019-09-25" "2019-12-25")
   (months-diff "2021-12-15" "2026-09-15")
-(/ 57.0 3)
+  (/ 57.0 3)
 
 
   (/ 60 365)
@@ -384,12 +385,11 @@
   (* 1000.0M 0.0616M)
 
   (defn calc-int [stdate edate dailyPercentageRate prin]
-  (let [days (days-diff stdate edate)
-        day-rate (/ dailyPercentageRate 100.0M)
-        period-rate (* days day-rate)
-        interest (* prin period-rate)]
-    interest)
-  )
+    (let [days (days-diff stdate edate)
+          day-rate (/ dailyPercentageRate 100.0M)
+          period-rate (* days day-rate)
+          interest (* prin period-rate)]
+      interest))
 
   (defn calc-int2 [stdate edate monthPercentageRate prin]
     (let [days (days-diff stdate edate)
@@ -399,44 +399,44 @@
           interest (* prin daysToUse month-rate)]
       interest))
 
-(defn pow [b e] (Math/pow b e))
+  (comment
+    (calc-int2 "2022-01-26" "2023-01-26" (/ 5.0 12.0) 10000.0M)
+
+    calc-int2)
+
+  (defn pow [b e] (Math/pow b e))
 
 ;; MonthlyRate=(1+APR)^(1/12)-1
 
-(defn month-interest-from-apr [apr]
-(let [base (+ 1 apr)
-      exp (/ 1 12)
-      p (pow base exp)
-      ]
-      (- p 1)
-      )
-)
+  (defn month-interest-from-apr [apr]
+    (let [base (+ 1 apr)
+          exp (/ 1 12)
+          p (pow base exp)]
+      (- p 1)))
 
 ;; (MonthlyRate+1)^12 -1=APR
-(defn apr-interest-from-monthly [monthly]
-  (let [base (+ 1 monthly)
-        exp 12
-        p (pow base exp)]
-    (- p 1)))
+  (defn apr-interest-from-monthly [monthly]
+    (let [base (+ 1 monthly)
+          exp 12
+          p (pow base exp)]
+      (- p 1)))
 
 
-(defn apr-calc [prin total-int n]
-(let [int-over-prin (/ total-int prin)
-      per-n (/ int-over-prin n )
-      per-year (* per-n 12) ;; assuming n is months
-      apr-percent (* per-year 100)
-      ]
-      apr-percent
-      )
-)
+  (defn apr-calc [prin total-int n]
+    (let [int-over-prin (/ total-int prin)
+          per-n (/ int-over-prin n)
+          per-year (* per-n 12) ;; assuming n is months
+          apr-percent (* per-year 100)]
+      apr-percent))
 
-(apr-calc 1000.0M 1396.03M 48.0)
-(month-interest-from-apr (/ 64.50M 100.0))
-(apr-interest-from-monthly 0.042350610718397075)
+  (apr-calc 1000.0M 1396.03M 48.0)
+  (month-interest-from-apr (/ 64.50M 100.0))
+  (apr-interest-from-monthly 0.042350610718397075)
 
-(* 0.042350610718397075 12 100)
-(pow 2 (/ 1 2))
-  (calc-int "2021-08-01" "2021-09-14" 0.14 1000.0M)
+  (* 0.042350610718397075 12 100)
+  (pow 2 (/ 1 2))
+  (calc-int2 "2022-01-26" "2023-01-26" (/ 5.0 12.0) 10000.0M)
+
   (calc-int2 "2021-08-01" "2021-09-14" 4.2350610718397075M 1000.0M)
   ;;
   ) 
