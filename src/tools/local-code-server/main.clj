@@ -41,21 +41,41 @@
                   res)))
             file placeholders)))
 
+;; Find the placeholder in the file and return the line-number it is on
+(defn find-placeholder-in-file [filepath placeholder]
+  (let [filestr (slurp filepath)
+        match-str (str "#placeholder=" placeholder)
+        pos (str/index-of filestr match-str)
+        res-str (if pos (subs filestr 0 pos) "")
+        num-line (count (str/split-lines res-str))]
+    num-line))
+
 (comment
+
+;;#placeholder=xplaceholderval
+(find-placeholder-in-file "/Users/mkersh/JupyterNotebooks/ClojureTests/src/tools/local-code-server/main.clj"
+"placeholderval"
+)
+
 (expand-placeholder "{{CLOJURE_TESTS}}/src/tools/traceclient.clj")
 
+(str/index-of "bbba" "a")
 
 (re-seq #"\{\{[^\}]*\}\}" "shshs {{shsh}}  shssh {{aaa}}")
 
 (str/replace "The color is red" "red" "blue")
+
 
 ;;
 )
 
 (defn goto-file [query-params]
   (let [file (expand-placeholder (get query-params "file"))
-        line (or (get query-params "line") 1)]
-    (sh/sh "code" "-g" (str file ":" line))
+        line (or (get query-params "line") 1)
+        placeholder (get query-params "placeholder")
+        line2 (if placeholder (find-placeholder-in-file file placeholder) line)
+        ]
+    (sh/sh "code" "-g" (str file ":" line2))
     ;; Close the browser window 
     (str "<script>window.close();</script>")
     ))
