@@ -9,8 +9,9 @@
 ;;; Starting the Webserver: See [1] below
 ;;;
 ;;; Example URLS:
-;;; http://localhost:3000/goto-file2?file=<filepath>&line=<linenum>
-;;; NOTE: Passing line param is optional. If line not passed then line=1 will be assumed
+;;; * http://localhost:3000/goto-file2?file=<filepath>[&line=<linenum>]
+;;; * http://localhost:3000/goto-file2?file=<filepath>&bookmark=<bookmark>
+;;;       - Searches for #bookmark= <bookmark> in file and jumps to this place
 ;;;
 ;;; Supports a number of placeholders that can be added to the <filepath> to make them relative
 ;;;     {{CLOJURE_TESTS}} - E.g  http://localhost:3000/goto-file2?file={{CLOJURE_TESTS}}/<filepath>&line=<linenum>
@@ -30,9 +31,7 @@
             ))
 
 (import java.util.UUID)
-
 (import '[java.awt.datatransfer DataFlavor StringSelection Transferable])
-
 (defonce LAST-PLACEHOLDER (atom ""))
 
 (defn clipboard []
@@ -84,29 +83,6 @@
         num-line (count (str/split-lines res-str))]
     num-line))
 
-(comment
-(clipboard)
-(paste-from-clipboard)
-(UUID/randomUUID) 
-;; #bookmark= bcc294fe-03f0-4812-a326-2d552148c8f1
-(copy-to-clipboard "Copy this text to the clipboard")
-(generate-placeholder)
-(find-placeholder-in-file "/Users/mkersh/JupyterNotebooks/ClojureTests/src/tools/local-code-server/main.clj"
-"bcc294fe-03f0-4812-a326-2d552148c8f1"
-)
-
-(expand-placeholder "{{CLOJURE_TESTS}}/src/tools/traceclient.clj")
-
-(str/index-of "bbba" "a")
-
-(re-seq #"\{\{[^\}]*\}\}" "shshs {{shsh}}  shssh {{aaa}}")
-
-(str/replace "The color is red" "red" "blue")
-
-;;#bookmark=placeholderval
-;;
-)
-
 ;; ***********************************
 ;; Apply a VSCode code command to open up a file in your VSCode App
 ;; Which file to open and where to jumpto is passed in the query-params:
@@ -131,7 +107,14 @@
     (str "<script>window.close();</script>")
     ))
 
+;; *********************************
 ;; Define the possible routes of our webserver
+;; The home page http://localhost:3000/ provides a menu of options for:
+;;     * Generating a Bookmark
+;;     * Creating a gotofile-url, from previous bookmark and clipboard-paste-buffer for the file
+;; The webserver also supports /goto-file route that is the one that can open VSCode files and jump
+;; to a specific line position of search+jump to a bookmark
+;;
 (defroutes app
   (GET "/" [] (resp/resource-response "public/goto-file.html"))
   (GET "/gen-placeholder" [] (do (generate-placeholder) "<a href='/'>BACK</a>"))
