@@ -112,6 +112,7 @@
 ;; The home page http://localhost:3000/ provides a menu of options for:
 ;;     * Generating a Bookmark
 ;;     * Creating a gotofile-url, from previous bookmark and clipboard-paste-buffer for the file
+;;
 ;; The webserver also supports /goto-file route that is the one that can open VSCode files and jump
 ;; to a specific line position of search+jump to a bookmark
 ;;
