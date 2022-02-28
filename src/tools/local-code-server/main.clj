@@ -29,6 +29,19 @@
             [clojure.string :as str]
             ))
 
+(import java.util.UUID)
+
+(import '[java.awt.datatransfer DataFlavor StringSelection Transferable])
+
+(defn clipboard []
+  (.getSystemClipboard (java.awt.Toolkit/getDefaultToolkit)))
+
+(defn copy-to-clipboard [text]
+  (let [selection (StringSelection. text)]
+    (.setContents (clipboard) selection selection)
+    text
+    ))
+
 (def placeholder-list
   {"{{CLOJURE_TESTS}}" "/Users/mkersh/clojure/ClojureTests"})
 
@@ -41,20 +54,35 @@
                   res)))
             file placeholders)))
 
+(defn generate-placeholder []
+  (let [uuid (UUID/randomUUID)]
+    (copy-to-clipboard (str "#bookmark= " uuid))))
+
+(defn generate-temp-bookmark1 []
+  (let [url-str "http://localhost:3000/goto-file?file={{CLOJURE_TESTS}}/&bookmark=xxx"]
+    (copy-to-clipboard url-str)))
+
+(defn generate-temp-bookmark2 []
+  (let [url-str "http://localhost:3000/goto-file?file={{CLOJURE_TESTS}}/&line=1"]
+    (copy-to-clipboard url-str)))
+
 ;; Find the placeholder in the file and return the line-number it is on
-(defn find-placeholder-in-file [filepath placeholder]
+(defn find-placeholder-in-file [filepath bookmark]
   (let [filestr (slurp filepath)
-        match-str (str "#placeholder=" placeholder)
+        match-str (str "#bookmark= " bookmark)
         pos (str/index-of filestr match-str)
         res-str (if pos (subs filestr 0 pos) "")
         num-line (count (str/split-lines res-str))]
     num-line))
 
 (comment
-
-;;#placeholder=xplaceholderval
+(clipboard)
+(UUID/randomUUID) 
+;; #bookmark= bcc294fe-03f0-4812-a326-2d552148c8f1
+(copy-to-clipboard "Copy this text to the clipboard")
+(generate-placeholder)
 (find-placeholder-in-file "/Users/mkersh/JupyterNotebooks/ClojureTests/src/tools/local-code-server/main.clj"
-"placeholderval"
+"bcc294fe-03f0-4812-a326-2d552148c8f1"
 )
 
 (expand-placeholder "{{CLOJURE_TESTS}}/src/tools/traceclient.clj")
@@ -65,15 +93,15 @@
 
 (str/replace "The color is red" "red" "blue")
 
-
+;;#bookmark=placeholderval
 ;;
 )
 
 (defn goto-file [query-params]
   (let [file (expand-placeholder (get query-params "file"))
         line (or (get query-params "line") 1)
-        placeholder (get query-params "placeholder")
-        line2 (if placeholder (find-placeholder-in-file file placeholder) line)
+        bookmark (get query-params "bookmark")
+        line2 (if bookmark (find-placeholder-in-file file bookmark) line)
         ]
     (sh/sh "code" "-g" (str file ":" line2))
     ;; Close the browser window 
@@ -81,10 +109,12 @@
     ))
 
 (defroutes app
-  (GET "/" [] "Simple web-server for jumping to a file in VSCode</br> Use /goto-file/:file/:line")
+  (GET "/" [] (resp/resource-response "public/goto-file.html"))
+  (GET "/gen-placeholder" [] (do (generate-placeholder) "<a href='/'>BACK</a>"))
+  (GET "/gen-temp-bookmark1" [] (do (generate-temp-bookmark1) "<a href='/'>BACK</a>"))
+  (GET "/gen-temp-bookmark2" [] (do (generate-temp-bookmark1) "<a href='/'>BACK</a>"))
   (GET "/about" request (str "<h1>Hello World!!!</h1>" request))
-  (GET "/goto-file/:file/:line" [file line] (str "Goto File: " file " Line:" line))
-  (GET "/goto-file2" {query-params :query-params} (goto-file query-params))
+  (GET "/goto-file" {query-params :query-params} (goto-file query-params))
   (route/not-found "<h1>Page not found</h1>"))
 
 ;; https://github.com/ring-clojure/ring/issues/104
