@@ -76,7 +76,7 @@
   (reset! BOOKMARK_CACHE (assoc @BOOKMARK_CACHE bookmark-uuid bookmark-obj)))
 
 (defn find-all-bookmarks [filestr]
-  (let [match-list (re-seq #"#bookmark= " filestr)]
+  (let [match-list (re-seq #"#bookmark= (\w+-\w+-\w+-\w+-\w+)" filestr)]
     (prn "Matching bookmarks")
     (prn match-list)))
 
@@ -110,6 +110,13 @@
 (add-bookmark "sgsgsgs" {})
 (add-bookmark "sgsgsgs2" {})
 (add-bookmark "sgsgsgs3" {})
+
+(def matcher (re-matcher #"#bookmark= ((\d+)-(\d+)-(\d+)-(\d+)-(\d+))" "#bookmark= 453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"))
+(def matcher (re-matcher #"((\d+)-(\d+)-(\d+)-(\d+))" "672-345-456-3212"))
+(def matcher (re-matcher #"#bookmark= (\w+-\w+-\w+-\w+-\w+)" "#bookmark= 453bd6f6-f98b-48be-bb5d-94ef3ea5eafb #bookmark= 453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"))
+
+
+(re-seq #"#bookmark= (\w+-\w+-\w+-\w+-\w+)" "#bookmark= 453bd6f6-f98b-48be-bb5d-94ef3ea5eafb #bookmark= 453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc")
 
 @BOOKMARK_CACHE
 ;;
