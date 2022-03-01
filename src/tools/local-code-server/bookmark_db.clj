@@ -106,17 +106,27 @@
   (let [bookmark-list (find-all-bookmarks fpath)]
     bookmark-list))
 
-(defn parse-find-bookmarks [placestolook-list _ignore-list]
+(defn parse-find-bookmarks [placestolook-list]
   (loop [dir-list placestolook-list]
     (let [dir1 (first dir-list)
           rest-list (next placestolook-list)]
       (doall (map #(process-file (.getPath %)) (walk-dir dir1 #".*\..*")))
       (when rest-list (recur rest-list)))))
 
+(defn get-bookmark-obj [bm-uuid]
+(let [bm-obj (get @BOOKMARK_CACHE bm-uuid)]
+  (if bm-obj
+    bm-obj
+    (let [_ (parse-find-bookmarks ["src"])
+          bm-obj2 (get @BOOKMARK_CACHE bm-uuid)]
+      bm-obj2)))
+)
+
 (comment
 
-(parse-find-bookmarks ["src/tools/local-code-server"] "")
-(parse-find-bookmarks ["src"] "")
+(get-bookmark-obj "9d814ac2-02dc-47a5-980d-3a23108de57a")
+(parse-find-bookmarks ["src/tools/local-code-server"])
+(parse-find-bookmarks ["src"])
 
 @BOOKMARK_CACHE
 (save-bookmarks {:f1 :v1 :f2 [2 3 4 5 6 7]})

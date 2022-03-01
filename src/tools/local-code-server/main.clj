@@ -28,6 +28,7 @@
             [ring.util.response :as resp]
             [clojure.java.shell :as sh]
             [clojure.string :as str]
+            [tools.local-code-server.bookmark-db :as bm]
             ))
 
 (import java.util.UUID)
@@ -97,15 +98,34 @@
 ;;
 
 (defn goto-file [query-params]
-  (let [file (expand-placeholder (get query-params "file"))
+  (let [_ (prn "111")
+        file0 (get query-params "file")
+        file (when file0 (expand-placeholder (get query-params "file")))
         line (or (get query-params "line") 1)
         bookmark (get query-params "bookmark")
-        line2 (if bookmark (find-placeholder-in-file file bookmark) line)
-        ]
-    (sh/sh "code" "-g" (str file ":" line2))
+        _ (prn "here2")
+        line2 (if (and file bookmark)
+                (do (prn "22" bookmark)
+                    (if bookmark
+                      (find-placeholder-in-file file bookmark)
+                      line))
+                line)
+        _ (prn "here3")
+        bm_obj (when (not file) (bm/get-bookmark-obj bookmark))
+        file2 (or (:file bm_obj) file)
+        line3 (or (:line bm_obj) line2)]
+    (sh/sh "code" "-g" (str file2 ":" line3))
     ;; Close the browser window 
     (str "<script>window.close();</script>")
+    ;; Use next line for debugging
+    ;;[file2 line3]
     ))
+
+(comment 
+(goto-file {"filex" "{{CLOJURE_TESTS}}/src/http/api/mambu/demo/training/stream_api.clj" "bookmark" "1989a54f-774f-46f0-a1da-5c50645c7394"})
+(find-placeholder-in-file (expand-placeholder "{{CLOJURE_TESTS}}/src/http/api/mambu/demo/training/stream_api.clj") "hjh")
+)
+
 
 ;; *********************************
 ;; Define the possible routes of our webserver
