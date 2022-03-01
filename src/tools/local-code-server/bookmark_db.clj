@@ -75,22 +75,36 @@
 (defn add-bookmark [bookmark-uuid bookmark-obj]
   (reset! BOOKMARK_CACHE (assoc @BOOKMARK_CACHE bookmark-uuid bookmark-obj)))
 
-(defn find-all-bookmarks [filestr]
-  (let [match-list (re-seq #"#bookmark= (\w+-\w+-\w+-\w+-\w+)" filestr)]
-    (prn "Matching bookmarks")
-    (prn match-list)))
+;; Find the placeholder in the file and return the line-number it is on
+(defn find-placeholder-in-file [fn bookmark]
+  (let [filestr (slurp fn)
+        match-str bookmark
+        pos (str/index-of filestr match-str)
+        res-str (if pos (subs filestr 0 pos) "")
+        num-line (count (str/split-lines res-str))]
+    num-line))
+
+(defn cache-bookmark [fpath]
+  ;; return a fn to use in a (map ..)
+  (fn [[bm-str bm-uuid]]
+    (let [line-num (find-placeholder-in-file fpath bm-str)]
+      (add-bookmark bm-uuid {:file fpath :line line-num}))
+    ))
+
+
+(defn find-all-bookmarks [fpath]
+  (let [filestr (slurp fpath)
+      match-list (re-seq #"#bookmark= (\w+-\w+-\w+-\w+-\w+)" filestr)]
+    (doall (map (cache-bookmark fpath) match-list))))
 
 ;; https://rosettacode.org/wiki/Walk_a_directory/Recursively#Clojure
 (defn walk-dir [dirpath pattern]
   (doall (filter #(re-matches pattern (.getName %))
                  (file-seq (io/file dirpath)))))
 
-(defn process-file [fn]
-(prn "Processing File" fn)
-(let [file-str (slurp fn)
-      bookmark-list (find-all-bookmarks file-str)]
-  bookmark-list)
-)
+(defn process-file [fpath]
+  (let [bookmark-list (find-all-bookmarks fpath)]
+    bookmark-list))
 
 (defn parse-find-bookmarks [placestolook-list _ignore-list]
   (loop [dir-list placestolook-list]
@@ -102,7 +116,9 @@
 (comment
 
 (parse-find-bookmarks ["src/tools/local-code-server"] "")
+(parse-find-bookmarks ["src"] "")
 
+@BOOKMARK_CACHE
 (save-bookmarks {:f1 :v1 :f2 [2 3 4 5 6 7]})
 (save-bookmarks @BOOKMARK_CACHE)
 (read-bookmarks)
