@@ -75,6 +75,10 @@
 (defn add-bookmark [bookmark-uuid bookmark-obj]
   (reset! BOOKMARK_CACHE (assoc @BOOKMARK_CACHE bookmark-uuid bookmark-obj)))
 
+(defn find-all-bookmarks [filestr]
+  (let [match-list (re-seq #"#bookmark= " filestr)]
+    (prn "Matching bookmarks")
+    (prn match-list)))
 
 ;; https://rosettacode.org/wiki/Walk_a_directory/Recursively#Clojure
 (defn walk-dir [dirpath pattern]
@@ -83,6 +87,9 @@
 
 (defn process-file [fn]
 (prn "Processing File" fn)
+(let [file-str (slurp fn)
+      bookmark-list (find-all-bookmarks file-str)]
+  bookmark-list)
 )
 
 (defn parse-find-bookmarks [placestolook-list _ignore-list]
@@ -96,7 +103,6 @@
 
 (parse-find-bookmarks ["src/tools/local-code-server"] "")
 
-(re-matches #".*\.edn" "hhh.edn")
 (save-bookmarks {:f1 :v1 :f2 [2 3 4 5 6 7]})
 (save-bookmarks @BOOKMARK_CACHE)
 (read-bookmarks)
