@@ -9,7 +9,7 @@
 ;;; Bookmark's have the following format: #bookmark= 9d814ac2-02dc-47a5-980d-3a23108de57a
 ;;; The plan is to place these in clojure src files and for the GotoFile tool to be able to jump to these
 ;;;
-(ns tools.local-code-server.bookmark-db
+(ns tools.local_code_server.bookmark_db
   (:require  [clojure.java.io :as io]
              [clojure.java.shell :as sh]
              [clojure.pprint :as pp]
@@ -67,6 +67,9 @@
   (let [fpath (str @BM-ROOT "bookmarks.edn")]
    (reset! BOOKMARK_CACHE (read-object fpath))))
 
+;; read-bookmarks from disk first time we load
+(defonce _read-cache (read-bookmarks))
+
 
 ;; *************************************
 ;; Main Bookmark functions
@@ -118,6 +121,7 @@
   (if bm-obj
     bm-obj
     (let [_ (parse-find-bookmarks ["src"])
+          _ (save-bookmarks @BOOKMARK_CACHE)
           bm-obj2 (get @BOOKMARK_CACHE bm-uuid)]
       bm-obj2)))
 )
@@ -145,5 +149,7 @@
 (re-seq #"#bookmark= (\w+-\w+-\w+-\w+-\w+)" "#bookmark= 453bd6f6-f98b-48be-bb5d-94ef3ea5eafb #bookmark= 453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc")
 
 @BOOKMARK_CACHE
+_read-cache
+
 ;;
 )

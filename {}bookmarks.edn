@@ -1,1 +1,13 @@
-{"sgsgsgs" {}, "sgsgsgs2" {}, "sgsgsgs3" {}}
+{"sgsgsgs" {},
+ "sgsgsgs2" {},
+ "sgsgsgs3" {},
+ "9d814ac2-02dc-47a5-980d-3a23108de57a"
+ {:file "src/tools/local-code-server/bookmark_db.clj", :line 9},
+ "453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
+ {:file "src/tools/local-code-server/bookmark_db.clj", :line 144},
+ "453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"
+ {:file "src/tools/local-code-server/bookmark_db.clj", :line 146},
+ "1989a54f-774f-46f0-a1da-5c50645c7394"
+ {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 181},
+ "c6906f02-3c46-4919-ba7b-058831bd90f7"
+ {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253}}

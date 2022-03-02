@@ -18,7 +18,7 @@
 ;;;
 ;;; NOTE: The placeholder values are stored in placeholder-list 
 
-(ns tools.local_code_server.main
+(ns tools.local-code-server.main
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.adapter.jetty :as jet]
@@ -28,7 +28,7 @@
             [ring.util.response :as resp]
             [clojure.java.shell :as sh]
             [clojure.string :as str]
-            [tools.local_code_server.bookmark_db :as bm]
+            [tools.local-code-server.bookmark_db :as bm]
             ))
 
 (import java.util.UUID)
