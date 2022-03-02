@@ -133,7 +133,7 @@
 ;; to a specific line position of search+jump to a bookmark
 ;;
 (defroutes app
-  (GET "/" [] (resp/resource-response "public/goto-file.html"))
+  (GET "/" [] (resp/resource-response "public/goto-file.html")) ; #search= dfbab3ef-0544-4037-bc6b-ebafe0186efc
   (GET "/gen-placeholder" [] (do (generate-placeholder) "<a href='/'>BACK</a>"))
   (GET "/gen-temp-bookmark1" [] (do (generate-temp-bookmark1) "<a href='/'>BACK</a>"))
   (GET "/gen-temp-bookmark2" [] (do (generate-temp-bookmark2) "<a href='/'>BACK</a>"))

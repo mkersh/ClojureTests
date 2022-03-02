@@ -96,9 +96,11 @@
 
 
 (defn find-all-bookmarks [fpath]
-  (let [filestr (slurp fpath)
-      match-list (re-seq #"#bookmark= (\w+-\w+-\w+-\w+-\w+)" filestr)]
-    (doall (map (cache-bookmark fpath) match-list))))
+  (try
+    (let [filestr (slurp fpath)
+          match-list (re-seq #"#bookmark= (\w+-\w+-\w+-\w+-\w+)" filestr)]
+      (doall (map (cache-bookmark fpath) match-list)))
+    (catch Exception _ "Must have been a directory")))
 
 ;; https://rosettacode.org/wiki/Walk_a_directory/Recursively#Clojure
 (defn walk-dir [dirpath pattern]
@@ -140,6 +142,10 @@
 (add-bookmark "sgsgsgs" {})
 (add-bookmark "sgsgsgs2" {})
 (add-bookmark "sgsgsgs3" {})
+;; Takes quite a long time to run the below
+(parse-find-bookmarks ["/Users/mkersh/clojure/ClojureTests"])
+;; As oppose to this which is very quick
+(parse-find-bookmarks ["/Users/mkersh/clojure/ClojureTests/src"])
 
 (def matcher (re-matcher #"#bookmark= ((\d+)-(\d+)-(\d+)-(\d+)-(\d+))" "#bookmark= 453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"))
 (def matcher (re-matcher #"((\d+)-(\d+)-(\d+)-(\d+))" "672-345-456-3212"))
