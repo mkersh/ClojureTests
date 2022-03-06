@@ -75,6 +75,7 @@
           total_payment_due (cas/expr-sub2 (:total_payment_due instal-obj) sub-values)]
       {:num num :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :total_payment_due total_payment_due})))
 
+;; #bookmark= 75413827-b6af-48ac-90f8-4a3f8da73ac6
 (defn expand-schedule [OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date]
   (let [sub-values0 {:P OrigPrinciple :r (/ interestRatePerInstalment 100) :disbursement-date disbursement-date :first-payment-date first-payment-date}
         loan-sched (loan-schedule numInstalments sub-values0)

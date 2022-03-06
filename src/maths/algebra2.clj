@@ -1,3 +1,4 @@
+;;; #bookmark= 0ca2a676-ac5d-4022-85a0-56f81592be83
 ;;; Just enough algebra manipulations to allow me to replicate loan installment  calculations
 ;;; Previously I did this in Python using SymPy library:
 ;;; https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb

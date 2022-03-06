@@ -42,8 +42,7 @@
              (= date1-day last-day1)
              (= date2-day last-day2))
       (+ months-diff 1)
-      months-diff))
-     )
+      months-diff)))
 
 ;; The next function tries to replicate the EXCEL DAYS360 function 
 ;; NOTE: I still don't have a 100% match when dates involve 28/29 February
@@ -63,17 +62,17 @@
                      30
                      date2-day0)
         months-diff (months-diff date1 date2)]
-      (if (>= date2-day date1-day)
-        (let [days-diff (- date2-day  date1-day)
+    (if (>= date2-day date1-day)
+      (let [days-diff (- date2-day  date1-day)
          ;;_ (prn "here1" date1-day date2-day date1-month  date1-last-dayofmonth (not= date1-month 2))
-        ]
-          (+ (* months-diff 30) days-diff))
-        (let [date1-day0 (- 30 (.getDayOfMonth date1-local))
-              date1-day (if (< date1-day0 0) 0 date1-day0)
-              days-diff0 (+ date2-day date1-day)
-              _ (prn "here")
-              days-diff (if (> days-diff0 30) 30 days-diff0)]
-          (+ (* months-diff 30) days-diff)))))
+            ]
+        (+ (* months-diff 30) days-diff))
+      (let [date1-day0 (- 30 (.getDayOfMonth date1-local))
+            date1-day (if (< date1-day0 0) 0 date1-day0)
+            days-diff0 (+ date2-day date1-day)
+            _ (prn "here")
+            days-diff (if (> days-diff0 30) 30 days-diff0)]
+        (+ (* months-diff 30) days-diff)))))
 
 
 (defn months-diff2 [date1 date2]
@@ -83,29 +82,29 @@
 
 (comment
 ;; See also Test EXCEL spreadsheet - https://docs.google.com/spreadsheets/d/1GgzUK3_hvQxvqPUNpGUcmMueUX_FyiYd6_uspmTPeJc/edit#gid=0 
-(days360 "2021-03-21" "2021-04-04")
-(days360 "2021-03-22" "2021-05-22")
-(days360 "2021-02-28" "2021-03-31")
-(days360 "2021-01-01" "2021-04-30")
-(days360 "2021-02-01" "2021-02-28")
-(days360 "2021-02-27" "2021-03-31")
-(days360 "2020-02-29" "2020-03-31")
-(days360 "2020-02-28" "2020-03-31")
-(days360 "2020-02-01" "2020-02-29")
-(days360 "2020-01-31" "2020-02-29")
-(days360 "2021-01-31" "2021-02-28")
-(days360 "2020-12-31" "2021-02-28")
-(months-diff "2020-12-31" "2021-02-28" )
-(months-diff "2021-01-31" "2021-02-28")
-(months-diff "2020-11-30" "2020-12-29")
-(days360 "2020-11-30" "2020-12-29")
-(months-diff2 "2021-02-28" "2021-03-31")
-(months-diff2 "2021-03-21" "2021-04-04")
-(months-diff2 "2021-01-01" "2021-04-30")
-(days360 "2021-03-21" "2021-04-04")
-(days-diff "2021-03-21" "2021-04-04")
+  (days360 "2021-03-21" "2021-04-04")
+  (days360 "2021-03-22" "2021-05-22")
+  (days360 "2021-02-28" "2021-03-31")
+  (days360 "2021-01-01" "2021-04-30")
+  (days360 "2021-02-01" "2021-02-28")
+  (days360 "2021-02-27" "2021-03-31")
+  (days360 "2020-02-29" "2020-03-31")
+  (days360 "2020-02-28" "2020-03-31")
+  (days360 "2020-02-01" "2020-02-29")
+  (days360 "2020-01-31" "2020-02-29")
+  (days360 "2021-01-31" "2021-02-28")
+  (days360 "2020-12-31" "2021-02-28")
+  (months-diff "2020-12-31" "2021-02-28")
+  (months-diff "2021-01-31" "2021-02-28")
+  (months-diff "2020-11-30" "2020-12-29")
+  (days360 "2020-11-30" "2020-12-29")
+  (months-diff2 "2021-02-28" "2021-03-31")
+  (months-diff2 "2021-03-21" "2021-04-04")
+  (months-diff2 "2021-01-01" "2021-04-30")
+  (days360 "2021-03-21" "2021-04-04")
+  (days-diff "2021-03-21" "2021-04-04")
 ;;;
-)
+  )
 
 (defn get-r0-interest-rate0 [disburement-date first-payment-date monthly-interest-rate]
   (let [;; Keeping it simple and assuming that the monthly-interest-rate is for 31 days
@@ -159,7 +158,7 @@
         principle_remaining (cas/expr-sub principle_remaining0 sub-values)
         interest_remaining0 (cas/expr interest_expected (cas/term -1 [:E]))
         interest_remaining (cas/expr-sub interest_remaining0 sub-values)
-        total_remain principle_remaining 
+        total_remain principle_remaining
         total_payment_due (cas/expr (cas/term 1 [:E]))
         first-install {:num 1 :interest_expected interest_expected :principal_expected principal_expected  :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain  :total_payment_due total_payment_due}]
     (reduce (add-loan-instalment sub-values) [first-install] (range 1 numInstalments))))
@@ -215,7 +214,7 @@
                                   ;; If i is on recalc-list then need to clear some remaining interest_remaining
                                   (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1) (cas/expr-multiply interest_remaining -1))
                                   (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
-            
+
             prev-instal-mod1 (:mod1-applied (get install-list previous-index))
             ;; principal expected+remaining is different if the previous instalment had previous-interest_remaining > 0
             ;; If this is the case then prev-instal-mod1 will equal true as well
@@ -224,8 +223,7 @@
                                  (cas/expr-sub principal_expected0 sub-values))
             principle_remaining0 (if prev-instal-mod1
                                    (cas/expr previous-principle_remaining interest_expected previous-interest_remaining (cas/term -1 [:E]))
-                                   (cas/expr previous-principle_remaining interest_expected (cas/term -1 [:E]))
-                                   )
+                                   (cas/expr previous-principle_remaining interest_expected (cas/term -1 [:E])))
             principle_remaining (cas/expr-sub principle_remaining0 sub-values)
             total_remain0 (cas/expr principle_remaining)
             total_remain (cas/expr-sub total_remain0 sub-values)
@@ -246,8 +244,8 @@
 (defn need-to-recalcuate [expand-sched]
   (let [expand-sched1 (enumerate expand-sched)
         recalc-needed (filter
-                      (fn [[_ instal]] (and (not (:mod1-applied instal)) (> (:interest_remaining instal) 0)))
-                      expand-sched1)]
+                       (fn [[_ instal]] (and (not (:mod1-applied instal)) (> (:interest_remaining instal) 0)))
+                       expand-sched1)]
     (if (> (count recalc-needed) 0)
       (mapv (fn [[i _]] i) recalc-needed)
       nil)))
@@ -290,11 +288,12 @@
             loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))]
         (expand-schedule-final loan-sched2 numInstalments sub-values0)))))
 
- (defn expand-schedule [OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date]
-   (reset! debug false)
-    (let [sub-values0 {:P OrigPrinciple :r (/ interestRatePerInstalment 100) :disbursement-date disbursement-date :first-payment-date first-payment-date}
-          loan-sched (loan-schedule numInstalments sub-values0)]
-      (expand-schedule0 loan-sched numInstalments sub-values0)))
+;; #bookmark= 1031c4ec-f363-4294-8d2a-bd29b099f130
+(defn expand-schedule [OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date]
+  (reset! debug false)
+  (let [sub-values0 {:P OrigPrinciple :r (/ interestRatePerInstalment 100) :disbursement-date disbursement-date :first-payment-date first-payment-date}
+        loan-sched (loan-schedule numInstalments sub-values0)]
+    (expand-schedule0 loan-sched numInstalments sub-values0)))
 
 ;;--------------------------------------------------------------------
 ;; Print to CSV functions
@@ -310,7 +309,15 @@
 
 (defn dump-sched-to-csv [instal-list]
   (let [next-instal (first instal-list)
-        rest-instal (rest instal-list)]
+        rest-instal (rest instal-list)
+        prin-exp (round-num (:principal_expected next-instal))
+        ]
+    ;; Debug to track a problem
+    (when (= prin-exp "506.62")
+      (prn "Interest Expected" (:interest_expected next-instal))
+      (prn "Prin expected" (:principal_expected next-instal))
+      (prn "Total payment" (:total_payment_due next-instal))
+      )
     (println
      (str
       (:num next-instal) ","
@@ -321,7 +328,7 @@
       (round-num (:interest_remaining next-instal)) ","
       (round-num (:total_remain next-instal)) ","
       (round-num (:total_payment_due next-instal))))
-      
+
     ;; recurse to next line
     (when (not-empty rest-instal) (dump-sched-to-csv rest-instal))))
 
@@ -339,7 +346,7 @@
 (def test-first-payment-date2 "2021-01-05")
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
-
+  
   (save-to-csv-file "real2-schedule1b.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (pp/pprint (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
   (save-to-csv-file "real2-schedule2b.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
@@ -437,9 +444,9 @@
 
   (calc-int2 "2021-08-01" "2021-09-14" 4.2350610718397075M 1000.0M)
   ;;
-  ) 
-  
+  )
 
 
-  
+
+
 

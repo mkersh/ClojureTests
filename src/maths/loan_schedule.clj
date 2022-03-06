@@ -94,9 +94,9 @@
         (println "#, Interest Expected, Principal Expected, Principle Remaining, Total Amount Due")
         (dump-sched-to-csv (:instalments sched))))))
 
-(comment ;; Testing sanbox area
+(comment ;; Testing sandbox area
   (ns-unalias *ns* 'cas)
-
+  ;; #bookmark= ab6e3701-7ff2-47a3-8502-6c139ff101a1
   (save-to-csv-file "simple-schedule1.csv" (expand-schedule 5000 1 5))
   (pp/pprint (expand-schedule 5000 1 5))
   (pp/pprint (expand-schedule 5000 10 12))

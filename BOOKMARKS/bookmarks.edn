@@ -1,10 +1,18 @@
-{"9d814ac2-02dc-47a5-980d-3a23108de57a"
- {:file "src/tools/local_code_server/bookmark_db.clj", :line 9},
- "453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
+{"453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 150},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 152},
+ "75413827-b6af-48ac-90f8-4a3f8da73ac6"
+ {:file "src/maths/loan_schedule2.clj", :line 78},
+ "c6906f02-3c46-4919-ba7b-058831bd90f7"
+ {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253},
  "1989a54f-774f-46f0-a1da-5c50645c7394"
  {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 181},
- "c6906f02-3c46-4919-ba7b-058831bd90f7"
- {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253}}
+ "0ca2a676-ac5d-4022-85a0-56f81592be83"
+ {:file "src/maths/algebra2.clj", :line 1},
+ "9d814ac2-02dc-47a5-980d-3a23108de57a"
+ {:file "src/tools/local_code_server/bookmark_db.clj", :line 9},
+ "1031c4ec-f363-4294-8d2a-bd29b099f130"
+ {:file "src/maths/loan_schedule3.clj", :line 291},
+ "ab6e3701-7ff2-47a3-8502-6c139ff101a1"
+ {:file "src/maths/loan_schedule.clj", :line 99}}
