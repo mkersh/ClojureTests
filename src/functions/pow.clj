@@ -1,3 +1,4 @@
+;;; #bookmark= 9de28b85-a797-4682-9403-1329daaf8cc3
 (ns functions.pow
   (:require [clojure.math.numeric-tower :as math]))
 

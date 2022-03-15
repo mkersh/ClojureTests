@@ -4,6 +4,8 @@
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 152},
  "75413827-b6af-48ac-90f8-4a3f8da73ac6"
  {:file "src/maths/loan_schedule2.clj", :line 78},
+ "9de28b85-a797-4682-9403-1329daaf8cc3"
+ {:file "src/functions/pow.clj", :line 1},
  "c6906f02-3c46-4919-ba7b-058831bd90f7"
  {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253},
  "1989a54f-774f-46f0-a1da-5c50645c7394"
