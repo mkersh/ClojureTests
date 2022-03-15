@@ -47,10 +47,19 @@
         (+ prin-bal new-int-bal)
         (recur (- n 1) prin-bal new-int-bal)))))
 
+(defn calc-comp-total-amount2 [p0 daily-interest-rate num-days]
+(let [_1plusr-overn (+ 1 (/ daily-interest-rate num-days))
+      exp1 (pow _1plusr-overn num-days)
+      res (* p0 exp1)]
+  res)
+
+)
+
 (comment
 
 (calc-comp-total-amount 1000 0.000277 30)
 (calc-simp-total-amount 1000 0.000277 30)
+(calc-comp-total-amount2 1000 0.00797 30)
 
 ;; Using Compound interest results in the customer paying less interest
 ;; NOTE: Not what you normally think of when you talk about compounded interest
