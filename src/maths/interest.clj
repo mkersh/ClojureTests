@@ -59,6 +59,7 @@
      res)))
 
 ;; #bookmark= a07afdb9-608d-4f57-af44-81abcb558da6
+;; Function to calculate the amount when applying continuous compounding to an original principal amount
 ;; P(t)=P_{0}e^{rt}
 (defn continuous-comp-amount [p0 annual-interesst-rate% t]
   (let [interest-rate-annual (/ annual-interesst-rate% 100.0M)
