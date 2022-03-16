@@ -58,6 +58,14 @@
          res (* p0 exp1)]
      res)))
 
+;; #bookmark= a07afdb9-608d-4f57-af44-81abcb558da6
+;; P(t)=P_{0}e^{rt}
+(defn continuous-comp-amount [p0 annual-interesst-rate% t]
+  (let [interest-rate-annual (/ annual-interesst-rate% 100.0M)
+        e-pow-rt  (pow (Math/E) (* interest-rate-annual t))
+        res (* p0 e-pow-rt)]
+    res))
+
 (comment
 
 ;; ways to calculate the interest being acrued
@@ -88,6 +96,11 @@
 ;; They do over a 1 year period (which is what I expected)
 (calc-comp-total-amount 1000 0.0002647855489630313 360)
 (calc-simp-total-amount 1000 0.0002777777777777778 360)
+
+;; Compare against when compounding continuously for 1 year
+(continuous-comp-amount 1000 10.0M 1)
+;; continuous compunding for 1 month
+(continuous-comp-amount 1000 10.0M (double 1/12))
 
 ;; tests to calculate the daily and monthlt interest-rate from the annual
 (/ 0.1 360)

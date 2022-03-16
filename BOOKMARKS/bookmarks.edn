@@ -12,6 +12,8 @@
  {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 181},
  "0ca2a676-ac5d-4022-85a0-56f81592be83"
  {:file "src/maths/algebra2.clj", :line 1},
+ "a07afdb9-608d-4f57-af44-81abcb558da6"
+ {:file "src/maths/interest.clj", :line 61},
  "9d814ac2-02dc-47a5-980d-3a23108de57a"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 9},
  "1031c4ec-f363-4294-8d2a-bd29b099f130"
