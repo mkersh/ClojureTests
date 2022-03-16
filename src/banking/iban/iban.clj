@@ -18,6 +18,8 @@
 
 (iban/iban? :not-an-iban) 
 (iban/iban? "SA0380000000608010167519") 
+(iban/iban? "GB34NWBK60161331926826")
+
 
 (iban/bban "SA0380000000608010167519") 
 
@@ -29,7 +31,7 @@
  
 (iban/iban "RO" "BTRLLGBO89B2P72HNFGM")
 
-(iban/iban "GB" "NWBK60161331926822")
+(iban/iban "GB" "NWBK60161331926826")
 
 
 (iban/bic  "RO26BTRLLGBO89B2P72HNFGM")
