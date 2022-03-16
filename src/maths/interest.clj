@@ -2,7 +2,7 @@
   (:require [clojure.math.numeric-tower :as math]))
 
 ;; exp function to raise a number by a power
-;; different ways of doing this http://localhost:3000/goto-file?&bookmark=9de28b85-a797-4682-9403-1329daaf8cc3 - If using my GotoFile mechanism
+;; different ways of doing this http://localhost:3000/goto-file?&bookmark=9de28b85-a797-4682-9403-1329daaf8cc3
 ;;
 (defn pow [num power]
   (math/expt num power))
@@ -47,19 +47,32 @@
         (+ prin-bal new-int-bal)
         (recur (- n 1) prin-bal new-int-bal)))))
 
-(defn calc-comp-total-amount2 [p0 daily-interest-rate num-days]
-(let [_1plusr-overn (+ 1 (/ daily-interest-rate num-days))
-      exp1 (pow _1plusr-overn num-days)
-      res (* p0 exp1)]
-  res)
-
-)
+;; Single equation/formulae for calculating the compound interest
+(defn calc-comp-total-amount2
+  ([p0 daily-interest-rate num-days]
+   (calc-comp-total-amount2 p0 daily-interest-rate num-days 1))
+  ([p0 daily-interest-rate num-days t]
+   (let [_1plusr-overn (+ 1 (/ daily-interest-rate num-days))
+         exp1 (pow _1plusr-overn (* num-days t))
+         res (* p0 exp1)]
+     res)))
 
 (comment
 
-(calc-comp-total-amount 1000 0.000277 30)
+(calc-comp-total-amount 1000 0.0002777777777777778 30)
 (calc-simp-total-amount 1000 0.000277 30)
-(calc-comp-total-amount2 1000 0.00797 30)
+;; compounding using the monthly rate
+(calc-comp-total-amount2 1000 0.00833333 30)
+;; calculating on the compound monthly rate is way off
+(calc-comp-total-amount2 1000 0.007974140428903764 30)
+
+;; Calculate compunded interest for 1 year
+(calc-comp-total-amount 1000 0.0002777777777777778 360)
+(calc-comp-total-amount2 1000 0.00833333 30 12)
+(calc-simp-total-amount 1000 0.000277 360)
+
+(/ 0.1 360)
+(/ 0.1 12)
 
 ;; Using Compound interest results in the customer paying less interest
 ;; NOTE: Not what you normally think of when you talk about compounded interest
