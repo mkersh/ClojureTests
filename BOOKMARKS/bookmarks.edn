@@ -16,5 +16,7 @@
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 9},
  "1031c4ec-f363-4294-8d2a-bd29b099f130"
  {:file "src/maths/loan_schedule3.clj", :line 291},
+ "8569537e-3b6f-4f08-9e66-dfd027f10515"
+ {:file "src/maths/interest.clj", :line 1},
  "ab6e3701-7ff2-47a3-8502-6c139ff101a1"
  {:file "src/maths/loan_schedule.clj", :line 99}}

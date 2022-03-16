@@ -1,3 +1,4 @@
+;; #bookmark= 8569537e-3b6f-4f08-9e66-dfd027f10515
 (ns maths.interest
   (:require [clojure.math.numeric-tower :as math]))
 
@@ -59,18 +60,36 @@
 
 (comment
 
+;; ways to calculate the interest being acrued
+
+;; accrue interest based on current total-balance (principal + accrued-interest)
 (calc-comp-total-amount 1000 0.0002777777777777778 30)
+;; accrue interest using simple-interest formulae. Interest only calculated on current principal
 (calc-simp-total-amount 1000 0.000277 30)
+
+;; These next methods use the A = (1+r/n)^(nt) formulae for calculating compound interest
+;; Ref: https://www.thecalculatorsite.com/articles/finance/compound-interest-formula.php 
+;; NOTE: Should deliver same results as calc-comp-total-amount function
+
 ;; compounding using the monthly rate
 (calc-comp-total-amount2 1000 0.00833333 30)
+;; compunding using the daily rate
+(calc-comp-total-amount2 1000 0.0002777777777777778 1 30)
 ;; calculating on the compound monthly rate is way off
 (calc-comp-total-amount2 1000 0.007974140428903764 30)
 
-;; Calculate compunded interest for 1 year
+
+;; Calculate compounded interest for 1 year
 (calc-comp-total-amount 1000 0.0002777777777777778 360)
 (calc-comp-total-amount2 1000 0.00833333 30 12)
 (calc-simp-total-amount 1000 0.000277 360)
 
+;; Test if compound interest and simple interest equate to the same amounts
+;; They do over a 1 year period (which is what I expected)
+(calc-comp-total-amount 1000 0.0002647855489630313 360)
+(calc-simp-total-amount 1000 0.0002777777777777778 360)
+
+;; tests to calculate the daily and monthlt interest-rate from the annual
 (/ 0.1 360)
 (/ 0.1 12)
 
