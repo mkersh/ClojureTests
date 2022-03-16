@@ -67,6 +67,26 @@
         res (* p0 e-pow-rt)]
     res))
 
+
+;; ref: http://rmathew.com/2006/calculating-emis.html
+;; http://4.bp.blogspot.com/_glrEiI4xsDc/S0WLhz4JllI/AAAAAAAAA44/kQsk1bEY7Lk/s320/emiform.png
+;;
+;; p0 - original principal
+;; n - number of months in the term
+;;
+;; Return - Will return the EMI (equal monthly instalment)
+;;
+(defn emi-calc [p0 annual-interesst-rate% n]
+  (let [_ (prn "here 1" annual-interesst-rate% n)
+        monthly-r (/ (double (/ annual-interesst-rate% 12)) 100.0M)
+        _ (prn "here 2")
+        one-plus-r (+ 1 monthly-r)
+        one-plus-r-pow-n (pow one-plus-r n)
+        one-plus-r-pow-n-minus1 (- one-plus-r-pow-n 1)
+        res0 (/ one-plus-r-pow-n one-plus-r-pow-n-minus1)
+        res (* p0 monthly-r res0)]
+    res))
+
 (comment
 
 ;; ways to calculate the interest being acrued
@@ -102,6 +122,12 @@
 (continuous-comp-amount 1000 10.0M 1)
 ;; continuous compunding for 1 month
 (continuous-comp-amount 1000 10.0M (double 1/12))
+
+
+;; EMI Calculation
+;; #bookmark= a1bd998c-4927-4eba-9842-35fa0ca44310
+;; compare to http://localhost:3000/goto-file?&bookmark=0fed71a9-32df-4232-bfb9-fbae63f2ddd8
+(emi-calc 1000000 8.5 (* 15 12))
 
 ;; tests to calculate the daily and monthlt interest-rate from the annual
 (/ 0.1 360)

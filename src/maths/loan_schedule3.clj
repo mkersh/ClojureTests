@@ -376,6 +376,12 @@
   (save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2023-01-26"))
   (save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2024-01-26"))
 
+
+;; #bookmark= 0fed71a9-32df-4232-bfb9-fbae63f2ddd8
+;; Compare against the standard formula for calculating - http://localhost:3000/goto-file?&bookmark=a1bd998c-4927-4eba-9842-35fa0ca44310
+;;
+(save-to-csv-file "comp-against-formula.csv" (expand-schedule 1000000 (/ 8.50 12.0) (* 15 12) "2022-01-26" "2022-02-26"))
+
   (get-r0-interest-rate "2019-09-25" "2019-12-25" 5.00M)
 
   (days-diff "2019-09-25" "2019-12-25")
