@@ -5,7 +5,7 @@
 ;;; (1) planned-payment holidays within the schedule. Where a holiday can be
 ;;;     - principle-holiday 
 ;;;     - principal+interest-holiday
-;;;         - interest-accrued
+;;;         - interest-accrued (probably will only implement this one initially)
 ;;;         - interest-writeoff
 ;;;         - nterest-capitalise
 ;;;
@@ -17,6 +17,8 @@
             [clojure.java.io :as io]
             [clojure.pprint :as pp]
             [java-time :as t]))
+
+(defonce LOAN-SCHEDULE-EDIT (atom {}))
 
 (def debug (atom false))
 
@@ -309,48 +311,53 @@
         (println "#, ModFlag, Interest Expected, Principal Expected, Principle Remaining, Interest Remaining, Total Remaining, Total Amount Due")
         (dump-sched-to-csv (:instalments sched))))))
 
-(def test-disbursement-date "2021-01-01")
-(def test-first-payment-date "2025-01-01")
-(def test-first-payment-date2 "2021-01-05")
+;;--------------------------------------------------------------------
+;; Edit-schedule function
+;; Features to allow for planned-payment holidays
+;;
+;; uses @LOAN-SCHEDULE-EDIT map
+
+(defn edit-map-field [edit-map inst-num field val]
+  (let [
+        inst-obj  (get edit-map inst-num {})
+        inst-obj2 (assoc inst-obj field val)
+        edit-map2 (assoc edit-map inst-num inst-obj2)]
+    edit-map2))
+
+(defn clear-schedule-edits []
+  (reset! LOAN-SCHEDULE-EDIT {}))
+
+(defn edit-sched-interest-only [inst-num]
+  (let [edit-map @LOAN-SCHEDULE-EDIT
+        edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay 0)]
+    (reset! LOAN-SCHEDULE-EDIT edit-map2)))
+
+;; No payments for instalment=inst-num 
+;; Accrued-interest to be paid after holiday ends
+(defn edit-sched-full-holiday [inst-num]
+(let [edit-map @LOAN-SCHEDULE-EDIT
+      edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay 0)
+      edit-map3 (edit-map-field edit-map2 inst-num :interest-to-pay 0)]
+  (reset! LOAN-SCHEDULE-EDIT edit-map3))
+)
+
+(comment
+(clear-schedule-edits)
+(edit-sched-interest-only 3)
+(edit-sched-full-holiday 1)
+(edit-sched-full-holiday 15)
+;;
+)
+
+
+
 
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
 
-  (save-to-csv-file "real2-schedule1b.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
-  (pp/pprint (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date))
-  (save-to-csv-file "real2-schedule2b.csv" (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
-  (pp/pprint (expand-schedule 100000 0.4 100 test-disbursement-date test-first-payment-date))
-  (save-to-csv-file "real2-schedule1c.csv" (expand-schedule 5000 1 5 test-disbursement-date test-first-payment-date2))
 
-
-  ;; Testing some specific loans examples
-  (save-to-csv-file "testsch1.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2021-04-14" "2021-06-15"))
-  (save-to-csv-file "testsch2.csv" (expand-schedule 12550 (/ 19.4M 12.0) 78 "2020-07-08" "2020-10-18"))
-
-  ;; Example from client P
-  (save-to-csv-file "testsch3-v2.csv" (expand-schedule 1000 4.2350610718397075M 24 "2021-03-21" "2021-04-04")) ;; 65.70 emi example
-  (months-diff "2021-03-21" "2021-04-04")
-  (save-to-csv-file "testsch3b.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-19")) ;; 67.05 emi example
-  (save-to-csv-file "testsch3c.csv" (expand-schedule 1000 4.24M 48 "2021-03-21" "2021-05-04")) ;; 49.94, 48m
-  (save-to-csv-file "testsch4.csv" (expand-schedule 1000 4.24M 24 "2021-08-01" "2021-09-14")) ;; 68.39 emi example
-  (save-to-csv-file "testsch5.csv" (expand-schedule 1000 4.24M 36 "2021-08-01" "2021-09-14")) ;; 55.60 emi example
-  (save-to-csv-file "testsch6.csv" (expand-schedule 1000 4.24M 48 "2021-08-01" "2021-09-14")) ;; 49.92 emi example
-
-
-  (save-to-csv-file "testsch7b.csv" (expand-schedule 1000000 5.00M 24 "2019-09-25" "2019-12-25")) ;; Simar's eg1 - "Interest is more than 1st Inst Amt"
-  (save-to-csv-file "testsch7c.csv" (expand-schedule 1000000 0.50M 12 "2019-09-25" "2020-01-25")) ;; Simar's eg2 - "Intrest Less than the 1st Inst Amount"
-  (save-to-csv-file "testsch7d.csv" (expand-schedule 1000 4.24M 24 "2021-03-21" "2021-04-04")) ;; Simar's egn - Pr one
-
-;; Test injecting into Mambu balloon loan
-  (save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2023-01-26"))
-  (save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2024-01-26"))
-
-
-;; #bookmark= 0fed71a9-32df-4232-bfb9-fbae63f2ddd8
-;; Compare against the standard formula for calculating - http://localhost:3000/goto-file?&bookmark=a1bd998c-4927-4eba-9842-35fa0ca44310
-;;
-  (save-to-csv-file "comp-against-formula.csv" (expand-schedule 1000000 (/ 8.50 12.0) (* 15 12) "2022-01-26" "2022-02-26"))
-
+  (save-to-csv-file "test-ls4-1.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
+  (save-to-csv-file "test-ls4-2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
   
   ;;
   )
