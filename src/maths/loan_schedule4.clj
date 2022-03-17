@@ -312,7 +312,7 @@
         (dump-sched-to-csv (:instalments sched))))))
 
 ;;--------------------------------------------------------------------
-;; Edit-schedule function
+;; Edit-schedule functions
 ;; Features to allow for planned-payment holidays
 ;;
 ;; uses @LOAN-SCHEDULE-EDIT map
@@ -348,8 +348,6 @@
 (edit-sched-full-holiday 15)
 ;;
 )
-
-
 
 
 (comment ;; Testing sanbox area
