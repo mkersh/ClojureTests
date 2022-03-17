@@ -5,6 +5,7 @@
 ;;; (1) The time-gap between (disbursement-date --> first-payment-date) being <> to a complete month
 ;;;     This time-gap could be smaller or bigger than a month
 ;;;
+;;; #bookmark= 64f6dd89-071d-4493-abc2-c0a4f40277ef
 ;;; GitHub: https://github.com/mkersh/ClojureTests/blob/master/src/maths/loan_schedule2.clj  
 
 (ns maths.loan-schedule2

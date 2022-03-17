@@ -1,11 +1,15 @@
-{"453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
+{"97d12c61-e5ad-4037-88fb-0957be83a1d7"
+ {:file "src/maths/loan_schedule4.clj", :line 12},
+ "64f6dd89-071d-4493-abc2-c0a4f40277ef"
+ {:file "src/maths/loan_schedule2.clj", :line 8},
+ "453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 150},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 152},
  "a1bd998c-4927-4eba-9842-35fa0ca44310"
  {:file "src/maths/interest.clj", :line 128},
  "75413827-b6af-48ac-90f8-4a3f8da73ac6"
- {:file "src/maths/loan_schedule2.clj", :line 78},
+ {:file "src/maths/loan_schedule2.clj", :line 79},
  "9de28b85-a797-4682-9403-1329daaf8cc3"
  {:file "src/functions/pow.clj", :line 1},
  "c6906f02-3c46-4919-ba7b-058831bd90f7"
