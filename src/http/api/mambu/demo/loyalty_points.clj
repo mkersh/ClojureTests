@@ -1,3 +1,4 @@
+;;; #bookmark= b331f4c7-75f0-4a23-9d4b-cfa49cdfe973
 ;;; GiHub: https://github.com/mkersh/ClojureTests/blob/master/src/http/api/mambu/demo/loyalty_points.clj
 (ns http.api.mambu.demo.loyalty-points
   (:require [http.api.json_helper :as api]

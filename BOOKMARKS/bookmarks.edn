@@ -3,7 +3,9 @@
  "64f6dd89-071d-4493-abc2-c0a4f40277ef"
  {:file "src/maths/loan_schedule2.clj", :line 8},
  "357f20d4-585a-4321-b3ed-e6e5c8cf677f"
- {:file "src/tools/capability_taxonomy/captax.clj", :line 491},
+ {:file "src/tools/capability_taxonomy/captax.clj", :line 489},
+ "b331f4c7-75f0-4a23-9d4b-cfa49cdfe973"
+ {:file "src/http/api/mambu/demo/loyalty_points.clj", :line 1},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 150},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"
@@ -34,5 +36,9 @@
  {:file "src/maths/loan_schedule3.clj", :line 291},
  "8569537e-3b6f-4f08-9e66-dfd027f10515"
  {:file "src/maths/interest.clj", :line 1},
+ "102cb3af-9613-4130-9c01-dfafe894cda2"
+ {:file
+  "src/http/api/mambu/demo/multi-currency-daily-bank-account.clj",
+  :line 1},
  "ab6e3701-7ff2-47a3-8502-6c139ff101a1"
  {:file "src/maths/loan_schedule.clj", :line 100}}
