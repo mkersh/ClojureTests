@@ -67,7 +67,6 @@
           "notes" "Approved from the API"}})
 
 (comment
-  (ns-unalias *ns* 'PRODUCT-BASE-ACC)
   (api/setenv "env2")
 
   (cust/close-customer @CUSTID)
