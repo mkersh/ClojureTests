@@ -1,3 +1,4 @@
+;;; ************************************************************
 ;;; Functions to create a capability-taxonomy folder structure
 ;;;
 
@@ -483,10 +484,9 @@
 
 (comment
 
-(range 0 2)
-
 (reset! CAPTAX-DIR "/Users/mkersh/captax/CAPTAX-Examples/captax01")
 
+;; #bookmark= 357f20d4-585a-4321-b3ed-e6e5c8cf677f
 ;; [1] create a capability-taxonomy from a file definition
 ;;
 (create-taxonomy-from-file (str @CAPTAX-DIR ".txt") @CAPTAX-DIR)

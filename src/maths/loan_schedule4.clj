@@ -102,6 +102,8 @@
 ;; Loan Installments
 ;; Taken from my orignal: https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb 
 
+(declare check-for-principle-holiday check-for-specific-total-amount check-for-prin-remain-holiday)
+
 (defn add-loan-instalment [sub-values]
   (fn [install-list i]
     (let [previous-index (- i 1)
@@ -109,14 +111,14 @@
           interest_expected0 (cas/expr-multiply previous-principle_remaining  :r)
           ;; Try and simplify the expressions at every opportunity. That's why we are calling expr-sub
           interest_expected (cas/expr-sub interest_expected0 sub-values)
-          principal_expected0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))
+          principal_expected0 (check-for-principle-holiday i (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
           principal_expected (cas/expr-sub principal_expected0 sub-values)
-          principle_remaining0 (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E]))
+          principle_remaining0 (check-for-prin-remain-holiday i (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E])) previous-principle_remaining)
           principle_remaining (cas/expr-sub principle_remaining0 sub-values)
           interest_remaining0 (cas/expr interest_expected (cas/term -1 [:E]))
           interest_remaining (cas/expr-sub interest_remaining0 sub-values)
           total_remain principle_remaining
-          total_payment_due (cas/expr (cas/term 1 [:E]))
+          total_payment_due (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)
           nth-install {:num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due}]
       (conj install-list nth-install))))
 
@@ -124,14 +126,14 @@
   (let [r0 (get-r0-interest-rate (:disbursement-date sub-values) (:first-payment-date sub-values) (:r sub-values))
         interest_expected0 (cas/expr-multiply (cas/expr (cas/term 1 [:P])) r0)
         interest_expected (cas/expr-sub interest_expected0 sub-values)
-        principal_expected0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))
+        principal_expected0 (check-for-principle-holiday 0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
         principal_expected (cas/expr-sub principal_expected0 sub-values)
-        principle_remaining0 (cas/expr (cas/term 1 [:P]) interest_expected (cas/term -1 [:E]))
+        principle_remaining0 (check-for-prin-remain-holiday 0 (cas/expr (cas/term 1 [:P]) interest_expected (cas/term -1 [:E])) (cas/expr (cas/term 1 [:P])))
         principle_remaining (cas/expr-sub principle_remaining0 sub-values)
         interest_remaining0 (cas/expr interest_expected (cas/term -1 [:E]))
         interest_remaining (cas/expr-sub interest_remaining0 sub-values)
         total_remain principle_remaining
-        total_payment_due (cas/expr (cas/term 1 [:E]))
+        total_payment_due (check-for-specific-total-amount 0 (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)
         first-install {:num 1 :interest_expected interest_expected :principal_expected principal_expected  :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain  :total_payment_due total_payment_due}]
     (reduce (add-loan-instalment sub-values) [first-install] (range 1 numInstalments))))
 
@@ -169,7 +171,8 @@
                               (cas/expr interest_expected (cas/term -1 [:E]))
                               (cas/expr previous-interest_remaining interest_expected (cas/term -1 [:E])))
         interest_remaining (cas/expr-sub interest_remaining0 sub-values)
-        total_payment_due (cas/expr (cas/term 1 [:E]))]
+        ;;total_payment_due (cas/expr (cas/term 1 [:E]))
+        ]
 
     ;; if recalc-list <> [] then always force principal+interest
     (if (and (not (revert-install? recalc-list i)) (> (:interest_remaining expanded-instal-obj) 0))
@@ -179,6 +182,7 @@
             principle_remaining (cas/expr-sub principle_remaining0 sub-values)
             total_remain0 (cas/expr principle_remaining  interest_remaining)
             total_remain (cas/expr-sub total_remain0 sub-values)
+            total_payment_due (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)
             ;; mark the instalment with :mod1-applied to prevent recursing on it again
             nth-install {:mod1-applied true :num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due}]
         nth-install)
@@ -190,15 +194,18 @@
             prev-instal-mod1 (:mod1-applied (get install-list previous-index))
             ;; principal expected+remaining is different if the previous instalment had previous-interest_remaining > 0
             ;; If this is the case then prev-instal-mod1 will equal true as well
-            principal_expected (if prev-instal-mod1
+            principal_expected1a (if prev-instal-mod1
                                  (cas/expr-sub (cas/expr principal_expected0 (cas/expr-multiply previous-interest_remaining -1)) sub-values)
                                  (cas/expr-sub principal_expected0 sub-values))
-            principle_remaining0 (if prev-instal-mod1
+            principal_expected (check-for-principle-holiday i principal_expected1a)
+            principle_remaining0a (if prev-instal-mod1
                                    (cas/expr previous-principle_remaining interest_expected previous-interest_remaining (cas/term -1 [:E]))
                                    (cas/expr previous-principle_remaining interest_expected (cas/term -1 [:E])))
+            principle_remaining0 (check-for-prin-remain-holiday i principle_remaining0a previous-principle_remaining)
             principle_remaining (cas/expr-sub principle_remaining0 sub-values)
             total_remain0 (cas/expr principle_remaining)
             total_remain (cas/expr-sub total_remain0 sub-values)
+            total_payment_due (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)
             nth-install {:num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due}]
         nth-install))))
 
@@ -332,6 +339,10 @@
         edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay 0)]
     (reset! LOAN-SCHEDULE-EDIT edit-map2)))
 
+(defn edit-sched-interest-only2 [inst-list]
+  (clear-schedule-edits)
+  (map edit-sched-interest-only inst-list))
+
 ;; No payments for instalment=inst-num 
 ;; Accrued-interest to be paid after holiday ends
 (defn edit-sched-full-holiday [inst-num]
@@ -341,22 +352,62 @@
   (reset! LOAN-SCHEDULE-EDIT edit-map3))
 )
 
+(defn check-for-principle-holiday [inst-num-1 calculated-expr]
+  (let [inst-num (+ inst-num-1 1)
+        edit-map @LOAN-SCHEDULE-EDIT
+        inst-obj  (get edit-map inst-num)
+        pricipal-to-pay (:pricipal-to-pay inst-obj)]
+    (if pricipal-to-pay
+          ;; specific principal amount has been defined use this
+     (do
+       (prn "Holiday" inst-num-1)
+       (cas/expr (cas/term pricipal-to-pay [])))
+          ;; else use
+      calculated-expr)))
+
+(defn check-for-prin-remain-holiday [inst-num-1 no-holiday-expr previous-prin-expr ]
+  (let [inst-num (+ inst-num-1 1)
+        edit-map @LOAN-SCHEDULE-EDIT
+        inst-obj  (get edit-map inst-num)
+        pricipal-to-pay (:pricipal-to-pay inst-obj)]
+    (if pricipal-to-pay
+      ;; specific principal amount has been defined use this
+      ;;(cas/expr previous-prin-expr (cas/expr-multiply previous-prin-expr :r) (cas/term (* -1 pricipal-to-pay) []))
+      previous-prin-expr
+      ;; else use
+      no-holiday-expr)))
+
+
+(defn check-for-specific-total-amount [inst-num-1 calculated-expr prin-expected int-expected]
+  (let [inst-num (+ inst-num-1 1)
+        edit-map @LOAN-SCHEDULE-EDIT
+        inst-obj  (get edit-map inst-num)]
+    (if inst-obj
+      ;; specific total-amount
+      (cas/expr prin-expected int-expected)
+      ;; else use
+      calculated-expr)))
+
 (comment
-(clear-schedule-edits)
-(edit-sched-interest-only 3)
-(edit-sched-full-holiday 1)
-(edit-sched-full-holiday 15)
+(* -1 0)
 ;;
 )
 
 
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
-
-
-  (save-to-csv-file "test-ls4-1.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
-  (save-to-csv-file "test-ls4-2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
   
+  @LOAN-SCHEDULE-EDIT
+  (clear-schedule-edits)
+
+
+  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
+  (edit-sched-interest-only2 [3 5 7 9 11])
+  (save-to-csv-file "test-ls4-1b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
+
+(* 11 954.71)
+  (save-to-csv-file "test-ls4-2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+
   ;;
   )
 
