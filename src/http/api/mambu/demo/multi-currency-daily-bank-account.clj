@@ -58,7 +58,7 @@
           "currencyCode" "EUR"
           "accountHolderType" "CLIENT"}})
 
-(defn approveDepositAccount [context]
+(defn approveDepositAccount-api [context]
   {:url (str "{{*env*}}/deposits/" (:accid context) ":changeState")
    :method api/POST
    :headers {"Accept" "application/vnd.mambu.v2+json"
