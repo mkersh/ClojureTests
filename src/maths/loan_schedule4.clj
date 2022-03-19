@@ -384,7 +384,8 @@
         inst-obj  (get edit-map inst-num)]
     (if inst-obj
       ;; specific total-amount
-      (cas/expr prin-expected int-expected)
+      ;;(cas/expr prin-expected int-expected)
+      (cas/expr (cas/term 33.00 []))
       ;; else use
       calculated-expr)))
 
@@ -402,11 +403,11 @@
 
 
   (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
-  (edit-sched-interest-only2 [3 5 7 9 11])
+  (edit-sched-interest-only2 [1 3 5 7 9 11])
   (save-to-csv-file "test-ls4-1b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
 
 (* 11 954.71)
-  (save-to-csv-file "test-ls4-2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+  (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
 
   ;;
   )
