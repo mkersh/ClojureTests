@@ -87,6 +87,20 @@
         res (* p0 monthly-r res0)]
     res))
 
+;; Alternative version of emi-calc from annuity formulae
+;; P0 = E * annuity
+;; v (discount rate) = (1/(1+i))
+;; annuity = v + v^2 + v^3 + ... + v^n
+;;         = ((1 - v^n)/i)
+(defn emi-calc2 [p0 annual-interesst-rate% n]
+  (let [
+        i (/ (double (/ annual-interesst-rate% 12)) 100.0M)
+        v (/ 1 (+ 1 i))
+        annuity (/ (- 1 (pow v n)) i)
+        emi (/ p0 annuity)]
+    emi))
+
+
 (comment
 
 ;; ways to calculate the interest being acrued
@@ -128,6 +142,9 @@
 ;; #bookmark= a1bd998c-4927-4eba-9842-35fa0ca44310
 ;; compare to http://localhost:3000/goto-file?&bookmark=0fed71a9-32df-4232-bfb9-fbae63f2ddd8
 (emi-calc 1000000 8.5 (* 15 12))
+
+;;
+(emi-calc2 1000000 8.5 (* 15 12))
 
 ;; tests to calculate the daily and monthlt interest-rate from the annual
 (/ 0.1 360)
