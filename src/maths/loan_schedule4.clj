@@ -75,7 +75,6 @@
       (let [date1-day0 (- 30 (.getDayOfMonth date1-local))
             date1-day (if (< date1-day0 0) 0 date1-day0)
             days-diff0 (+ date2-day date1-day)
-            _ (prn "here")
             days-diff (if (> days-diff0 30) 30 days-diff0)]
         (+ (* months-diff 30) days-diff)))))
 

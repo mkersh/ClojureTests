@@ -70,7 +70,6 @@
       (let [date1-day0 (- 30 (.getDayOfMonth date1-local))
             date1-day (if (< date1-day0 0) 0 date1-day0)
             days-diff0 (+ date2-day date1-day)
-            _ (prn "here")
             days-diff (if (> days-diff0 30) 30 days-diff0)]
         (+ (* months-diff 30) days-diff)))))
 
@@ -374,7 +373,7 @@
 
 ;; Test injecting into Mambu balloon loan
   (save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2023-01-26"))
-  (save-to-csv-file "test-balloon1.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2024-01-26"))
+  (save-to-csv-file "test-balloon1b.csv" (expand-schedule 10000 (/ 5.00 12.0) 20 "2022-01-26" "2024-01-26"))
 
 
 ;; #bookmark= 0fed71a9-32df-4232-bfb9-fbae63f2ddd8
