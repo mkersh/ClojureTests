@@ -11,13 +11,15 @@
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 152},
  "a1bd998c-4927-4eba-9842-35fa0ca44310"
- {:file "src/maths/interest.clj", :line 128},
+ {:file "src/maths/interest.clj", :line 142},
  "4eae3949-dfde-4693-bd6d-ef4251b04ba3"
  {:file "src/maths/loan_schedule.clj", :line 3},
  "75413827-b6af-48ac-90f8-4a3f8da73ac6"
  {:file "src/maths/loan_schedule2.clj", :line 79},
  "9de28b85-a797-4682-9403-1329daaf8cc3"
  {:file "src/functions/pow.clj", :line 1},
+ "2dce401d-2a1e-4c8d-83c6-b5c18c9f137d"
+ {:file "src/testing/unit_test_examples.clj", :line 1},
  "c6906f02-3c46-4919-ba7b-058831bd90f7"
  {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253},
  "1989a54f-774f-46f0-a1da-5c50645c7394"
