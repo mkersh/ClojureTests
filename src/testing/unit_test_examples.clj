@@ -17,6 +17,17 @@
     1 4
     3 2))
 
+(deftest lots-of-tests
+  (testing "Arithmetic"
+    (testing "with positive integers"
+      (is (= 4 (+ 2 2)))
+      (is (= 7 (+ 3 4)))
+      (testing "and another subsection"
+        (is (= 1 (+ 1 1)))))
+    (testing "with negative integers"
+      (is (= -5 (+ -2 -2)))                ;error here
+      (is (= -1 (+ 3 -4))))))
+
 (comment
 
 ;; Run all tests across all namespaces loaded
