@@ -383,8 +383,8 @@
         inst-obj  (get edit-map inst-num)]
     (if inst-obj
       ;; specific total-amount
-      ;;(cas/expr prin-expected int-expected)
-      (cas/expr (cas/term 33.00 []))
+      (cas/expr prin-expected int-expected)
+      ;;(cas/expr (cas/term 33.00 []))
       ;; else use
       calculated-expr)))
 
