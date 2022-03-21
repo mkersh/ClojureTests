@@ -396,6 +396,9 @@
 
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
+
+  ;; Regression test suite:
+  ;; http://localhost:3000/goto-file?&bookmark=7501ef93-3bb5-414e-9bc4-8726e8ac2611
   
   @LOAN-SCHEDULE-EDIT
   (clear-schedule-edits)

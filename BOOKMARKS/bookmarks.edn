@@ -8,6 +8,9 @@
  {:file "src/http/api/mambu/demo/loyalty_points.clj", :line 1},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 150},
+ "7501ef93-3bb5-414e-9bc4-8726e8ac2611"
+ {:file "src/maths/loan_schedule_tests/loan_schedule_tests.clj",
+  :line 2},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 152},
  "a1bd998c-4927-4eba-9842-35fa0ca44310"
@@ -33,9 +36,9 @@
  "9d814ac2-02dc-47a5-980d-3a23108de57a"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 9},
  "0fed71a9-32df-4232-bfb9-fbae63f2ddd8"
- {:file "src/maths/loan_schedule3.clj", :line 380},
+ {:file "src/maths/loan_schedule3.clj", :line 379},
  "1031c4ec-f363-4294-8d2a-bd29b099f130"
- {:file "src/maths/loan_schedule3.clj", :line 291},
+ {:file "src/maths/loan_schedule3.clj", :line 290},
  "8569537e-3b6f-4f08-9e66-dfd027f10515"
  {:file "src/maths/interest.clj", :line 1},
  "102cb3af-9613-4130-9c01-dfafe894cda2"

@@ -1,3 +1,5 @@
+;; Regression tests for loan_schedulexx.clj
+;; #bookmark= 7501ef93-3bb5-414e-9bc4-8726e8ac2611
 (ns maths.loan-schedule-tests.loan-schedule-tests
   (:use clojure.test)
   (:require [maths.loan-schedule3 :as ls3]
