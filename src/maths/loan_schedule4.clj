@@ -103,6 +103,9 @@
 
 (declare check-for-principle-holiday check-for-specific-total-amount check-for-prin-remain-holiday)
 
+;; ------------------------------------------
+;; Logic for calculating instalments
+
 (defn install-value [new-inst-obj i field install-list install-previous-list sub-values]
   (let [previous-index (- i 1)
         previous-principle_remaining (or (:principle_remaining (get install-list previous-index))
@@ -139,6 +142,9 @@
       (install-value i :interest_remaining install-list nil sub-values)
       (install-value i :total_remain install-list nil sub-values)
       (install-value i :total_payment_due install-list nil sub-values)))
+
+;; --------------------------------------
+
 
 (defn add-loan-instalment [sub-values]
   (fn [install-list i]
