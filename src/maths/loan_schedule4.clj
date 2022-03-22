@@ -340,7 +340,7 @@
 
 (defn edit-sched-interest-only2 [inst-list]
   (clear-schedule-edits)
-  (map edit-sched-interest-only inst-list))
+  (dorun (map edit-sched-interest-only inst-list)))
 
 ;; No payments for instalment=inst-num 
 ;; Accrued-interest to be paid after holiday ends
@@ -357,11 +357,9 @@
         inst-obj  (get edit-map inst-num)
         pricipal-to-pay (:pricipal-to-pay inst-obj)]
     (if pricipal-to-pay
-          ;; specific principal amount has been defined use this
-     (do
-       (prn "Holiday" inst-num-1)
-       (cas/expr (cas/term pricipal-to-pay [])))
-          ;; else use
+      ;; specific principal amount has been defined use this
+      (cas/expr (cas/term pricipal-to-pay []))
+      ;; else use
       calculated-expr)))
 
 (defn check-for-prin-remain-holiday [inst-num-1 no-holiday-expr previous-prin-expr ]
@@ -399,16 +397,22 @@
 
   ;; Regression test suite:
   ;; http://localhost:3000/goto-file?&bookmark=7501ef93-3bb5-414e-9bc4-8726e8ac2611
-  
+
   @LOAN-SCHEDULE-EDIT
   (clear-schedule-edits)
 
-
-  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
   (edit-sched-interest-only2 [1 3 5 7 9 11])
+  (save-to-csv-file "test-ls4-1a.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
+
+  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 11])
   (save-to-csv-file "test-ls4-1b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
 
-(* 11 954.71)
+  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
+  (save-to-csv-file "test-ls4-1c.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
+
+
+
+  (* 11 954.71)
   (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
 
   ;;
