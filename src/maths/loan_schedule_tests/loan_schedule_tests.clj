@@ -25,7 +25,7 @@
 
 (defn compare-schedules [expected-map actual-map]
   (let [expected-res (:instalments expected-map)
-        actual-res (:instalments actual-map) ]
+        actual-res (:instalments actual-map)]
     (dorun (map (fn [e a]
                   (testing (str "Instalment " (:num e))
                     (is (= e a))))
@@ -118,35 +118,38 @@
   )
 
 
-  (deftest loan-schedule4-holidays
-    (testing "test-ls4-1a.csv"
-      (ls4/edit-sched-interest-only2 [1 3 5 7 9 11])
-      (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-1a.txt")]
-        (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
+(deftest loan-schedule4-holidays
+  (testing "test-ls4-1a.csv"
+    (ls4/edit-sched-interest-only2 [1 3 5 7 9 11])
+    (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-1a.txt")]
+      (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
 
-    (testing "test-ls4-1b.csv"
-      (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 11])
-      (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-1b.txt")]
-        (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
+  (testing "test-ls4-1b.csv"
+    (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 11])
+    (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-1b.txt")]
+      (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
 
-    (testing "test-ls4-1c.csv"
-      (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
-      (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-1c.txt")]
-        (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
+  (testing "test-ls4-1c.csv"
+    (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
+    (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-1c.txt")]
+      (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
 
     ;;
-    )
+  )
 
 
 (comment
 
   (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
-;; Save results into a file and then create a regression test to ensure that we do not break
+  ;; Save results into a file and then create a regression test to ensure that we do not break
   (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01")
                "src/maths/loan_schedule_tests/expected_results/test-ls4-1c.txt")
 
-;; Run all the tests in this namespace
+  ;; Run all the tests in this namespace
   (run-all-tests #"maths.loan_schedule_tests.loan_schedule_tests/other-test")
+  ;; Run individual tests
   (loan-schedule4-holidays)
+
+
 ;;
-  )
+)
