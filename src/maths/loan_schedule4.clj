@@ -68,9 +68,9 @@
                      date2-day0)
         months-diff (months-diff date1 date2)]
     (if (>= date2-day date1-day)
-      (let [days-diff (- date2-day  date1-day)
+      (let [days-diff (- date2-day  date1-day)]
          ;;_ (prn "here1" date1-day date2-day date1-month  date1-last-dayofmonth (not= date1-month 2))
-            ]
+            
         (+ (* months-diff 30) days-diff))
       (let [date1-day0 (- 30 (.getDayOfMonth date1-local))
             date1-day (if (< date1-day0 0) 0 date1-day0)
@@ -103,17 +103,53 @@
 
 (declare check-for-principle-holiday check-for-specific-total-amount check-for-prin-remain-holiday)
 
+
+(defn install-value [i field sub-values new-inst-obj install-list install-previous-list]
+  (let [previous-index (- i 1)
+        previous-principle_remaining (or (:principle_remaining (get install-list previous-index))
+                                         (cas/expr (cas/term 1 [:P])))
+        interest_expected (:interest_expected new-inst-obj)
+        principle_remaining (:principle_remaining new-inst-obj)
+        principal_expected (:principal_expected new-inst-obj)
+        field-val (condp = field
+                    :num (+ i 1)
+                    :interest_expected
+                    (cas/expr-multiply previous-principle_remaining  :r)
+                    :principal_expected
+                    (check-for-principle-holiday 0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
+                    :principle_remaining
+                    (check-for-prin-remain-holiday i (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E])) previous-principle_remaining)
+                    :interest_remaining
+                    (cas/expr interest_expected (cas/term -1 [:E]))
+                    :total_remain principle_remaining
+                    :total_payment_due (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected))
+        field-val-expand (cas/expr-sub field-val sub-values)]
+    (assoc new-inst-obj field field-val-expand)))
+
+(comment
+ (get [] -1))
+
+
+
 (defn add-loan-instalment [sub-values]
   (fn [install-list i]
     (let [previous-index (- i 1)
           previous-principle_remaining (:principle_remaining (get install-list previous-index))
-          interest_expected0 (cas/expr-multiply previous-principle_remaining  :r)
+          ;;interest_expected0 (cas/expr-multiply previous-principle_remaining  :r)
           ;; Try and simplify the expressions at every opportunity. That's why we are calling expr-sub
-          interest_expected (cas/expr-sub interest_expected0 sub-values)
-          principal_expected0 (check-for-principle-holiday i (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
-          principal_expected (cas/expr-sub principal_expected0 sub-values)
-          principle_remaining0 (check-for-prin-remain-holiday i (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E])) previous-principle_remaining)
-          principle_remaining (cas/expr-sub principle_remaining0 sub-values)
+          ;;interest_expected (cas/expr-sub interest_expected0 sub-values)
+          inst-obj (install-value i :interest_expected {} sub-values install-list nil)
+          interest_expected (:interest_expected inst-obj)
+          ;;principal_expected0 (check-for-principle-holiday i (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
+          ;;principal_expected (cas/expr-sub principal_expected0 sub-values)
+          inst-obj1 (install-value i :principal_expected inst-obj sub-values install-list nil)
+          principal_expected (:principal_expected inst-obj1)
+
+          inst-obj2 (install-value i :principle_remaining inst-obj sub-values install-list nil)
+          principle_remaining (:principle_remaining inst-obj2)
+          ;;principle_remaining0 (check-for-prin-remain-holiday i (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E])) previous-principle_remaining)
+          ;;principle_remaining (cas/expr-sub principle_remaining0 sub-values)
+          
           interest_remaining0 (cas/expr interest_expected (cas/term -1 [:E]))
           interest_remaining (cas/expr-sub interest_remaining0 sub-values)
           total_remain principle_remaining
@@ -169,9 +205,9 @@
         interest_remaining0 (if (= i 0)
                               (cas/expr interest_expected (cas/term -1 [:E]))
                               (cas/expr previous-interest_remaining interest_expected (cas/term -1 [:E])))
-        interest_remaining (cas/expr-sub interest_remaining0 sub-values)
+        interest_remaining (cas/expr-sub interest_remaining0 sub-values)]
         ;;total_payment_due (cas/expr (cas/term 1 [:E]))
-        ]
+        
 
     ;; if recalc-list <> [] then always force principal+interest
     (if (and (not (revert-install? recalc-list i)) (> (:interest_remaining expanded-instal-obj) 0))
@@ -194,8 +230,8 @@
             ;; principal expected+remaining is different if the previous instalment had previous-interest_remaining > 0
             ;; If this is the case then prev-instal-mod1 will equal true as well
             principal_expected1a (if prev-instal-mod1
-                                 (cas/expr-sub (cas/expr principal_expected0 (cas/expr-multiply previous-interest_remaining -1)) sub-values)
-                                 (cas/expr-sub principal_expected0 sub-values))
+                                  (cas/expr-sub (cas/expr principal_expected0 (cas/expr-multiply previous-interest_remaining -1)) sub-values)
+                                  (cas/expr-sub principal_expected0 sub-values))
             principal_expected (check-for-principle-holiday i principal_expected1a)
             principle_remaining0a (if prev-instal-mod1
                                    (cas/expr previous-principle_remaining interest_expected previous-interest_remaining (cas/term -1 [:E]))
@@ -243,8 +279,8 @@
         equal-month-amount (cas/solve total-remain-last-expanded :E)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
         expand-sched (mapv (expand-instalment sub-values1) loan-sched2)]
-        {:equal-month-amount equal-month-amount
-         :instalments expand-sched})
+       {:equal-month-amount equal-month-amount
+        :instalments expand-sched})
       ;; Else  
       {:equal-month-amount equal-month-amount
        :instalments expand-sched})))
@@ -260,7 +296,7 @@
       ;; Recalculate the schedule based on the modified loan-sched2
       (let
        [loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))]
-        (recur loan-sched2 numInstalments sub-values0))
+       (recur loan-sched2 numInstalments sub-values0))
       ;; Expr we need to solve to get E
       (let [_ (reset! debug true)
             loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))]
@@ -345,11 +381,11 @@
 ;; No payments for instalment=inst-num 
 ;; Accrued-interest to be paid after holiday ends
 (defn edit-sched-full-holiday [inst-num]
-(let [edit-map @LOAN-SCHEDULE-EDIT
-      edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay 0)
-      edit-map3 (edit-map-field edit-map2 inst-num :interest-to-pay 0)]
-  (reset! LOAN-SCHEDULE-EDIT edit-map3))
-)
+ (let [edit-map @LOAN-SCHEDULE-EDIT
+       edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay 0)
+       edit-map3 (edit-map-field edit-map2 inst-num :interest-to-pay 0)]
+   (reset! LOAN-SCHEDULE-EDIT edit-map3)))
+
 
 (defn check-for-principle-holiday [inst-num-1 calculated-expr]
   (let [inst-num (+ inst-num-1 1)
@@ -362,7 +398,7 @@
       ;; else use
       calculated-expr)))
 
-(defn check-for-prin-remain-holiday [inst-num-1 no-holiday-expr previous-prin-expr ]
+(defn check-for-prin-remain-holiday [inst-num-1 no-holiday-expr previous-prin-expr]
   (let [inst-num (+ inst-num-1 1)
         edit-map @LOAN-SCHEDULE-EDIT
         inst-obj  (get edit-map inst-num)
@@ -387,9 +423,9 @@
       calculated-expr)))
 
 (comment
-(* -1 0)
+ (* -1 0))
 ;;
-)
+
 
 
 (comment ;; Testing sanbox area
@@ -413,10 +449,10 @@
 
 
   (* 11 954.71)
-  (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+  (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01")))
 
   ;;
-  )
+  
 
 
 
