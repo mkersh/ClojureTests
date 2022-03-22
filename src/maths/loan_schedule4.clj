@@ -104,7 +104,7 @@
 (declare check-for-principle-holiday check-for-specific-total-amount check-for-prin-remain-holiday)
 
 
-(defn install-value [i field sub-values new-inst-obj install-list install-previous-list]
+(defn install-value [new-inst-obj i field install-list install-previous-list sub-values]
   (let [previous-index (- i 1)
         previous-principle_remaining (or (:principle_remaining (get install-list previous-index))
                                          (cas/expr (cas/term 1 [:P])))
@@ -114,7 +114,9 @@
         field-val (condp = field
                     :num (+ i 1)
                     :interest_expected
-                    (cas/expr-multiply previous-principle_remaining  :r)
+                    (if (= i 0)
+                      (cas/expr-multiply previous-principle_remaining  :r0)
+                      (cas/expr-multiply previous-principle_remaining  :r))
                     :principal_expected
                     (check-for-principle-holiday 0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
                     :principle_remaining
@@ -123,42 +125,33 @@
                     (cas/expr interest_expected (cas/term -1 [:E]))
                     :total_remain principle_remaining
                     :total_payment_due (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected))
-        field-val-expand (cas/expr-sub field-val sub-values)]
+        field-val-expand (if (#{:num} field)
+                           field-val
+                           (cas/expr-sub field-val sub-values))]
     (assoc new-inst-obj field field-val-expand)))
+
+(defn get-inst-obj [i install-list install-previous-list sub-values]
+  (-> {}
+      (install-value i :num install-list nil sub-values)
+      (install-value i :interest_expected install-list nil sub-values)
+      (install-value i :principal_expected install-list nil sub-values)
+      (install-value i :principle_remaining install-list nil sub-values)
+      (install-value i :interest_remaining install-list nil sub-values)
+      (install-value i :total_remain install-list nil sub-values)
+      (install-value i :total_payment_due install-list nil sub-values)))
 
 (comment
  (get [] -1))
 
 
-
 (defn add-loan-instalment [sub-values]
   (fn [install-list i]
-    (let [previous-index (- i 1)
-          previous-principle_remaining (:principle_remaining (get install-list previous-index))
-          ;;interest_expected0 (cas/expr-multiply previous-principle_remaining  :r)
-          ;; Try and simplify the expressions at every opportunity. That's why we are calling expr-sub
-          ;;interest_expected (cas/expr-sub interest_expected0 sub-values)
-          inst-obj (install-value i :interest_expected {} sub-values install-list nil)
-          interest_expected (:interest_expected inst-obj)
-          ;;principal_expected0 (check-for-principle-holiday i (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
-          ;;principal_expected (cas/expr-sub principal_expected0 sub-values)
-          inst-obj1 (install-value i :principal_expected inst-obj sub-values install-list nil)
-          principal_expected (:principal_expected inst-obj1)
-
-          inst-obj2 (install-value i :principle_remaining inst-obj sub-values install-list nil)
-          principle_remaining (:principle_remaining inst-obj2)
-          ;;principle_remaining0 (check-for-prin-remain-holiday i (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E])) previous-principle_remaining)
-          ;;principle_remaining (cas/expr-sub principle_remaining0 sub-values)
-          
-          interest_remaining0 (cas/expr interest_expected (cas/term -1 [:E]))
-          interest_remaining (cas/expr-sub interest_remaining0 sub-values)
-          total_remain principle_remaining
-          total_payment_due (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)
-          nth-install {:num (+ i 1) :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due}]
-      (conj install-list nth-install))))
+    (let [inst-obj (get-inst-obj i install-list nil sub-values)]
+      (conj install-list inst-obj))))
 
 (defn loan-schedule [numInstalments sub-values]
   (let [r0 (get-r0-interest-rate (:disbursement-date sub-values) (:first-payment-date sub-values) (:r sub-values))
+        sub-values (assoc sub-values :r0 r0)
         interest_expected0 (cas/expr-multiply (cas/expr (cas/term 1 [:P])) r0)
         interest_expected (cas/expr-sub interest_expected0 sub-values)
         principal_expected0 (check-for-principle-holiday 0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1)))
@@ -169,8 +162,11 @@
         interest_remaining (cas/expr-sub interest_remaining0 sub-values)
         total_remain principle_remaining
         total_payment_due (check-for-specific-total-amount 0 (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)
-        first-install {:num 1 :interest_expected interest_expected :principal_expected principal_expected  :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain  :total_payment_due total_payment_due}]
-    (reduce (add-loan-instalment sub-values) [first-install] (range 1 numInstalments))))
+        first-install {:num 1 :interest_expected interest_expected :principal_expected principal_expected  :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain  :total_payment_due total_payment_due}
+        first-install0 (get-inst-obj 0 {} nil sub-values)
+        _ (prn "OLD" first-install)
+        _ (prn "NEW" first-install0)]
+    (reduce (add-loan-instalment sub-values) [first-install0] (range 1 numInstalments))))
 
 (defn expand-instalment [sub-values]
   (fn [instal-obj]

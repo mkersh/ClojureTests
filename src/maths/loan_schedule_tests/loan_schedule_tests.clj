@@ -137,6 +137,11 @@
     ;;
   )
 
+(deftest failingtest
+  (ls4/clear-schedule-edits)
+  (testing "testsch7b.csv"
+    (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/testsch7b.txt")]
+      (testing "loan-schedule4" (compare-schedules expected-res (ls4/expand-schedule 1000000 5.00M 24 "2019-09-25" "2019-12-25"))))))
 
 (comment
 
@@ -149,6 +154,7 @@
   (run-all-tests #"maths.loan_schedule_tests.loan_schedule_tests/other-test")
   ;; Run individual tests
   (loan-schedule4-holidays)
+  (failingtest)
 
 
 ;;
