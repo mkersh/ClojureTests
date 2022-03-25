@@ -278,10 +278,9 @@
       ;; Recalculate the schedule based on the modified loan-sched2
       (let
        [loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))
-       dbgcnt @DEBUG-COUNT
-       dbgcnt (+ dbgcnt 1)
-       _ (reset! DEBUG-COUNT dbgcnt)
-       ]
+        dbgcnt @DEBUG-COUNT
+        dbgcnt (+ dbgcnt 1)
+        _ (reset! DEBUG-COUNT dbgcnt)]
         (if (< dbgcnt 50)
           (recur loan-sched2 numInstalments sub-values0)
           (assert false "ABORT - looped too many times")
