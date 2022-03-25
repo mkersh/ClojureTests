@@ -120,6 +120,9 @@
         principal_expected (:principal_expected new-inst-obj)
         prev-instal-mod1 (:mod1-applied (get install-list previous-index))
         interest_remaining_check (and recalc-list expand-sched (not (revert-install? recalc-list i)) (> (:interest_remaining expand-sched) 0))
+        new-inst-obj (if interest_remaining_check
+                       (assoc new-inst-obj :mod1-applied true)
+                       new-inst-obj)
         field-val (condp = field
                     :num (+ i 1)
                     :interest_expected
@@ -279,9 +282,10 @@
        dbgcnt (+ dbgcnt 1)
        _ (reset! DEBUG-COUNT dbgcnt)
        ]
-        (when (< dbgcnt 5)
-          (prn "expand-schedule0 loop" dbgcnt)
-          (recur loan-sched2 numInstalments sub-values0)))
+        (if (< dbgcnt 5)
+          (recur loan-sched2 numInstalments sub-values0)
+          (assert false "ABORT - looped too many times")
+          ))
       ;; Expr we need to solve to get E
       (let [_ (reset! debug true)
             loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))]
