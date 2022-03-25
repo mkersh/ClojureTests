@@ -156,6 +156,5 @@
   (loan-schedule4-holidays)
   (failingtest)
 
-
 ;;
 )

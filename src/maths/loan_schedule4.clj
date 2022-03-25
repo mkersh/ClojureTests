@@ -21,6 +21,7 @@
 (defonce LOAN-SCHEDULE-EDIT (atom {}))
 
 (def debug (atom false))
+(defonce DEBUG-COUNT (atom 0))
 
 ;;--------------------------------------------------------------------
 ;; Functions to calculate R0 - First Instalment interest-rate to use
@@ -70,7 +71,7 @@
     (if (>= date2-day date1-day)
       (let [days-diff (- date2-day  date1-day)]
          ;;_ (prn "here1" date1-day date2-day date1-month  date1-last-dayofmonth (not= date1-month 2))
-            
+
         (+ (* months-diff 30) days-diff))
       (let [date1-day0 (- 30 (.getDayOfMonth date1-local))
             date1-day (if (< date1-day0 0) 0 date1-day0)
@@ -118,7 +119,7 @@
         principle_remaining (:principle_remaining new-inst-obj)
         principal_expected (:principal_expected new-inst-obj)
         prev-instal-mod1 (:mod1-applied (get install-list previous-index))
-        interest_remaining_check (and (not (revert-install? recalc-list i)) (> (:interest_remaining expand-sched) 0))
+        interest_remaining_check (and recalc-list expand-sched (not (revert-install? recalc-list i)) (> (:interest_remaining expand-sched) 0))
         field-val (condp = field
                     :num (+ i 1)
                     :interest_expected
@@ -156,7 +157,7 @@
                     (if (= i 0)
                       (cas/expr interest_expected (cas/term -1 [:E]))
                       (cas/expr previous-interest_remaining interest_expected (cas/term -1 [:E])))
-                    :total_remain 
+                    :total_remain
                     (if install-previous-list
                       ;; update pass
                       (if interest_remaining_check
@@ -164,12 +165,12 @@
                         (cas/expr principle_remaining))
                       ;; 1st pass
                       principle_remaining)
-                      :total_payment_due 
-                      (if install-previous-list
+                    :total_payment_due
+                    (if install-previous-list
                         ;; update pass
-                        (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)
+                      (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)
                         ;; 1st pass
-                        (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)))
+                      (check-for-specific-total-amount i (cas/expr (cas/term 1 [:E])) principal_expected interest_expected)))
         field-val-expand (if (#{:num} field)
                            field-val
                            (cas/expr-sub field-val sub-values))]
@@ -197,8 +198,8 @@
       (conj install-list inst-obj))))
 
 (defn loan-schedule [numInstalments sub-values]
-  (let [r0 (get-r0-interest-rate (:disbursement-date sub-values) (:first-payment-date sub-values) (:r sub-values))
-        sub-values (assoc sub-values :r0 r0)
+  (let [;;r0 (get-r0-interest-rate (:disbursement-date sub-values) (:first-payment-date sub-values) (:r sub-values))
+        ;;sub-values (assoc sub-values :r0 r0)
         first-install (get-inst-obj 0 {} nil sub-values)]
     (reduce (add-loan-instalment sub-values) [first-install] (range 1 numInstalments))))
 
@@ -257,8 +258,8 @@
         equal-month-amount (cas/solve total-remain-last-expanded :E)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
         expand-sched (mapv (expand-instalment sub-values1) loan-sched2)]
-       {:equal-month-amount equal-month-amount
-        :instalments expand-sched})
+        {:equal-month-amount equal-month-amount
+         :instalments expand-sched})
       ;; Else  
       {:equal-month-amount equal-month-amount
        :instalments expand-sched})))
@@ -273,17 +274,27 @@
     (if (need-to-recalcuate expand-sched)
       ;; Recalculate the schedule based on the modified loan-sched2
       (let
-       [loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))]
-       (recur loan-sched2 numInstalments sub-values0))
+       [loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))
+       dbgcnt @DEBUG-COUNT
+       dbgcnt (+ dbgcnt 1)
+       _ (reset! DEBUG-COUNT dbgcnt)
+       ]
+        (when (< dbgcnt 5)
+          (prn "expand-schedule0 loop" dbgcnt)
+          (recur loan-sched2 numInstalments sub-values0)))
       ;; Expr we need to solve to get E
       (let [_ (reset! debug true)
             loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))]
         (expand-schedule-final loan-sched2 numInstalments sub-values0)))))
 
+
 ;; #bookmark= 1031c4ec-f363-4294-8d2a-bd29b099f130
 (defn expand-schedule [OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date]
   (reset! debug false)
-  (let [sub-values0 {:P OrigPrinciple :r (/ interestRatePerInstalment 100) :disbursement-date disbursement-date :first-payment-date first-payment-date}
+  (reset! DEBUG-COUNT 0) ;; mechanism to stop looping forever
+  (let [int-rate (/ interestRatePerInstalment 100)
+        r0 (get-r0-interest-rate disbursement-date first-payment-date int-rate)
+        sub-values0 {:P OrigPrinciple :r int-rate  :r0 r0 :disbursement-date disbursement-date :first-payment-date first-payment-date}
         loan-sched (loan-schedule numInstalments sub-values0)]
     (expand-schedule0 loan-sched numInstalments sub-values0)))
 
@@ -338,8 +349,7 @@
 ;; uses @LOAN-SCHEDULE-EDIT map
 
 (defn edit-map-field [edit-map inst-num field val]
-  (let [
-        inst-obj  (get edit-map inst-num {})
+  (let [inst-obj  (get edit-map inst-num {})
         inst-obj2 (assoc inst-obj field val)
         edit-map2 (assoc edit-map inst-num inst-obj2)]
     edit-map2))
@@ -359,10 +369,10 @@
 ;; No payments for instalment=inst-num 
 ;; Accrued-interest to be paid after holiday ends
 (defn edit-sched-full-holiday [inst-num]
- (let [edit-map @LOAN-SCHEDULE-EDIT
-       edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay 0)
-       edit-map3 (edit-map-field edit-map2 inst-num :interest-to-pay 0)]
-   (reset! LOAN-SCHEDULE-EDIT edit-map3)))
+  (let [edit-map @LOAN-SCHEDULE-EDIT
+        edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay 0)
+        edit-map3 (edit-map-field edit-map2 inst-num :interest-to-pay 0)]
+    (reset! LOAN-SCHEDULE-EDIT edit-map3)))
 
 
 (defn check-for-principle-holiday [inst-num-1 calculated-expr]
@@ -401,7 +411,7 @@
       calculated-expr)))
 
 (comment
- (* -1 0))
+  (* -1 0))
 ;;
 
 
@@ -430,7 +440,7 @@
   (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01")))
 
   ;;
-  
+
 
 
 
