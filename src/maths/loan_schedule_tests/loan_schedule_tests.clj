@@ -134,6 +134,11 @@
     (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-1c.txt")]
       (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
 
+  (testing "test-ls4-2b2.csv"
+    (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
+    (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2.txt")]
+      (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))))
+
     ;;
   )
 
@@ -147,8 +152,8 @@
 
   (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
   ;; Save results into a file and then create a regression test to ensure that we do not break
-  (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01")
-               "src/maths/loan_schedule_tests/expected_results/test-ls4-1c.txt")
+  (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01")
+               "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2.txt")
 
   ;; Run all the tests in this namespace
   (run-all-tests #"maths.loan_schedule_tests.loan_schedule_tests/other-test")

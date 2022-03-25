@@ -144,7 +144,7 @@
                                           prin-exp1)]
                           (check-for-principle-holiday i prin-exp2)))
                       ;; 1st pass
-                      (check-for-principle-holiday 0 (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))))
+                      (check-for-principle-holiday i (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))))
                     :principle_remaining
                     (if install-previous-list
                       ;; update pass
@@ -261,8 +261,8 @@
         equal-month-amount (cas/solve total-remain-last-expanded :E)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
         expand-sched (mapv (expand-instalment sub-values1) loan-sched2)]
-        {:equal-month-amount equal-month-amount
-         :instalments expand-sched})
+       {:equal-month-amount equal-month-amount
+        :instalments expand-sched})
       ;; Else  
       {:equal-month-amount equal-month-amount
        :instalments expand-sched})))
@@ -281,10 +281,10 @@
         dbgcnt @DEBUG-COUNT
         dbgcnt (+ dbgcnt 1)
         _ (reset! DEBUG-COUNT dbgcnt)]
-        (if (< dbgcnt 50)
-          (recur loan-sched2 numInstalments sub-values0)
-          (assert false "ABORT - looped too many times")
-          ))
+       (if (< dbgcnt 50)
+         (recur loan-sched2 numInstalments sub-values0)
+         (assert false "ABORT - looped too many times")))
+          
       ;; Expr we need to solve to get E
       (let [_ (reset! debug true)
             loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched []) [] (range 0 numInstalments))]
@@ -431,10 +431,9 @@
   (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
   (save-to-csv-file "test-ls4-1c.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
 
-
-
-  (* 11 954.71)
+  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
   (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01")))
+  
 
   ;;
 
