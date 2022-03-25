@@ -282,7 +282,7 @@
        dbgcnt (+ dbgcnt 1)
        _ (reset! DEBUG-COUNT dbgcnt)
        ]
-        (if (< dbgcnt 5)
+        (if (< dbgcnt 50)
           (recur loan-sched2 numInstalments sub-values0)
           (assert false "ABORT - looped too many times")
           ))
@@ -413,12 +413,6 @@
       ;;(cas/expr (cas/term 33.00 []))
       ;; else use
       calculated-expr)))
-
-(comment
-  (* -1 0))
-;;
-
-
 
 (comment ;; Testing sanbox area
   (ns-unalias *ns* 'cas)
