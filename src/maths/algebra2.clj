@@ -124,6 +124,7 @@
 
 
 (comment   ;; My REPL test area
+(expr-simplify (expr (term 33.0 [])))
 
 (def prin-remain {[:P] {:term-num 1M, :term-vlist [:P]}, [:P :r] {:term-num 1M, :term-vlist [:P :r]}, [:E] {:term-num -1M, :term-vlist [:E]}})
 (expr-sub prin-remain {:P 5000 :r 0.1 :E 500.00})

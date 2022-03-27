@@ -180,11 +180,15 @@
 
 ;; No payments for instalment=inst-num 
 ;; Accrued-interest to be paid after holiday ends
-(defn edit-sched-full-holiday [inst-num]
+(defn edit-sched-full-holiday [[inst-num obj]]
   (let [edit-map @LOAN-SCHEDULE-EDIT
-        edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay 0)
-        edit-map3 (edit-map-field edit-map2 inst-num :interest-to-pay 0)]
+        edit-map2 (edit-map-field edit-map inst-num :pricipal-to-pay (:pricipal-to-pay obj))
+        edit-map3 (edit-map-field edit-map2 inst-num :interest-to-pay (:interest-to-pay obj))]
     (reset! LOAN-SCHEDULE-EDIT edit-map3)))
+
+(defn edit-schedule [inst-list]
+  (clear-schedule-edits)
+  (dorun (map edit-sched-full-holiday inst-list)))
 
 
 (defn check-for-principle-holiday [inst-num-1 calculated-expr]
@@ -198,57 +202,36 @@
       ;; else use
       calculated-expr)))
 
-(defn check-for-full-holiday [inst-num-1]
+;; During a holiday how much interest do we charge?
+;; We support:
+;; (1) Determine the interest to pay from @HOLIDAY-INTEREST_CAP
+;;     NOTE: This would never be used in production but is very useful for testing
+;; (2) Have an explicit interest amount defined in @LOAN-SCHEDULE-EDIT
+;; (3) For default principal-only holiday rule:
+;;         interest-to-pay = principal-currently-remaining * interest-rate-for-this-instalment-period
+;;
+(defn holiday-interest-cap [install-list expand-sched inst-num-1 new-inst-obj int-expected]
   (let [inst-num (+ inst-num-1 1)
         edit-map @LOAN-SCHEDULE-EDIT
         inst-obj  (get edit-map inst-num)
         pricipal-to-pay (:pricipal-to-pay inst-obj)
         interest-to-pay (:interest-to-pay inst-obj)]
-    (and pricipal-to-pay interest-to-pay)))
-
-;; During a principal holiday how much interest do we charge?
-;; We support:
-;; (1) Determine the interest to pay from @HOLIDAY-INTEREST_CAP
-;;     NOTE: This would never be used in production but is very useful for testing
-;; (2) interest-to-pay = principal-currently-remaining * interest-rate-for-this-instalment-period
-;;
-(defn prin-holiday-interest-cap [install-list inst-num-1 new-inst-obj int-expected]
-  (let [inst-num (+ inst-num-1 1)
-        edit-map @LOAN-SCHEDULE-EDIT
-        inst-obj  (get edit-map inst-num)
-        pricipal-to-pay (:pricipal-to-pay inst-obj)]
-    
     (if pricipal-to-pay
       ;;int-expected
-      (let [int-cap @HOLIDAY-INTEREST_CAP 
+      (let [int-cap0 (or interest-to-pay @HOLIDAY-INTEREST_CAP)
+            interest_expected (if expand-sched (:interest_expected expand-sched) int-cap0)
+            int-cap (if (> int-cap0 interest_expected) interest_expected int-cap0)
             prev-instal (get install-list (- inst-num-1 1))
             principle_remaining (if prev-instal (:principle_remaining prev-instal)
                                     (cas/expr (cas/term 1 [:P])))
             int-rate (:r new-inst-obj)]
-        (if (= int-cap 0)
+        (if (and (= int-cap 0) (not interest-to-pay))
           ;; mechanism to override/force the interest charged during a holiday - useful for testing
-          (cas/expr-multiply principle_remaining int-rate)
+          (cas/expr (cas/term pricipal-to-pay []) (cas/expr-multiply principle_remaining int-rate))
           ;; During a principal-holiday only charge the standard monthly interest
-          (cas/expr (cas/term int-cap []))))
+          (cas/expr (cas/term pricipal-to-pay []) (cas/term int-cap []))))
       int-expected)))
 
-(comment 
-      (cas/expr (cas/term @HOLIDAY-INTEREST_CAP []))
-                (cas/expr-multiply principle_remaining int-rate)
-
-
-
-(let [int-cap @HOLIDAY-INTEREST_CAP ;; mechanism to override/force the interest charged during a holiday - useful for testing
-               principle_remaining (:principle_remaining new-inst-obj)
-               int-rate (:r new-inst-obj)]
-           (if (= int-cap 0)
-          ;; During a principal-holiday only charge the standard monthly interest
-             (cas/expr-multiply principle_remaining int-rate)
-             (cas/expr (cas/term 30 []))))
-             
-             
-             
-             )
 ;;--------------------------------------------------------------------
 ;; Loan Installments
 ;; Taken from my orignal: https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb 
@@ -259,7 +242,6 @@
 (defn install-value [new-inst-obj i field install-list install-previous-list sub-values expand-sched recalc-list]
   (let [previous-index (- i 1)
         prin-holiday (check-for-principle-holiday i nil) 
-        full-holiday (check-for-full-holiday i)
         total_payment_due (:total_payment_due new-inst-obj)
         previous-principle_remaining (or (:principle_remaining (get install-list previous-index))
                                          (cas/expr (cas/term 1 [:P])))
@@ -287,7 +269,7 @@
                         (cas/expr-multiply previous-principle_remaining  r0))
                       (cas/expr-multiply previous-principle_remaining  :r))
                     :interest_expected_capped
-                    (prin-holiday-interest-cap install-list i new-inst-obj interest_expected)
+                    (holiday-interest-cap install-list expand-sched i new-inst-obj interest_expected)
                     :principal_expected
                     (if install-previous-list
                       ;; update pass
@@ -478,7 +460,9 @@
 
   @LOAN-SCHEDULE-EDIT
   (clear-schedule-edits)
+  (reset! INT_REMAIN-ZERO-TOGGLE true)
 
+  (reset! HOLIDAY-INTEREST_CAP 30)
   (edit-sched-interest-only2 [1 3 5 7 9 11])
   (save-to-csv-file "test-ls4-1a.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
 
@@ -503,6 +487,14 @@
   (reset! HOLIDAY-INTEREST_CAP 0.0000001)
   (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
   (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+
+(edit-schedule [[1 {:pricipal-to-pay 500 :interest-to-pay 0}] ])
+(save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+
+(reset! HOLIDAY-INTEREST_CAP 0)
+(edit-schedule [[-1 {:pricipal-to-pay 0 :interest-to-pay 0}]
+                [-10 {:pricipal-to-pay 0 :interest-to-pay 0}]])
+(save-to-csv-file "test-ls4-2b2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01"))
 
 
 
