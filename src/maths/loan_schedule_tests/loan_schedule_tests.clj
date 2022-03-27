@@ -54,12 +54,12 @@
                     (is (= e a))))
                 expected-res actual-res))))
 
+;; The check-schedule-amounts test was failing originally for some holiday scenarios
+;; so added this test to debug
 (deftest check-totals-test
   (reset! ls4/INT_REMAIN-ZERO-TOGGLE true)
   (reset! ls4/HOLIDAY-INTEREST_CAP 30)
   (testing "test-ls4-1a.csv"
-    ;;(ls4/edit-sched-interest-only2 [1 3 5 7 9 11])
-    ;;(ls4/edit-sched-interest-only2 [])
     (ls4/edit-sched-interest-only2 [1 3 5 7 9 11])
     (check-schedule-amounts  (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
 
