@@ -27,6 +27,7 @@
   (Float/parseFloat (format "%.2f" num)))
 
 (defonce CHECK_AMOUNTS (atom true))
+
 (defn check-schedule-amounts [actual-map]
   (testing "Check principal and interest amounts add up"
     (let [instal-list (:instalments actual-map)
