@@ -288,15 +288,13 @@
                       (cas/expr previous-interest_remaining interest_expected (cas/expr-multiply total_payment_due -1)))
                     :interest_remaining
                     ;; determine whether to zero the interest_remaining balance or not
-                    (if (and install-previous-list (not interest_remaining_check)) 
+                    (if (and install-previous-list (not interest_remaining_check))
                       ;; We only consider zeroing after the initial-pass (i.e. when install-previous-list is non-nil)
                       ;; We should zero in all cases apart from when interest_expected<>interest_expected_capped.    
                       (if (= interest_expected interest_expected_capped)
                         (cas/expr (cas/term 0 []))
-                        (cas/expr interest_expected (cas/expr-multiply interest_expected_capped -1))
-                        )
-                      interest_remaining0
-                    )
+                        (cas/expr interest_expected (cas/expr-multiply interest_expected_capped -1)))
+                      interest_remaining0)
 
                       :total_remain
                       (if install-previous-list
