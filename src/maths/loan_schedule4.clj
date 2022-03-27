@@ -233,6 +233,7 @@
                                       (:interest_remaining (get install-list previous-index)))
         interest_expected (:interest_expected new-inst-obj)
         interest_expected_capped (:interest_expected_capped new-inst-obj)
+        interest_remaining0 (:interest_remaining0 new-inst-obj)
         interest_remaining (:interest_remaining new-inst-obj)
         principle_remaining (:principle_remaining new-inst-obj)
         principal_expected (:principal_expected new-inst-obj)
@@ -248,7 +249,7 @@
                       (let [r0 (:r0 sub-values)]
                         (cas/expr-multiply previous-principle_remaining  r0))
                       (cas/expr-multiply previous-principle_remaining  :r))
-                    :interest_expected_capped 
+                    :interest_expected_capped
                     (prin-holiday-interest-cap i new-inst-obj interest_expected)
                     :principal_expected
                     (if install-previous-list
@@ -281,22 +282,34 @@
                       (if prin-holiday
                         previous-principle_remaining
                         (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E]))))
-                    :interest_remaining
+                    :interest_remaining0
                     (if (= i 0)
                       (cas/expr interest_expected (cas/expr-multiply total_payment_due -1))
                       (cas/expr previous-interest_remaining interest_expected (cas/expr-multiply total_payment_due -1)))
-                    :total_remain
-                    (if install-previous-list
+                    :interest_remaining
+                    ;; determine whether to zero the interest_remaining balance or not
+                    (if (and install-previous-list (not interest_remaining_check)) 
+                      ;; We only consider zeroing after the initial-pass (i.e. when install-previous-list is non-nil)
+                      ;; We should zero in all cases apart from when interest_expected<>interest_expected_capped.    
+                      (if (= interest_expected interest_expected_capped)
+                        (cas/expr (cas/term 0 []))
+                        (cas/expr interest_expected (cas/expr-multiply interest_expected_capped -1))
+                        )
+                      interest_remaining0
+                    )
+
+                      :total_remain
+                      (if install-previous-list
                       ;; update pass
-                      (if interest_remaining_check
-                        (cas/expr principle_remaining  interest_remaining)
-                        (cas/expr principle_remaining))
+                        (if interest_remaining_check
+                          (cas/expr principle_remaining  interest_remaining)
+                          (cas/expr principle_remaining))
                       ;; 1st pass
-                      principle_remaining)
-                    :total_payment_due
-                    (if prin-holiday
-                      (cas/expr principal_expected interest_expected_capped)
-                      (cas/expr (cas/term 1 [:E]))))
+                        principle_remaining)
+                      :total_payment_due
+                      (if prin-holiday
+                        (cas/expr principal_expected interest_expected_capped)
+                        (cas/expr (cas/term 1 [:E]))))
 
         field-val-expand (if (#{:num} field)
                            field-val
@@ -314,6 +327,7 @@
        (install-value i :principal_expected install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :principle_remaining install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :total_payment_due install-list install-previous-list sub-values expand-sched recalc-list)
+       (install-value i :interest_remaining0 install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :interest_remaining install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :total_remain install-list install-previous-list sub-values expand-sched recalc-list))))
 
@@ -430,7 +444,7 @@
   (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
   (save-to-csv-file "test-ls4-1c.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
 
-  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
+  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
   (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01")))
   
   ;;
