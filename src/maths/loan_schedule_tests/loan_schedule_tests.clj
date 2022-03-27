@@ -33,6 +33,11 @@
 
 (deftest loan-sch-tests
   (ls4/clear-schedule-edits)
+  ;; These were my original regression tests to provde that ls4 produced the same results as ls3
+  ;; Using ls4/INT_REMAIN-ZERO-TOGGLE off to keep the results compatible
+  ;; See loan-schedule4-holidays below for proper ls4 specific tests - testing the new payment holiday features
+  (reset! ls4/INT_REMAIN-ZERO-TOGGLE false)
+
   (testing "real2-schedule1b.csv"
     (let [expected-res {:equal-month-amount {:E 1507.796459M}, :instalments [{:mod1-applied true, :num 1, :interest_expected 2400.00M, :principal_expected 0M, :principle_remaining 5000M, :interest_remaining 892.203541M, :total_remain 5892.203541M, :total_payment_due 1507.796459M} {:mod1-applied nil, :num 2, :interest_expected 50.00M, :principal_expected 565.592918M, :principle_remaining 4434.407082M, :interest_remaining -565.592918M, :total_remain 4434.407082M, :total_payment_due 1507.796459M} {:mod1-applied nil, :num 3, :interest_expected 44.34407082M, :principal_expected 1463.45238818M, :principle_remaining 2970.95469382M, :interest_remaining -2029.04530618M, :total_remain 2970.95469382M, :total_payment_due 1507.796459M} {:mod1-applied nil, :num 4, :interest_expected 29.7095469382M, :principal_expected 1478.0869120618M, :principle_remaining 1492.8677817582M, :interest_remaining -3507.1322182418M, :total_remain 1492.8677817582M, :total_payment_due 1507.796459M} {:mod1-applied nil, :num 5, :interest_expected 14.928677817582M, :principal_expected 1492.867781182418M, :principle_remaining 5.75782E-7M, :interest_remaining -4999.999999424218M, :total_remain 5.75782E-7M, :total_payment_due 1507.796459M}]}]
       (testing "loan-schedule3" (compare-schedules expected-res (ls3/expand-schedule 5000 1 5 "2021-01-01" "2025-01-01")))
@@ -119,6 +124,8 @@
 
 
 (deftest loan-schedule4-holidays
+  (reset! ls4/INT_REMAIN-ZERO-TOGGLE true)
+  (reset! ls4/HOLIDAY-INTEREST_CAP 30)
   (testing "test-ls4-1a.csv"
     (ls4/edit-sched-interest-only2 [1 3 5 7 9 11])
     (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-1a.txt")]
@@ -135,31 +142,39 @@
       (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
 
   (testing "test-ls4-2b2.csv"
-    (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
+    (reset! ls4/HOLIDAY-INTEREST_CAP 30)
+    (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
     (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2.txt")]
+      (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))))
+
+  (testing "test-ls4-2b2-2.csv"
+    (reset! ls4/HOLIDAY-INTEREST_CAP 0)
+    (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
+    (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2-2.txt")]
+      (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))))
+
+  (testing "test-ls4-2b2-3.csv"
+    (reset! ls4/HOLIDAY-INTEREST_CAP 0.0000001)
+    (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
+    (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2-3.txt")]
       (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))))
 
     ;;
   )
 
-(deftest failingtest
-  (ls4/clear-schedule-edits)
-  (testing "testsch7b.csv"
-    (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/testsch7b.txt")]
-      (testing "loan-schedule4" (compare-schedules expected-res (ls4/expand-schedule 1000000 5.00M 24 "2019-09-25" "2019-12-25"))))))
-
 (comment
-
-  (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
+  (reset! ls4/INT_REMAIN-ZERO-TOGGLE true)
+  (reset! ls4/HOLIDAY-INTEREST_CAP 0.0000001)
+  (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
   ;; Save results into a file and then create a regression test to ensure that we do not break
   (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01")
-               "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2.txt")
+               "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2-3.txt")
 
   ;; Run all the tests in this namespace
   (run-all-tests #"maths.loan_schedule_tests.loan_schedule_tests/other-test")
   ;; Run individual tests
   (loan-schedule4-holidays)
-  (failingtest)
+
 
 ;;
-)
+  )

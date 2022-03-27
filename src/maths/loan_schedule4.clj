@@ -19,6 +19,8 @@
             [java-time :as t]))
 
 (defonce LOAN-SCHEDULE-EDIT (atom {}))
+(defonce HOLIDAY-INTEREST_CAP (atom 0))
+(defonce INT_REMAIN-ZERO-TOGGLE (atom true))
 (defonce DEBUG-COUNT (atom 0))
 
 ;;--------------------------------------------------------------------
@@ -204,16 +206,49 @@
         interest-to-pay (:interest-to-pay inst-obj)]
     (and pricipal-to-pay interest-to-pay)))
 
-(defn prin-holiday-interest-cap [inst-num-1 new-inst-obj int-expected]
+;; During a principal holiday how much interest do we charge?
+;; We support:
+;; (1) Determine the interest to pay from @HOLIDAY-INTEREST_CAP
+;;     NOTE: This would never be used in production but is very useful for testing
+;; (2) interest-to-pay = principal-currently-remaining * interest-rate-for-this-instalment-period
+;;
+(defn prin-holiday-interest-cap [install-list inst-num-1 new-inst-obj int-expected]
   (let [inst-num (+ inst-num-1 1)
         edit-map @LOAN-SCHEDULE-EDIT
         inst-obj  (get edit-map inst-num)
         pricipal-to-pay (:pricipal-to-pay inst-obj)]
+    
     (if pricipal-to-pay
       ;;int-expected
-      (cas/expr (cas/term 30 []))
+      (let [int-cap @HOLIDAY-INTEREST_CAP 
+            prev-instal (get install-list (- inst-num-1 1))
+            principle_remaining (if prev-instal (:principle_remaining prev-instal)
+                                    (cas/expr (cas/term 1 [:P])))
+            int-rate (:r new-inst-obj)]
+        (if (= int-cap 0)
+          ;; mechanism to override/force the interest charged during a holiday - useful for testing
+          (cas/expr-multiply principle_remaining int-rate)
+          ;; During a principal-holiday only charge the standard monthly interest
+          (cas/expr (cas/term int-cap []))))
       int-expected)))
 
+(comment 
+      (cas/expr (cas/term @HOLIDAY-INTEREST_CAP []))
+                (cas/expr-multiply principle_remaining int-rate)
+
+
+
+(let [int-cap @HOLIDAY-INTEREST_CAP ;; mechanism to override/force the interest charged during a holiday - useful for testing
+               principle_remaining (:principle_remaining new-inst-obj)
+               int-rate (:r new-inst-obj)]
+           (if (= int-cap 0)
+          ;; During a principal-holiday only charge the standard monthly interest
+             (cas/expr-multiply principle_remaining int-rate)
+             (cas/expr (cas/term 30 []))))
+             
+             
+             
+             )
 ;;--------------------------------------------------------------------
 ;; Loan Installments
 ;; Taken from my orignal: https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb 
@@ -244,13 +279,15 @@
                        new-inst-obj)
         field-val (condp = field
                     :num (+ i 1)
+                    :r0 (:r0 sub-values)
+                    :r (:r sub-values)
                     :interest_expected
                     (if (= i 0)
                       (let [r0 (:r0 sub-values)]
                         (cas/expr-multiply previous-principle_remaining  r0))
                       (cas/expr-multiply previous-principle_remaining  :r))
                     :interest_expected_capped
-                    (prin-holiday-interest-cap i new-inst-obj interest_expected)
+                    (prin-holiday-interest-cap install-list i new-inst-obj interest_expected)
                     :principal_expected
                     (if install-previous-list
                       ;; update pass
@@ -288,13 +325,20 @@
                       (cas/expr previous-interest_remaining interest_expected (cas/expr-multiply total_payment_due -1)))
                     :interest_remaining
                     ;; determine whether to zero the interest_remaining balance or not
-                    (if (and install-previous-list (not interest_remaining_check))
+                    (let [int-remain-feature-enabled @INT_REMAIN-ZERO-TOGGLE]
+                      (if int-remain-feature-enabled
+
+                      ;; ** feature is enabled
+                        (if (and install-previous-list (not interest_remaining_check))
                       ;; We only consider zeroing after the initial-pass (i.e. when install-previous-list is non-nil)
                       ;; We should zero in all cases apart from when interest_expected<>interest_expected_capped.    
-                      (if (= interest_expected interest_expected_capped)
-                        (cas/expr (cas/term 0 []))
-                        (cas/expr interest_expected (cas/expr-multiply interest_expected_capped -1)))
-                      interest_remaining0)
+                          (if (= interest_expected interest_expected_capped)
+                            (cas/expr (cas/term 0 []))
+                            (cas/expr interest_expected (cas/expr-multiply interest_expected_capped -1)))
+                          interest_remaining0)
+
+                      ;; ** feature not enabled - use the old approach
+                        interest_remaining0))
 
                       :total_remain
                       (if install-previous-list
@@ -309,7 +353,7 @@
                         (cas/expr principal_expected interest_expected_capped)
                         (cas/expr (cas/term 1 [:E]))))
 
-        field-val-expand (if (#{:num} field)
+        field-val-expand (if (#{:num :r0 :r} field)
                            field-val
                            (cas/expr-sub field-val sub-values))]
     (assoc new-inst-obj field field-val-expand)))
@@ -320,6 +364,8 @@
   ([i install-list install-previous-list sub-values expand-sched recalc-list]
    (-> {}
        (install-value i :num install-list install-previous-list sub-values expand-sched recalc-list)
+       (install-value i :r0 install-list install-previous-list sub-values expand-sched recalc-list)
+       (install-value i :r install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :interest_expected install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :interest_expected_capped install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :principal_expected install-list install-previous-list sub-values expand-sched recalc-list)
@@ -442,10 +488,30 @@
   (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10])
   (save-to-csv-file "test-ls4-1c.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
 
+  (reset! INT_REMAIN-ZERO-TOGGLE false)
+  (reset! HOLIDAY-INTEREST_CAP 30)
   (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
-  (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01")))
-  
+  (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+
+  ;; This is the real principal-only holiday scenario. 
+  ;; customer pays off interest-only but not any large interest-remainin balance
+  (reset! HOLIDAY-INTEREST_CAP 0)
+  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
+  (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+
+  ;; This next one allows you to simulate principal+interest holiday
+  (reset! HOLIDAY-INTEREST_CAP 0.0000001)
+  (edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
+  (save-to-csv-file "test-ls4-2b2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+
+
+
+
+
+
   ;;
+  )
+  
 
 
 
