@@ -263,6 +263,8 @@
                     :num (+ i 1)
                     :r0 (:r0 sub-values)
                     :r (:r sub-values)
+                    :payment_duedate
+                    "20220401"
                     :interest_expected
                     (if (= i 0)
                       (let [r0 (:r0 sub-values)]
@@ -335,7 +337,7 @@
                         (cas/expr principal_expected interest_expected_capped)
                         (cas/expr (cas/term 1 [:E]))))
 
-        field-val-expand (if (#{:num :r0 :r} field)
+        field-val-expand (if (#{:num :r0 :r :payment_duedate} field)
                            field-val
                            (cas/expr-sub field-val sub-values))]
     (assoc new-inst-obj field field-val-expand)))
@@ -348,6 +350,7 @@
        (install-value i :num install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :r0 install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :r install-list install-previous-list sub-values expand-sched recalc-list)
+       (install-value i :payment_duedate install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :interest_expected install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :interest_expected_capped install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :principal_expected install-list install-previous-list sub-values expand-sched recalc-list)
@@ -374,13 +377,14 @@
   (fn [instal-obj]
     (let [num (:num instal-obj)
           mod1-applied (:mod1-applied instal-obj)
+          payment_duedate (:payment_duedate instal-obj)
           interest_expected (cas/expr-sub2 (:interest_expected instal-obj) sub-values)
           principal_expected (cas/expr-sub2 (:principal_expected instal-obj) sub-values)
           principle_remaining (cas/expr-sub2 (:principle_remaining instal-obj) sub-values)
           interest_remaining (cas/expr-sub2 (:interest_remaining instal-obj) sub-values)
           total_remain (cas/expr-sub2 (:total_remain instal-obj) sub-values)
           total_payment_due (cas/expr-sub2 (:total_payment_due instal-obj) sub-values)]
-      {:mod1-applied mod1-applied :num num :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due})))
+      {:mod1-applied mod1-applied :num num :payment_duedate payment_duedate :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due})))
 
 (defn update-instalment
   [old-loan-sched sub-values install-list expanded-instal-obj i recalc-list]

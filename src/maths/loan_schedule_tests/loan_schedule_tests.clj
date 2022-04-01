@@ -4,7 +4,9 @@
   (:use clojure.test)
   (:require [maths.loan-schedule3 :as ls3]
             [maths.loan-schedule4 :as ls4]
-            [clojure.pprint :as pp]))
+            [clojure.pprint :as pp]
+            [clojure.data :as cd]
+            ))
 
 (defn save-to-file
   [file-name s]
@@ -45,13 +47,22 @@
 
       (when @CHECK_AMOUNTS (is (= total_paid total_calc))))))
 
+;; test that all fields in e are present and equal in a
+;; NOTE: Will ignore extra fields that a has
+(defn compare-map [e a]
+  (not (first (cd/diff e a))))
+
 (defn compare-schedules [expected-map actual-map]
   (let [expected-res (:instalments expected-map)
         actual-res (:instalments actual-map)]
     (check-schedule-amounts actual-map)
+    
     (dorun (map (fn [e a]
                   (testing (str "Instalment " (:num e))
-                    (is (= e a))))
+                    (let [se (into (sorted-map) e)
+                          sa (into (sorted-map) a)]
+                      (is (compare-map se sa)))
+                    ))
                 expected-res actual-res))))
 
 ;; The check-schedule-amounts test was failing originally for some holiday scenarios
