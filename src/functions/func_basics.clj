@@ -12,7 +12,11 @@
 ;;; 
 ;;; References:
 ;;; http://clojure-doc.org/articles/language/functions.html
-(ns functions.func-basics)
+(ns functions.func-basics
+(:require [clojure.reflect :as r]
+          [clojure.pprint :as pp])
+
+)
 
 
 ;;; [1] Standard function definitions
@@ -241,6 +245,7 @@ test-func
 
 (say-hello2 :dog)
 
+
 ;; [5.2] defprotocol approach
 ;; This is the 2nd way to do Polymorphism in Clojure
 (defprotocol P
@@ -262,6 +267,21 @@ test-func
 (bar-me (Foo. 1 2 3) 42)
 (bar-me (Bar. 3) 42)
 (bar-me (Bar. 3))
+
+(pp/pprint (r/reflect Foo))
+(.c (Foo. 1 2 3))
+(Foo/getBasis)
+
+;; Anonymous implementation of a protocol
+(defn P-impl [nm]
+  (reify P
+    (foo [_] (str "Hello Foo I am " nm))
+    (bar-me [_] "Bar-me 1")
+    (bar-me [_ y] (str "Bar-me" y))))
+
+(foo (P-impl "Harry"))
+(bar-me (P-impl "Harry"))
+(bar-me (P-impl "Harry") 67)
 
 ;; Alternative to (Bar. 3)
 (->Bar 3) ;; returns (Bar. 3)
