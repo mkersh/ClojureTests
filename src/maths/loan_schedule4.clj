@@ -50,6 +50,10 @@
       (+ months-diff 1)
       months-diff)))
 
+(defn add-month [date1]
+  (let [date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
+    (str (t/plus date1-local (t/months 1)))))
+
 ;; The next function tries to replicate the EXCEL DAYS360 function 
 ;; NOTE: I still don't have a 100% match when dates involve 28/29 February
 (defn days360 [date1 date2]
@@ -123,17 +127,12 @@
 
 (defn dump-sched-to-csv [instal-list]
   (let [next-instal (first instal-list)
-        rest-instal (rest instal-list)
-        prin-exp (round-num (:principal_expected next-instal))]
-    ;; Debug to track a problem
-    (when (= prin-exp "506.62")
-      (prn "Interest Expected" (:interest_expected next-instal))
-      (prn "Prin expected" (:principal_expected next-instal))
-      (prn "Total payment" (:total_payment_due next-instal)))
+        rest-instal (rest instal-list)]
     (println
      (str
       (:num next-instal) ","
       (:mod1-applied next-instal) ","
+      (:payment_duedate next-instal) ","
       (round-num (:interest_expected next-instal)) ","
       (round-num (:principal_expected next-instal)) ","
       (round-num (:principle_remaining next-instal)) ","
@@ -150,7 +149,7 @@
     (spit fpath "" :append false)
     (with-open [out-data (io/writer fpath)]
       (binding [*out* out-data]
-        (println "#, ModFlag, Interest Expected, Principal Expected, Principle Remaining, Interest Remaining, Total Remaining, Total Amount Due")
+        (println "#, ModFlag, DueDate, Interest Expected, Principal Expected, Principle Remaining, Interest Remaining, Total Remaining, Total Amount Due")
         (dump-sched-to-csv (:instalments sched))))))
 
 
@@ -264,7 +263,12 @@
                     :r0 (:r0 sub-values)
                     :r (:r sub-values)
                     :payment_duedate
-                    "20220401"
+                    (if (= i 0)
+                      (:first-payment-date sub-values)
+                      ;;(add-month (:first-payment-date sub-values))
+                      (add-month (:payment_duedate (get install-list previous-index)))
+                      
+                      )
                     :interest_expected
                     (if (= i 0)
                       (let [r0 (:r0 sub-values)]
@@ -324,18 +328,18 @@
                       ;; ** feature not enabled - use the old approach
                         interest_remaining0))
 
-                      :total_remain
-                      (if install-previous-list
+                    :total_remain
+                    (if install-previous-list
                       ;; update pass
-                        (if interest_remaining_check
-                          (cas/expr principle_remaining  interest_remaining)
-                          (cas/expr principle_remaining))
+                      (if interest_remaining_check
+                        (cas/expr principle_remaining  interest_remaining)
+                        (cas/expr principle_remaining))
                       ;; 1st pass
-                        principle_remaining)
-                      :total_payment_due
-                      (if prin-holiday
-                        (cas/expr principal_expected interest_expected_capped)
-                        (cas/expr (cas/term 1 [:E]))))
+                      principle_remaining)
+                    :total_payment_due
+                    (if prin-holiday
+                      (cas/expr principal_expected interest_expected_capped)
+                      (cas/expr (cas/term 1 [:E]))))
 
         field-val-expand (if (#{:num :r0 :r :payment_duedate} field)
                            field-val
@@ -499,9 +503,6 @@
 (edit-schedule [[-1 {:pricipal-to-pay 0 :interest-to-pay 0}]
                 [-10 {:pricipal-to-pay 0 :interest-to-pay 0}]])
 (save-to-csv-file "test-ls4-2b2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01"))
-
-
-
 
 
 
