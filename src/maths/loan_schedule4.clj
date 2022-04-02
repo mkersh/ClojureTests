@@ -237,8 +237,9 @@
 ;; Taken from my orignal: https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb 
 
 ;; ------------------------------------------
-;; Logic for calculating instalments
-
+;; Logic for calculating the value of a specific instalment field
+;; Function call multiple times from get-inst-obj to generate the entire instalment
+;;
 (defn install-value [new-inst-obj i field install-list install-previous-list sub-values expand-sched recalc-list]
   (let [previous-index (- i 1)
         prin-holiday (check-for-principle-holiday i nil) 
