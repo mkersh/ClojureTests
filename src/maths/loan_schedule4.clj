@@ -266,8 +266,7 @@
                     :payment_duedate
                     (if (= i 0)
                       (:first-payment-date sub-values)
-                      (add-month (:payment_duedate (get install-list previous-index)))
-                      )
+                      (add-month (:payment_duedate (get install-list previous-index))))
                     :int_days
                     (if (= i 0)
                       (days-diff (:disbursement-date sub-values) (:first-payment-date sub-values))
@@ -316,21 +315,17 @@
                       (cas/expr previous-interest_remaining interest_expected (cas/expr-multiply total_payment_due -1)))
                     :interest_remaining
                     ;; determine whether to zero the interest_remaining balance or not
-                    (let [int-remain-feature-enabled @INT_REMAIN-ZERO-TOGGLE]
-                      (if int-remain-feature-enabled
-
+                    (if @INT_REMAIN-ZERO-TOGGLE
                       ;; ** feature is enabled
-                        (if (and install-previous-list (not interest_remaining_check))
-                      ;; We only consider zeroing after the initial-pass (i.e. when install-previous-list is non-nil)
-                      ;; We should zero in all cases apart from when interest_expected<>interest_expected_capped.    
-                          (if (= interest_expected interest_expected_capped)
-                            (cas/expr (cas/term 0 []))
-                            (cas/expr interest_expected (cas/expr-multiply interest_expected_capped -1)))
-                          interest_remaining0)
-
+                      (if (and install-previous-list (not interest_remaining_check))
+                          ;; We only consider zeroing after the initial-pass (i.e. when install-previous-list is non-nil)
+                          ;; We should zero in all cases apart from when interest_expected<>interest_expected_capped.    
+                        (if (= interest_expected interest_expected_capped)
+                          (cas/expr (cas/term 0 []))
+                          (cas/expr interest_expected (cas/expr-multiply interest_expected_capped -1)))
+                        interest_remaining0)
                       ;; ** feature not enabled - use the old approach
-                        interest_remaining0))
-
+                      interest_remaining0)
                     :total_remain
                     (if install-previous-list
                       ;; update pass
@@ -343,7 +338,6 @@
                     (if prin-holiday
                       (cas/expr principal_expected interest_expected_capped)
                       (cas/expr (cas/term 1 [:E]))))
-
         field-val-expand (if (#{:num :r0 :r :payment_duedate :int_days} field)
                            field-val
                            (cas/expr-sub field-val sub-values))]
@@ -376,9 +370,7 @@
       (conj install-list inst-obj))))
 
 (defn loan-schedule [numInstalments sub-values]
-  (let [;;r0 (get-r0-interest-rate (:disbursement-date sub-values) (:first-payment-date sub-values) (:r sub-values))
-        ;;sub-values (assoc sub-values :r0 r0)
-        first-install (get-inst-obj 0 {} nil sub-values)]
+  (let [first-install (get-inst-obj 0 {} nil sub-values)]
     (reduce (add-loan-instalment sub-values) [first-install] (range 1 numInstalments))))
 
 (defn expand-instalment [sub-values]
@@ -508,8 +500,6 @@
 (edit-schedule [[-1 {:pricipal-to-pay 0 :interest-to-pay 0}]
                 [-10 {:pricipal-to-pay 0 :interest-to-pay 0}]])
 (save-to-csv-file "test-ls4-2b2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01"))
-
-
 
   ;;
   )
