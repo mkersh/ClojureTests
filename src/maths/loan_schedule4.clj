@@ -97,9 +97,17 @@
     (* daily-interest-rate days-diff)))
 
 ;; This below matches Excels DAYS360
-(defn get-r0-interest-rate [disburement-date first-payment-date monthly-interest-rate]
-  (let [months-diff (months-diff2 disburement-date first-payment-date)]
-    (* monthly-interest-rate months-diff)))
+(defn get-r0-interest-rate [daycount-model disburement-date first-payment-date monthly-interest-rate]
+  (condp = daycount-model
+    :30-360
+    (let [months-diff (months-diff2 disburement-date first-payment-date)]
+      (* monthly-interest-rate months-diff))
+    :actual-365
+    (let [apr (* monthly-interest-rate 12.0)
+          day-rate (/ apr 365.0)
+          days-diff (days-diff disburement-date first-payment-date)]
+      (* days-diff day-rate))  
+      ))
 
 ;;--------------------------------------------------------------------
 ;; basic support functions
@@ -243,6 +251,7 @@
 (defn install-value [new-inst-obj i field install-list install-previous-list sub-values expand-sched recalc-list]
   (let [previous-index (- i 1)
         prin-holiday (check-for-principle-holiday i nil) 
+        daycount-model (:daycount-model sub-values)
         total_payment_due (:total_payment_due new-inst-obj)
         previous-principle_remaining (or (:principle_remaining (get install-list previous-index))
                                          (cas/expr (cas/term 1 [:P])))
@@ -256,27 +265,40 @@
         principle_remaining (:principle_remaining new-inst-obj)
         principal_expected (:principal_expected new-inst-obj)
         prev-instal-mod1 (:mod1-applied (get install-list previous-index))
-        interest_remaining_check (and recalc-list expand-sched (not (revert-install? recalc-list i)) (> (:interest_remaining expand-sched) 0))
+        interest_remaining_check (and recalc-list expand-sched (not (revert-install? recalc-list i)) (> (:interest_remaining expand-sched) 0.009))
         new-inst-obj (if interest_remaining_check
                        (assoc new-inst-obj :mod1-applied true)
                        new-inst-obj)
         field-val (condp = field
                     :num (+ i 1)
                     :r0 (:r0 sub-values)
-                    :r (:r sub-values)
+                    :r
+                    (if (= i 0)
+                      (:r sub-values)
+                      (condp = daycount-model
+                        :30-360
+                        (let [int_days (:int_days new-inst-obj)
+                              months (/ int_days 30.0)
+                              int-rate (/ (:apr sub-values) 12.0)]
+                          (* months int-rate))))
                     :payment_duedate
                     (if (= i 0)
                       (:first-payment-date sub-values)
                       (add-month (:payment_duedate (get install-list previous-index))))
                     :int_days
-                    (if (= i 0)
-                      (days-diff (:disbursement-date sub-values) (:first-payment-date sub-values))
-                      (days-diff (:payment_duedate (get install-list previous-index)) (:payment_duedate new-inst-obj)))
+                    (let [days-diff-fn (condp = daycount-model :30-360 days360 :actual-365 days-diff)]
+                      (if (= i 0)
+                        (days-diff-fn (:disbursement-date sub-values) (:first-payment-date sub-values))
+                        (days-diff-fn (:payment_duedate (get install-list previous-index)) (:payment_duedate new-inst-obj))))
                     :interest_expected
                     (if (= i 0)
                       (let [r0 (:r0 sub-values)]
                         (cas/expr-multiply previous-principle_remaining  r0))
-                      (cas/expr-multiply previous-principle_remaining  :r))
+                      (let [r (bigdec (:r new-inst-obj))]
+                        ;; #bookmark= 7f8f53c0-ea5e-4dc3-ad22-d29aebf2669c
+                        ;; Previously was:
+                        ;;(cas/expr-multiply previous-principle_remaining  :r)
+                        (cas/expr-multiply previous-principle_remaining  r)))
                     :interest_expected_capped
                     (holiday-interest-cap install-list expand-sched i new-inst-obj interest_expected)
                     :principal_expected
@@ -350,10 +372,10 @@
   ([i install-list install-previous-list sub-values expand-sched recalc-list]
    (-> {}
        (install-value i :num install-list install-previous-list sub-values expand-sched recalc-list)
-       (install-value i :r0 install-list install-previous-list sub-values expand-sched recalc-list)
-       (install-value i :r install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :payment_duedate install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :int_days install-list install-previous-list sub-values expand-sched recalc-list)
+       (install-value i :r0 install-list install-previous-list sub-values expand-sched recalc-list)
+       (install-value i :r install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :interest_expected install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :interest_expected_capped install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :principal_expected install-list install-previous-list sub-values expand-sched recalc-list)
@@ -401,7 +423,7 @@
 (defn need-to-recalcuate [expand-sched]
   (let [expand-sched1 (enumerate expand-sched)
         recalc-needed (filter
-                       (fn [[_ instal]] (and (not (:mod1-applied instal)) (> (:interest_remaining instal) 0)))
+                       (fn [[_ instal]] (and (not (:mod1-applied instal)) (> (:interest_remaining instal) 0.009)))
                        expand-sched1)]
     (if (> (count recalc-needed) 0)
       (mapv (fn [[i _]] i) recalc-needed)
@@ -449,13 +471,17 @@
         (expand-schedule-final loan-sched2 numInstalments sub-values0)))))
 
 ;; #bookmark= 1031c4ec-f363-4294-8d2a-bd29b099f130
-(defn expand-schedule [OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date]
-  (reset! DEBUG-COUNT 0) ;; mechanism to prevent looping forever
-  (let [int-rate (/ interestRatePerInstalment 100)
-        r0 (get-r0-interest-rate disbursement-date first-payment-date int-rate)
-        sub-values0 {:P OrigPrinciple :r int-rate  :r0 r0 :disbursement-date disbursement-date :first-payment-date first-payment-date}
-        loan-sched (loan-schedule numInstalments sub-values0)]
-    (expand-schedule0 loan-sched numInstalments sub-values0)))
+(defn expand-schedule
+  ([OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date]
+   (expand-schedule OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date :30-360))
+  ([OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date daycount-model]
+   (reset! DEBUG-COUNT 0) ;; mechanism to prevent looping forever
+   (let [int-rate (/ interestRatePerInstalment 100)
+         apr (* int-rate 12.0)
+         r0 (get-r0-interest-rate daycount-model disbursement-date first-payment-date int-rate)
+         sub-values0 {:P OrigPrinciple :r int-rate  :r0 r0 :apr apr :daycount-model daycount-model :disbursement-date disbursement-date :first-payment-date first-payment-date}
+         loan-sched (loan-schedule numInstalments sub-values0)]
+     (expand-schedule0 loan-sched numInstalments sub-values0))))
 
 
 (comment ;; Testing sanbox area
@@ -502,6 +528,7 @@
                 [-10 {:pricipal-to-pay 0 :interest-to-pay 0}]])
 (save-to-csv-file "test-ls4-2b2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01"))
 
+(days360 "2022-01-02" "2022-02-01")
   ;;
   )
   

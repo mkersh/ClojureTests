@@ -27,6 +27,8 @@
  {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253},
  "1989a54f-774f-46f0-a1da-5c50645c7394"
  {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 181},
+ "7f8f53c0-ea5e-4dc3-ad22-d29aebf2669c"
+ {:file "src/maths/loan_schedule4.clj", :line 298},
  "0ca2a676-ac5d-4022-85a0-56f81592be83"
  {:file "src/maths/algebra2.clj", :line 1},
  "4f2ec93d-9e4c-4a8e-9588-a0d38d73a3b2"
