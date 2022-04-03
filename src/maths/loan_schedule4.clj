@@ -19,6 +19,7 @@
             [java-time :as t]))
 
 (defonce LOAN-SCHEDULE-EDIT (atom {}))
+(defonce NON-BUSDAY-CALENDAR (atom {}))
 (defonce HOLIDAY-INTEREST_CAP (atom 0))
 (defonce INT_REMAIN-ZERO-TOGGLE (atom true))
 (defonce DEBUG-COUNT (atom 0))
@@ -53,6 +54,11 @@
 (defn add-month [date1]
   (let [date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
     (str (t/plus date1-local (t/months 1)))))
+
+(defn add-day [date1]
+  (let [date1-local (t/local-date "yyyy-MM-dd" (subs date1 0 10))]
+    (str (t/plus date1-local (t/days 1)))))
+
 
 ;; The next function tries to replicate the EXCEL DAYS360 function 
 ;; NOTE: I still don't have a 100% match when dates involve 28/29 February
@@ -241,6 +247,37 @@
       int-expected)))
 
 ;;--------------------------------------------------------------------
+;; Calendar functions
+;; Allow for business-day calendar to be configured
+;; @NON-BUSDAY-CALENDAR is our datastore for non-business-day(s)
+
+(defn set-non-business-days [dates-list]
+  (let [bd-map (reduce (fn [res-map date-str]
+                         (assoc res-map date-str true))
+                       {} dates-list)]
+    (reset! NON-BUSDAY-CALENDAR bd-map)))
+
+(defn clear-non-business-days []
+    (reset! NON-BUSDAY-CALENDAR {}))
+
+;; Given a date-str return the nearest business day
+(defn get-nearest-business-day [date-str]
+(let [is-bus-day? (not (get @NON-BUSDAY-CALENDAR date-str))]
+  (if is-bus-day?
+    date-str
+    ;; At the moment we will always move forward to find nearest business-day
+    ;; In a production system you really need to support either moving forward or backward
+    ;; to find the nearest business-day
+    (get-nearest-business-day (add-day date-str)))))
+
+(comment
+(clear-non-business-days)
+(set-non-business-days ["2022-04-03" "2022-04-04" "2022-04-05"])
+(get-nearest-business-day "2022-04-03")
+;;
+)
+
+;;--------------------------------------------------------------------
 ;; Loan Installments
 ;; Taken from my orignal: https://github.com/mkersh/MambuAPINotebook/blob/master/Interest%20Calculations.ipynb 
 
@@ -282,9 +319,12 @@
                               int-rate (/ (:apr sub-values) 12.0)]
                           (* months int-rate))))
                     :payment_duedate
-                    (if (= i 0)
-                      (:first-payment-date sub-values)
-                      (add-month (:payment_duedate (get install-list previous-index))))
+                    (let [pay-duedate (if (= i 0)
+                                        (:first-payment-date sub-values)
+                                        (add-month (:payment_duedate (get install-list previous-index))))]
+                      (get-nearest-business-day pay-duedate)
+                      ;;pay-duedate
+                      )
                     :int_days
                     (let [days-diff-fn (condp = daycount-model :30-360 days360 :actual-365 days-diff)]
                       (if (= i 0)

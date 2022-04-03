@@ -96,6 +96,7 @@
 
 (deftest loan-sch-tests
   (ls4/clear-schedule-edits)
+  (ls4/clear-non-business-days)
   (reset! CHECK_AMOUNTS true)
   ;; These were my original regression tests to provde that ls4 produced the same results as ls3
   ;; Using ls4/INT_REMAIN-ZERO-TOGGLE off to keep the results compatible
