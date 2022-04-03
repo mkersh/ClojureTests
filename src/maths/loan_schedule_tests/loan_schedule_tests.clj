@@ -250,15 +250,24 @@
       (ls4/clear-schedule-edits)
       (ls4/set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
       (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-1.txt")]
-        (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01")))))
+        (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))))
+
+    (testing "test-ls4-030422-2.csv"
+      (ls4/clear-schedule-edits)
+      (ls4/clear-non-business-days)
+      (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-2.txt")]
+        (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365))))
+
+    ;;    
+    )
 
 (comment
 
   (ls4/clear-schedule-edits)
-  (ls4/set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
+(ls4/clear-non-business-days)
   ;; Save results into a file and then create a regression test to ensure that we do not break
-  (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01")
-               "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-1.txt")
+  (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365)
+               "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-2.txt")
 
   ;; Run all the tests in this namespace
   (run-all-tests #"maths.loan_schedule_tests.loan_schedule_tests/other-test")

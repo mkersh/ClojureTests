@@ -320,7 +320,11 @@
                         (let [int_days (:int_days new-inst-obj)
                               months (/ int_days 30.0)
                               int-rate (/ (:apr sub-values) 12.0)]
-                          (* months int-rate))))
+                          (* months int-rate))
+                        :actual-365
+                        (let [int_days (:int_days new-inst-obj)
+                              int-rate (/ (:apr sub-values) 365.0)]
+                          (* int_days int-rate))))
                     :payment_duedate0
                     (let [pay-duedate (if (= i 0)
                                         (:first-payment-date sub-values)
@@ -579,7 +583,12 @@
 (set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
 (save-to-csv-file "test-ls4-030422-1.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
 
-
+;; actual-365 daycount model
+(clear-schedule-edits)
+(clear-non-business-days)
+;;(set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
+(save-to-csv-file "test-ls4-030422-2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365))
+(save-to-csv-file "test-ls4-030422-2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :30-360))
   ;;
   )
   
