@@ -318,13 +318,13 @@
                               months (/ int_days 30.0)
                               int-rate (/ (:apr sub-values) 12.0)]
                           (* months int-rate))))
-                    :payment_duedate
+                    :payment_duedate0
                     (let [pay-duedate (if (= i 0)
                                         (:first-payment-date sub-values)
-                                        (add-month (:payment_duedate (get install-list previous-index))))]
-                      (get-nearest-business-day pay-duedate)
-                      ;;pay-duedate
-                      )
+                                        (add-month (:payment_duedate0 (get install-list previous-index))))]
+                      pay-duedate)
+                    :payment_duedate
+                    (get-nearest-business-day (:payment_duedate0 new-inst-obj))
                     :int_days
                     (let [days-diff-fn (condp = daycount-model :30-360 days360 :actual-365 days-diff)]
                       (if (= i 0)
@@ -401,7 +401,7 @@
                     (if prin-holiday
                       (cas/expr principal_expected interest_expected_capped)
                       (cas/expr (cas/term 1 [:E]))))
-        field-val-expand (if (#{:num :r0 :r :payment_duedate :int_days} field)
+        field-val-expand (if (#{:num :r0 :r :payment_duedate0 :payment_duedate :int_days} field)
                            field-val
                            (cas/expr-sub field-val sub-values))]
     (assoc new-inst-obj field field-val-expand)))
@@ -412,6 +412,7 @@
   ([i install-list install-previous-list sub-values expand-sched recalc-list]
    (-> {}
        (install-value i :num install-list install-previous-list sub-values expand-sched recalc-list)
+       (install-value i :payment_duedate0 install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :payment_duedate install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :int_days install-list install-previous-list sub-values expand-sched recalc-list)
        (install-value i :r0 install-list install-previous-list sub-values expand-sched recalc-list)
@@ -440,6 +441,7 @@
   (fn [instal-obj]
     (let [num (:num instal-obj)
           mod1-applied (:mod1-applied instal-obj)
+          payment_duedate0 (:payment_duedate0 instal-obj)
           payment_duedate (:payment_duedate instal-obj)
           int_days (:int_days instal-obj)
           interest_expected (cas/expr-sub2 (:interest_expected instal-obj) sub-values)
@@ -448,7 +450,7 @@
           interest_remaining (cas/expr-sub2 (:interest_remaining instal-obj) sub-values)
           total_remain (cas/expr-sub2 (:total_remain instal-obj) sub-values)
           total_payment_due (cas/expr-sub2 (:total_payment_due instal-obj) sub-values)]
-      {:mod1-applied mod1-applied :num num :payment_duedate payment_duedate :int_days int_days :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due})))
+      {:mod1-applied mod1-applied :num num :payment_duedate0 payment_duedate0 :payment_duedate payment_duedate :int_days int_days :interest_expected interest_expected :principal_expected principal_expected :principle_remaining principle_remaining :interest_remaining interest_remaining :total_remain total_remain :total_payment_due total_payment_due})))
 
 (defn update-instalment
   [old-loan-sched sub-values install-list expanded-instal-obj i recalc-list]
@@ -568,7 +570,13 @@
                 [-10 {:pricipal-to-pay 0 :interest-to-pay 0}]])
 (save-to-csv-file "test-ls4-2b2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01"))
 
-(days360 "2022-01-02" "2022-02-01")
+;; test  business-day features
+(clear-schedule-edits)
+(clear-non-business-days)
+(set-non-business-days ["2022-03-01" "2022-03-02" "2022-03-03" "2022-03-04"])
+(save-to-csv-file "test-ls4-030422-1.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
+
+
   ;;
   )
   
