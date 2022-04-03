@@ -244,18 +244,27 @@
     ;;
   )
 
+
+  (deftest loan-schedule4-non-business-day
+    (testing "test-ls4-030422-1.csv"
+      (ls4/clear-schedule-edits)
+      (ls4/set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
+      (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-1.txt")]
+        (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01")))))
+
 (comment
 
-  (reset! ls4/HOLIDAY-INTEREST_CAP 30)
-  (ls4/edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
+  (ls4/clear-schedule-edits)
+  (ls4/set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
   ;; Save results into a file and then create a regression test to ensure that we do not break
-  (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01")
-               "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2.txt")
+  (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01")
+               "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-1.txt")
 
   ;; Run all the tests in this namespace
   (run-all-tests #"maths.loan_schedule_tests.loan_schedule_tests/other-test")
   ;; Run individual tests
   (loan-schedule4-holidays)
+  (loan-schedule4-non-business-day)
 
 
 ;;

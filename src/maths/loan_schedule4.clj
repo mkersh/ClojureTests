@@ -308,7 +308,10 @@
                        new-inst-obj)
         field-val (condp = field
                     :num (+ i 1)
-                    :r0 (:r0 sub-values)
+                    :r0 
+                    (let [instal-obj (if (= i 0) new-inst-obj (get install-list 0))]
+                      ;; Only really need :r0 to be accurate for i=0 but for completeness make sure value is accurate for all instalment records
+                      (get-r0-interest-rate daycount-model (:disbursement-date sub-values) (:payment_duedate instal-obj) (:r sub-values)))
                     :r
                     (if (= i 0)
                       (:r sub-values)
@@ -328,11 +331,11 @@
                     :int_days
                     (let [days-diff-fn (condp = daycount-model :30-360 days360 :actual-365 days-diff)]
                       (if (= i 0)
-                        (days-diff-fn (:disbursement-date sub-values) (:first-payment-date sub-values))
+                        (days-diff-fn (:disbursement-date sub-values) (:payment_duedate new-inst-obj))
                         (days-diff-fn (:payment_duedate (get install-list previous-index)) (:payment_duedate new-inst-obj))))
                     :interest_expected
                     (if (= i 0)
-                      (let [r0 (:r0 sub-values)]
+                      (let [r0 (:r0 new-inst-obj)]
                         (cas/expr-multiply previous-principle_remaining  r0))
                       (let [r (bigdec (:r new-inst-obj))]
                         ;; #bookmark= 7f8f53c0-ea5e-4dc3-ad22-d29aebf2669c
@@ -573,7 +576,7 @@
 ;; test  business-day features
 (clear-schedule-edits)
 (clear-non-business-days)
-(set-non-business-days ["2022-03-01" "2022-03-02" "2022-03-03" "2022-03-04"])
+(set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
 (save-to-csv-file "test-ls4-030422-1.csv" (expand-schedule 10000 (/ 9.9M 12.0) 12 "2022-01-01" "2022-02-01"))
 
 
