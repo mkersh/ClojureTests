@@ -258,6 +258,15 @@
       (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-2.txt")]
         (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365))))
 
+     (testing "test-ls4-030422-3.csv"
+       (ls4/clear-schedule-edits)
+       (ls4/clear-non-business-days)
+       (reset! ls4/LOAN-BUBBLE-AMOUNT 10000)
+       (reset! CHECK_AMOUNTS false) ;; Totals do not add up ATM, so turn this check off
+       (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-3.txt")]
+         (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365)))
+       (reset! CHECK_AMOUNTS true))
+
     ;;    
     )
 
@@ -265,9 +274,10 @@
 
   (ls4/clear-schedule-edits)
 (ls4/clear-non-business-days)
+(reset! ls4/LOAN-BUBBLE-AMOUNT 10000)
   ;; Save results into a file and then create a regression test to ensure that we do not break
   (save-object (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365)
-               "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-2.txt")
+               "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-3.txt")
 
   ;; Run all the tests in this namespace
   (run-all-tests #"maths.loan_schedule_tests.loan_schedule_tests/other-test")

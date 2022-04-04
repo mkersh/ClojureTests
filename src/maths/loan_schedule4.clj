@@ -19,6 +19,7 @@
             [java-time :as t]))
 
 (defonce LOAN-SCHEDULE-EDIT (atom {}))
+(defonce LOAN-BUBBLE-AMOUNT (atom nil))
 (defonce NON-BUSDAY-CALENDAR (atom {}))
 (defonce HOLIDAY-INTEREST_CAP (atom 0))
 (defonce INT_REMAIN-ZERO-TOGGLE (atom true))
@@ -181,6 +182,7 @@
     edit-map2))
 
 (defn clear-schedule-edits []
+  (reset! LOAN-BUBBLE-AMOUNT nil)
   (reset! LOAN-SCHEDULE-EDIT {}))
 
 (defn edit-sched-interest-only [inst-num]
@@ -478,10 +480,15 @@
       (mapv (fn [[i _]] i) recalc-needed)
       nil)))
 
+(defn solve-E [total-remain-last-expanded]
+  (if @LOAN-BUBBLE-AMOUNT
+    (cas/solve total-remain-last-expanded :E @LOAN-BUBBLE-AMOUNT)
+    (cas/solve total-remain-last-expanded :E)))
+
 (defn expand-schedule-final [loan-sched numInstalments sub-values0]
   (let [total-remain-last (:total_remain (get loan-sched (- numInstalments 1)))
         total-remain-last-expanded (cas/expr-sub total-remain-last sub-values0)
-        equal-month-amount (cas/solve total-remain-last-expanded :E)
+        equal-month-amount (solve-E total-remain-last-expanded)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
         expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
     ;; After expanding check to see if the last of the interest-only instalments is still valid
@@ -490,7 +497,7 @@
        [loan-sched2 (reduce (check-for-remain-int-greater-zero loan-sched sub-values0 expand-sched recalc-list) [] (range 0 numInstalments))
         total-remain-last (:total_remain (get loan-sched2 (- numInstalments 1)))
         total-remain-last-expanded (cas/expr-sub total-remain-last sub-values0)
-        equal-month-amount (cas/solve total-remain-last-expanded :E)
+        equal-month-amount (solve-E total-remain-last-expanded)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
         expand-sched (mapv (expand-instalment sub-values1) loan-sched2)]
        {:equal-month-amount equal-month-amount
@@ -503,7 +510,7 @@
 (defn expand-schedule0 [loan-sched numInstalments sub-values0]
   (let [total-remain-last (:total_remain (get loan-sched (- numInstalments 1)))
         total-remain-last-expanded (cas/expr-sub total-remain-last sub-values0)
-        equal-month-amount (cas/solve total-remain-last-expanded :E)
+        equal-month-amount (solve-E total-remain-last-expanded)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
         expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
     (if (need-to-recalcuate expand-sched)
@@ -589,6 +596,15 @@
 ;;(set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
 (save-to-csv-file "test-ls4-030422-2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365))
 (save-to-csv-file "test-ls4-030422-2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :30-360))
+ 
+ 
+(clear-schedule-edits)
+(clear-non-business-days)
+(reset! LOAN-BUBBLE-AMOUNT 10000)
+(save-to-csv-file "test-ls4-030422-3.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365))
+(save-to-csv-file "test-ls4-030422-3b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :30-360))
+
+ 
   ;;
   )
   
