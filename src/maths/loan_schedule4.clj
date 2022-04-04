@@ -24,6 +24,7 @@
 (defonce HOLIDAY-INTEREST_CAP (atom 0))
 (defonce INT_REMAIN-ZERO-TOGGLE (atom true))
 (defonce DEBUG-COUNT (atom 0))
+(defonce debug (atom false))
 
 ;;--------------------------------------------------------------------
 ;; Functions to calculate R0 - First Instalment interest-rate to use
@@ -304,13 +305,17 @@
         principle_remaining (:principle_remaining new-inst-obj)
         principal_expected (:principal_expected new-inst-obj)
         prev-instal-mod1 (:mod1-applied (get install-list previous-index))
-        interest_remaining_check (and recalc-list expand-sched (not (revert-install? recalc-list i)) (> (:interest_remaining expand-sched) 0.009))
+        interest_remaining_check (and recalc-list expand-sched
+                                      (not (revert-install? recalc-list i))
+                                      (or (> (:interest_remaining expand-sched) 0.009)
+                                          (> (:interest_expected expand-sched) (:previous-E sub-values))
+                                          (< (:principal_expected expand-sched) 0)))
         new-inst-obj (if interest_remaining_check
                        (assoc new-inst-obj :mod1-applied true)
                        new-inst-obj)
         field-val (condp = field
                     :num (+ i 1)
-                    :r0 
+                    :r0
                     (let [instal-obj (if (= i 0) new-inst-obj (get install-list 0))]
                       ;; Only really need :r0 to be accurate for i=0 but for completeness make sure value is accurate for all instalment records
                       (get-r0-interest-rate daycount-model (:disbursement-date sub-values) (:payment_duedate instal-obj) (:r sub-values)))
@@ -474,7 +479,8 @@
 (defn need-to-recalcuate [expand-sched]
   (let [expand-sched1 (enumerate expand-sched)
         recalc-needed (filter
-                       (fn [[_ instal]] (and (not (:mod1-applied instal)) (> (:interest_remaining instal) 0.009)))
+                       (fn [[_ instal]] (and (not (:mod1-applied instal)) (or (> (:interest_remaining instal) 0.009)
+                                                                              (< (:principal_expected instal) 0))))
                        expand-sched1)]
     (if (> (count recalc-needed) 0)
       (mapv (fn [[i _]] i) recalc-needed)
@@ -512,7 +518,8 @@
         total-remain-last-expanded (cas/expr-sub total-remain-last sub-values0)
         equal-month-amount (solve-E total-remain-last-expanded)
         sub-values1 (assoc sub-values0 :E (:E equal-month-amount))
-        expand-sched (mapv (expand-instalment sub-values1) loan-sched)]
+        expand-sched (mapv (expand-instalment sub-values1) loan-sched)
+        sub-values0 (assoc sub-values0 :previous-E (:E equal-month-amount))]
     (if (need-to-recalcuate expand-sched)
       ;; Recalculate the schedule based on the modified loan-sched2
       (let
@@ -595,14 +602,28 @@
 (clear-non-business-days)
 ;;(set-non-business-days ["2022-02-01" "2022-02-02" "2022-02-03" "2022-02-04"])
 (save-to-csv-file "test-ls4-030422-2.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365))
+
 (save-to-csv-file "test-ls4-030422-2b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :30-360))
- 
  
 (clear-schedule-edits)
 (clear-non-business-days)
 (reset! LOAN-BUBBLE-AMOUNT 10000)
-(save-to-csv-file "test-ls4-030422-3.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365))
+(time (save-to-csv-file "test-ls4-030422-3.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365)))
+;; 30-360 count-model
 (save-to-csv-file "test-ls4-030422-3b.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :30-360))
+
+
+(reset! HOLIDAY-INTEREST_CAP 0.0000001)
+(edit-sched-interest-only2 [1 2 3 4 5 6 7 8 9 10 30 31 32 59 60 61 74 75 76])
+(save-to-csv-file "test-ls4-2b2-3.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+
+
+(reset! HOLIDAY-INTEREST_CAP 0)
+(edit-schedule [[1 {:pricipal-to-pay 450 :interest-to-pay 0}]])
+(save-to-csv-file "test-ls4-2b2-4.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+
+
+
 
  
   ;;

@@ -40,15 +40,19 @@
           total_interest (round-num (reduce (fn [tot obj] (+ tot (:interest_expected obj))) 0 instal-list))
           total_paid (round-num (reduce (fn [tot obj] (+ tot (:total_payment_due obj))) 0 instal-list))
           total_calc (round-num (+ total_principal total_interest))
+          int_remain_last_instal0 (round-num (:interest_remaining (get instal-list (- (count instal-list) 1))))
+          int_remain_last_instal (if (> int_remain_last_instal0 0) int_remain_last_instal0 0)
+          total_paid_plus_intremain (round-num (+ total_paid int_remain_last_instal))
 
           ;; _ (prn "Prin Total" total_principal)
           ;; _ (prn "Interest Total" total_interest)
           ;; _ (prn "Total Paid" total_paid)
           ;; _ (prn "Total Paid (Calc)" total_calc)
           ;; _ (prn "Diff" (- total_paid total_calc))
+          ;;_ (prn "int_remain_last_instal" total_paid_plus_intremain)
           ]
 
-      (when @CHECK_AMOUNTS (is (= total_paid total_calc))))))
+      (when @CHECK_AMOUNTS (is (= total_paid_plus_intremain total_calc))))))
 
 ;; Need to do this filtering because I had a number of failing regression tests
 ;; after I change the way I calculated interest: http://localhost:3000/goto-file?&bookmark=7f8f53c0-ea5e-4dc3-ad22-d29aebf2669c
@@ -230,15 +234,10 @@
   (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2-4.txt")]
     (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))))
 
-;; This test is not right at the moment i.e. The results are not as we expect
-;; The problem happens when there is 
 (testing "test-ls4-2b2-5.csv"
   (ls4/edit-schedule [[1 {:pricipal-to-pay 500 :interest-to-pay 0}]])
   (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-2b2-5.txt")]
-    (reset! CHECK_AMOUNTS false) ;; Totals do not add up ATM, so turn this check off
-    (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
-    (reset! CHECK_AMOUNTS true)
-    ))
+    (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))))
 
 
     ;;
@@ -262,17 +261,16 @@
        (ls4/clear-schedule-edits)
        (ls4/clear-non-business-days)
        (reset! ls4/LOAN-BUBBLE-AMOUNT 10000)
-       (reset! CHECK_AMOUNTS false) ;; Totals do not add up ATM, so turn this check off
        (let [expected-res (read-object "src/maths/loan_schedule_tests/expected_results/test-ls4-030422-3.txt")]
          (compare-schedules expected-res (ls4/expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01" :actual-365)))
-       (reset! CHECK_AMOUNTS true))
+       )
 
     ;;    
     )
 
 (comment
 
-  (ls4/clear-schedule-edits)
+(ls4/clear-schedule-edits)
 (ls4/clear-non-business-days)
 (reset! ls4/LOAN-BUBBLE-AMOUNT 10000)
   ;; Save results into a file and then create a regression test to ensure that we do not break
@@ -282,9 +280,10 @@
   ;; Run all the tests in this namespace
   (run-all-tests #"maths.loan_schedule_tests.loan_schedule_tests/other-test")
   ;; Run individual tests
+  (loan-sch-tests)
   (loan-schedule4-holidays)
   (loan-schedule4-non-business-day)
 
-
+(+ 1 1)
 ;;
   )
