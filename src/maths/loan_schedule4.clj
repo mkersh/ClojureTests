@@ -421,6 +421,7 @@
     (assoc new-inst-obj field field-val-expand)))
 
 ;; Create the i'th instalment record by calling install-value multiple times for each field in an instalment
+;; NOTE: Some fields depend on the value of other fields, so the order we call install-value for a given field is important
 (defn get-inst-obj
   ([i install-list install-previous-list sub-values]
    (get-inst-obj i install-list install-previous-list sub-values nil nil))
