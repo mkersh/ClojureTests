@@ -231,7 +231,8 @@
   (let [inst-num (+ inst-num-1 1)
         edit-map @LOAN-SCHEDULE-EDIT
         inst-obj  (get edit-map inst-num)
-        pricipal-to-pay (:pricipal-to-pay inst-obj)
+        pricipal-to-pay (if-let [pp (:pricipal-to-pay inst-obj)] pp nil)
+        ;;_ (prn "pricipal-to-pay" pricipal-to-pay)
         interest-to-pay (:interest-to-pay inst-obj)]
     (if pricipal-to-pay
       ;;int-expected
@@ -639,7 +640,7 @@
 
 
 (reset! HOLIDAY-INTEREST_CAP 0)
-(edit-schedule [[1 {:pricipal-to-pay 0 :interest-to-pay 0}]])
+(edit-schedule [[1 {:pricipal-to-pay 450 :interest-to-pay 0}]])
 (save-to-csv-file "test-ls4-2b2-4.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01"))
 
 (cas/expr (cas/term 45.00 []) (cas/term (* -1 10) []))
