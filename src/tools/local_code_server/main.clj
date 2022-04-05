@@ -3,12 +3,14 @@
 ;;; GotoFile Tool/App
 ;;;
 ;;; Creates a local webserver that can display files in your VSCode editor
-;;; Allows you to linkto code URLs in your note applications (OneNote, Miro etc) and when you click 
+;;; Allows you to place code-URLs in your note applications (OneNote, Miro etc) and when you click 
 ;;; on them they display the code/file in VSCode
 ;;;
 ;;; Starting the Webserver: See [1] below
 ;;;
 ;;; Example URLS:
+;;; * http://localhost:3000/goto-file2?bookmark=<bookmark>
+;;;       - Searches for the file containing <bookmark> and jumps to that position
 ;;; * http://localhost:3000/goto-file2?file=<filepath>[&line=<linenum>]
 ;;; * http://localhost:3000/goto-file2?file=<filepath>&bookmark=<bookmark>
 ;;;       - Searches for #bookmark= <bookmark> in file and jumps to this place
@@ -18,7 +20,7 @@
 ;;;
 ;;; NOTE: The placeholder values are stored in placeholder-list 
 
-(ns tools.local-code-server.main
+(ns tools.local_code_server.main
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.adapter.jetty :as jet]
@@ -28,7 +30,7 @@
             [ring.util.response :as resp]
             [clojure.java.shell :as sh]
             [clojure.string :as str]
-            [tools.local-code-server.bookmark_db :as bm]
+            [tools.local_code_server.bookmark_db :as bm]
             ))
 
 (import java.util.UUID)
@@ -73,6 +75,13 @@
 
 (defn generate-temp-bookmark2 []
   (let [url-str (str "http://localhost:3000/goto-file?file={{CLOJURE_TESTS}}/" (paste-from-clipboard) "&line=1")]
+    (copy-to-clipboard url-str)))
+
+;; Pretty confident that this will be thee onee I use most
+;; Will search for the bookmark across a range of files
+;; NOTE: Uses an in-memory cache to make it performant
+(defn generate-temp-bookmark3 []
+  (let [url-str (str "http://localhost:3000/goto-file?&bookmark=" @LAST-PLACEHOLDER)]
     (copy-to-clipboard url-str)))
 
 ;; Find the placeholder in the file and return the line-number it is on
@@ -124,10 +133,11 @@
 ;; to a specific line position of search+jump to a bookmark
 ;;
 (defroutes app
-  (GET "/" [] (resp/resource-response "public/goto-file.html"))
+  (GET "/" [] (resp/resource-response "public/goto-file.html")) ; #search= dfbab3ef-0544-4037-bc6b-ebafe0186efc
   (GET "/gen-placeholder" [] (do (generate-placeholder) "<a href='/'>BACK</a>"))
   (GET "/gen-temp-bookmark1" [] (do (generate-temp-bookmark1) "<a href='/'>BACK</a>"))
   (GET "/gen-temp-bookmark2" [] (do (generate-temp-bookmark2) "<a href='/'>BACK</a>"))
+  (GET "/gen-temp-bookmark3" [] (do (generate-temp-bookmark3) "<a href='/'>BACK</a>"))
   (GET "/about" request (str "<h1>Hello World!!!</h1>" request))
   (GET "/goto-file" {query-params :query-params} (goto-file query-params))
   (route/not-found "<h1>Page not found</h1>"))
