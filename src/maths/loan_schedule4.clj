@@ -241,12 +241,23 @@
             prev-instal (get install-list (- inst-num-1 1))
             principle_remaining (if prev-instal (:principle_remaining prev-instal)
                                     (cas/expr (cas/term 1 [:P])))
-            int-rate (:r new-inst-obj)]
+            int-rate (:r new-inst-obj)
+            pricipal-to-pay-expr (if expand-sched
+                                   (if (> (:interest_remaining expand-sched) 0)
+                                     (cas/term pricipal-to-pay [])
+                                     ;;(cas/term 0 [])
+                                    (cas/term pricipal-to-pay [])
+                                     )
+                                   ;;(cas/term 0 [])
+                                   (cas/term pricipal-to-pay [])
+                                   )
+            ;;_ (prn "inht remain" (:interest_remaining expand-sched))
+            ]
         (if (and (= int-cap 0) (not interest-to-pay))
           ;; mechanism to override/force the interest charged during a holiday - useful for testing
-          (cas/expr (cas/term pricipal-to-pay []) (cas/expr-multiply principle_remaining int-rate))
+          (cas/expr pricipal-to-pay-expr (cas/expr-multiply principle_remaining int-rate))
           ;; During a principal-holiday only charge the standard monthly interest
-          (cas/expr (cas/term pricipal-to-pay []) (cas/term int-cap []))))
+          (cas/expr pricipal-to-pay-expr (cas/term int-cap []))))
       int-expected)))
 
 ;;--------------------------------------------------------------------
@@ -313,6 +324,7 @@
         new-inst-obj (if interest_remaining_check
                        (assoc new-inst-obj :mod1-applied true)
                        new-inst-obj)
+        int-remain-capitalize (= (:int-remain-capitalize sub-values) :capitalize-int)
         field-val (condp = field
                     :num (+ i 1)
                     :r0
@@ -356,7 +368,7 @@
                     :interest_expected_capped
                     (holiday-interest-cap install-list expand-sched i new-inst-obj interest_expected)
                     :principal_expected
-                    (if install-previous-list
+                    (if (and (not int-remain-capitalize) install-previous-list)
                       ;; update pass
                       (if interest_remaining_check
                         (cas/expr (cas/term 0 []))
@@ -372,7 +384,7 @@
                       (or prin-holiday
                           (cas/expr (cas/term 1 [:E]) (cas/expr-multiply interest_expected -1))))
                     :principle_remaining
-                    (if install-previous-list
+                    (if (and (not int-remain-capitalize) install-previous-list)
                       ;; update pass
                       (if interest_remaining_check
                         (or previous-principle_remaining (cas/expr (cas/term (:P sub-values) [])))
@@ -381,9 +393,11 @@
                                              (cas/expr previous-principle_remaining interest_expected_capped (cas/term -1 [:E])))]
                           (if prin-holiday
                             previous-principle_remaining
+                            ;;(cas/expr previous-principle_remaining (cas/expr-multiply prin-holiday -1))
                             prin-remain1)))
                       ;; 1st pass
                       (if prin-holiday
+                        ;;(cas/expr previous-principle_remaining (cas/expr-multiply prin-holiday -1))
                         previous-principle_remaining
                         (cas/expr previous-principle_remaining (cas/expr-multiply previous-principle_remaining :r) (cas/term -1 [:E]))))
                     :interest_remaining0
@@ -536,15 +550,19 @@
         (expand-schedule-final loan-sched2 numInstalments sub-values0)))))
 
 ;; #bookmark= 1031c4ec-f363-4294-8d2a-bd29b099f130
+;; daycount-model = (:30-360, :actual-365)
+;; int-remain-capitalize = (:no-capitalize, :capitalize-int )
 (defn expand-schedule
   ([OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date]
-   (expand-schedule OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date :30-360))
+   (expand-schedule OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date :30-360 :no-capitalize))
   ([OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date daycount-model]
+   (expand-schedule OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date daycount-model :no-capitalize))
+  ([OrigPrinciple interestRatePerInstalment numInstalments disbursement-date first-payment-date daycount-model int-remain-capitalize]
    (reset! DEBUG-COUNT 0) ;; mechanism to prevent looping forever
    (let [int-rate (/ interestRatePerInstalment 100)
          apr (* int-rate 12.0)
          r0 (get-r0-interest-rate daycount-model disbursement-date first-payment-date int-rate)
-         sub-values0 {:P OrigPrinciple :r int-rate  :r0 r0 :apr apr :daycount-model daycount-model :disbursement-date disbursement-date :first-payment-date first-payment-date}
+         sub-values0 {:P OrigPrinciple :r int-rate  :r0 r0 :apr apr :daycount-model daycount-model :int-remain-capitalize int-remain-capitalize :disbursement-date disbursement-date :first-payment-date first-payment-date}
          loan-sched (loan-schedule numInstalments sub-values0)]
      (expand-schedule0 loan-sched numInstalments sub-values0))))
 
@@ -621,10 +639,12 @@
 
 
 (reset! HOLIDAY-INTEREST_CAP 0)
-(edit-schedule [[1 {:pricipal-to-pay 450 :interest-to-pay 0}]])
-(save-to-csv-file "test-ls4-2b2-4.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
+(edit-schedule [[1 {:pricipal-to-pay 0 :interest-to-pay 0}]])
+(save-to-csv-file "test-ls4-2b2-4.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01"))
 
+(cas/expr (cas/term 45.00 []) (cas/term (* -1 10) []))
 
+(> nil 0)
 
 
  
