@@ -286,7 +286,7 @@
 
 ;; ------------------------------------------
 ;; Logic for calculating the value of a specific instalment field
-;; Function call multiple times from get-inst-obj to generate the entire instalment
+;; NOTE: This function is called multiple times from get-inst-obj to generate the entire instalment
 ;;
 (defn install-value [new-inst-obj i field install-list install-previous-list sub-values expand-sched recalc-list]
   (let [previous-index (- i 1)
@@ -420,6 +420,7 @@
                            (cas/expr-sub field-val sub-values))]
     (assoc new-inst-obj field field-val-expand)))
 
+;; Create the i'th instalment record by calling install-value multiple times for each field in an instalment
 (defn get-inst-obj
   ([i install-list install-previous-list sub-values]
    (get-inst-obj i install-list install-previous-list sub-values nil nil))
