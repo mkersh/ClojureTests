@@ -393,8 +393,8 @@
                                              (cas/expr previous-principle_remaining interest_expected_capped previous-interest_remaining (cas/term -1 [:E]))
                                              (cas/expr previous-principle_remaining interest_expected_capped (cas/term -1 [:E])))]
                           (if prin-holiday
-                            previous-principle_remaining
-                            ;;(cas/expr previous-principle_remaining (cas/expr-multiply prin-holiday -1))
+                            ;;previous-principle_remaining
+                            (cas/expr previous-principle_remaining (cas/expr-multiply prin-holiday -1))
                             prin-remain1)))
                       ;; 1st pass
                       (if prin-holiday
@@ -428,7 +428,9 @@
                       principle_remaining)
                     :total_payment_due
                     (if prin-holiday
-                      (cas/expr principal_expected interest_expected_capped)
+                      (do
+                      ;;(prn "PRIN" principal_expected interest_expected_capped)
+                      (cas/expr principal_expected interest_expected_capped))
                       (cas/expr (cas/term 1 [:E]))))
         field-val-expand (if (#{:num :r0 :r :payment_duedate0 :payment_duedate :int_days} field)
                            field-val
@@ -642,6 +644,9 @@
 (reset! HOLIDAY-INTEREST_CAP 0)
 (edit-schedule [[1 {:pricipal-to-pay 450 :interest-to-pay 0}]])
 (save-to-csv-file "test-ls4-2b2-4.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2022-02-01"))
+
+(edit-schedule [[1 {:pricipal-to-pay 500 :interest-to-pay 0}]])
+(save-to-csv-file "test-ls4-2b2-5.csv" (expand-schedule 10000 (/ 9.9M 12.0) 84 "2022-01-01" "2023-01-01"))
 
 (cas/expr (cas/term 45.00 []) (cas/term (* -1 10) []))
 
