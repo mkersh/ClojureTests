@@ -1,4 +1,4 @@
-;;; Support functions to build a product definition that can be into the Mambu product create API endpoints:
+;;; Support functions to build a product definition using the Mambu product create API endpoints:
 ;;; - https://api.mambu.com/#loan-products-create
 ;;; - https://api.mambu.com/#deposit-products-create
 ;;;
@@ -8,6 +8,7 @@
 ;;; are. This is important because the Mambu core endpoints do not currently check that the configuration is legal and if an
 ;;; illegal combination is passed there will not be an error but the product will not work properly.
 ;;;
+;;; #bookmark= 30c41be8-396e-491a-ac51-cec8b41b6859
 (ns mambu.extensions.product-factory.product-factory)
 
 ;; if prod-def has config-prop=config-val then check dep-list are valid

@@ -13,6 +13,9 @@
   :line 2},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 152},
+ "30c41be8-396e-491a-ac51-cec8b41b6859"
+ {:file "src/mambu/extensions/product_factory/product_factory.clj",
+  :line 11},
  "a1bd998c-4927-4eba-9842-35fa0ca44310"
  {:file "src/maths/interest.clj", :line 142},
  "4eae3949-dfde-4693-bd6d-ef4251b04ba3"
@@ -28,7 +31,7 @@
  "1989a54f-774f-46f0-a1da-5c50645c7394"
  {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 181},
  "7f8f53c0-ea5e-4dc3-ad22-d29aebf2669c"
- {:file "src/maths/loan_schedule4.clj", :line 298},
+ {:file "src/maths/loan_schedule4.clj", :line 365},
  "0ca2a676-ac5d-4022-85a0-56f81592be83"
  {:file "src/maths/algebra2.clj", :line 1},
  "4f2ec93d-9e4c-4a8e-9588-a0d38d73a3b2"
@@ -48,4 +51,7 @@
   "src/http/api/mambu/demo/multi-currency-daily-bank-account.clj",
   :line 1},
  "ab6e3701-7ff2-47a3-8502-6c139ff101a1"
- {:file "src/maths/loan_schedule.clj", :line 100}}
+ {:file "src/maths/loan_schedule.clj", :line 100},
+ "137fe633-9ede-4ab4-b6a4-82d97d057c97"
+ {:file "src/mambu/extensions/product_factory/pf_poc/pf_poc.clj",
+  :line 2}}
