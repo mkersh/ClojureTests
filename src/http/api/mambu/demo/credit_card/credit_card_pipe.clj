@@ -1,7 +1,7 @@
-;;; https://github.com/mkersh/ClojureTests/tree/master/src/http/api/mambu/demo/credit_card_pipe.clj
+;;; https://github.com/mkersh/ClojureTests/tree/master/src/http/api/mambu/demo/credit_card/credit_card_pipe.clj
 (ns http.api.mambu.demo.credit_card.credit_card_pipe
   (:require [http.api.json_helper :as api]
-            [http.api.mambu.experiments.loan_schedule :as ext]
+            [http.api.mambu.demo.credit_card.zap_cust :as ext]
             [http.api.api_pipe :as steps]))
 
 
@@ -225,21 +225,26 @@
            )
 
 (defonce CUSTKEY (atom nil))
+(defonce CUSTID (atom nil))
 
 (defn create-new-cc-customer [first-name last-name]
   (let  [res-obj (steps/process-collection (create-cc-collection first-name last-name))]
     (reset! CUSTKEY (:cust-key res-obj))
-    (prn (str "Customer create with ID " (:custid res-obj)))))
+    (reset! CUSTID (:custid res-obj))
+    (prn (str "Customer create with ID " @CUSTID))))
 
 (comment
+
   ;; Create a new credit-card customer with initial set of accounts
   ;; #bookmark= 21ea216a-8446-4e6a-ae7d-9face4f7d8d1
   (api/setenv "env2")
-  (create-new-cc-customer "Apr24" "Tester4")
+  (create-new-cc-customer "Apr24" "Tester5")
+  @CUSTKEY
+  @CUSTID
 
 
   ;; [0] Next function deletes/zaps all loans for @CUSTKEY
   ;; MK: Doesn't work yest
-  (ext/zap-all-loans2 @CUSTKEY)
+  (ext/zap-all-loans @CUSTKEY)
   (reset! CUSTKEY "8a818fbc80510e2501805bc3ee9e4230")
   )
