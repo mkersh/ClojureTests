@@ -238,13 +238,13 @@
   ;; Create a new credit-card customer with initial set of accounts
   ;; #bookmark= 21ea216a-8446-4e6a-ae7d-9face4f7d8d1
   (api/setenv "env2")
-  (create-new-cc-customer "Apr24" "Tester5")
+  (create-new-cc-customer "Apr24" "Tester12")
   @CUSTKEY
   @CUSTID
 
 
   ;; [0] Next function deletes/zaps all loans for @CUSTKEY
   ;; MK: Doesn't work yest
-  (ext/zap-all-loans @CUSTKEY)
+  (ext/zap-cust {:cust-key @CUSTKEY :custid @CUSTID})
   (reset! CUSTKEY "8a818fbc80510e2501805bc3ee9e4230")
   )

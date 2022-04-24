@@ -1,4 +1,4 @@
-(ns http.api.mambu.loan-account
+(ns http.api.mambu.loan_fees
   (:require [http.api.json_helper :as api]
             [http.api.mambu.loan-account :as loan]
             [http.api.mambu.product-type :as pt]
