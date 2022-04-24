@@ -1,7 +1,8 @@
 ;;; https://github.com/mkersh/ClojureTests/tree/master/src/http/api/mambu/demo/credit_card_pipe.clj
 (ns http.api.mambu.demo.credit_card_pipe
   (:require [http.api.json_helper :as api]
-             [http.api.api_pipe :as steps]))
+            [http.api.mambu.experiments.loan_schedule :as ext]
+            [http.api.api_pipe :as steps]))
 
 
 (def create-customer
@@ -37,7 +38,7 @@
            "startDate" "2019-08-23T00:00:00+02:00"
            "state" "APPROVED"
            "_URepayOptions" {"AutoRepayMethod" "Direct-Debit"
-                             "PaymentDueDay" "1"
+                             "PaymentDueDay" (:payment-day context)
                              "ShortMonthOption" "late"}}})
 
 (defn createRCABucket [context]
@@ -144,12 +145,13 @@
      }))
 
 ;; A collection of steps     
-(def create-cc-collection
+(defn create-cc-collection [first-name last-name]
   {:context {:show-only false ; when true only prints steps, doesn't execute
-             :first-name "May07", :last-name "Tester" 
+             :first-name first-name, :last-name last-name 
              :branchid "8a818f5f6cbe6621016cbf217c9e5060"
              :card-limit 1000.00
              :payment-day 3
+             :verbose true
              ;; **** Debug Only settings next - allows you to jump to individual steps
              :cust-key "8a818ec676334eb101763471a68b3b1b"
              :ca-id "LPJ539"
@@ -159,42 +161,48 @@
              :payacc-id "FRGO251"}
    :Xjump-to-step [:step2 :one-only] ; set ":id :jump-here" in a step 
    :steps [;; [STEP-1] Create Customer
-           {:request create-customer
+           {:label "Create Customer"
+            :request create-customer
             :post-filter [;(steps/save-last-to-context :cust-create)
                           (steps/save-part-to-context ["encodedKey"] :cust-key)
                           (steps/save-part-to-context ["id"] :custid)]}
            ;; [STEP-2] Create CA
-           {:request create-credit-arrangement
+           {:label "Create credit-arrangement"
+            :request create-credit-arrangement
             :post-filter [(steps/save-part-to-context ["id"] :ca-id)
-                          (steps/save-value-to-context  false :ignore-rest)]
-            }
+                          (steps/save-value-to-context  false :ignore-rest)]}
            ;; [STEP-2b] Create Payment/Settlement Account
            ;; This is automatically linked to RCA bucket accounts
-           {:pre-filter (steps/save-value-to-context "8a818e3b763684f8017637bf5c5c0fb5" :ccpay-product)
+           {:label "Create payment-settlement account"
+            :pre-filter (steps/save-value-to-context "8a818e3b763684f8017637bf5c5c0fb5" :ccpay-product)
             :request createPaymentSettlementAccount
             :post-filter [(steps/save-part-to-context ["id"] :payacc-id)]}
            ;; [STEP-3] Create RCA-CASH
-           {:pre-filter [(steps/save-value-to-context "8a818f5f6cbe6621016cbf3cf8675424" :prod-key)
+           {:label "Create RCA-CASH account"
+            :pre-filter [(steps/save-value-to-context "8a818f5f6cbe6621016cbf3cf8675424" :prod-key)
                          (steps/save-value-to-context 5 :interestspread)
                          (steps/save-value-to-context  "CC - Cash" :acc-name)]
             :request createRCABucket
             :post-filter [;(steps/print-context "**RCA-CASH**:")
                           (steps/save-part-to-context ["id"] :rcacash-id)]}
             ;; [STEP-4] Create RCA-Purchase
-           {:pre-filter [(steps/save-value-to-context "8a818f5f6cbe6621016cbf6d66075e54" :prod-key)
+           {:label "Create RCA-Purchase account"
+            :pre-filter [(steps/save-value-to-context "8a818f5f6cbe6621016cbf6d66075e54" :prod-key)
                          (steps/save-value-to-context 0.0 :interestspread)
                          (steps/save-value-to-context  "CC - Purchases" :acc-name)]
             :request createRCABucket
             :post-filter [(steps/save-part-to-context ["id"] :rcashop-id)]}
 
            ;; [STEP-5] Create TempDDA
-           {:pre-filter [(steps/save-value-to-context "8a818f5f6cbe6621016cbf7310ff6064" :tempdda-product)
+           {:label "Create TempDDA account"
+            :pre-filter [(steps/save-value-to-context "8a818f5f6cbe6621016cbf7310ff6064" :tempdda-product)
                          (steps/save-value-to-context  false :show-only)]
             :request createTEMPCardDDAAccount
             :post-filter [(steps/save-part-to-context ["id"] :tempdda-id)]}
 
             ;; [STEP-6] Add Accounts to Credit-Arrangement
-           {:pre-filter [(steps/save-context-value-to-context :tempdda-id :accid)]
+           {:label "Add accounts to credit-arrangement"
+            :pre-filter [(steps/save-context-value-to-context :tempdda-id :accid)]
             :request addDepositToCreditLine}
            {:pre-filter [(steps/save-context-value-to-context :rcacash-id :accid)]
             :request addLoanToCreditLine}
@@ -202,7 +210,8 @@
             :request addLoanToCreditLine}
 
             ;; [STEP-7] Approve Accounts
-           {:pre-filter [(steps/save-context-value-to-context :payacc-id :accid)]
+           {:label "Approve Accounts"
+            :pre-filter [(steps/save-context-value-to-context :payacc-id :accid)]
             :request approveDepositAccount}
            {:pre-filter [(steps/save-context-value-to-context :tempdda-id :accid)]
             :request approveDepositAccount}
@@ -213,11 +222,24 @@
            
            ;; [STEP-7] Activate the TempDDA
            ;; Need to deposit some cash and then withdraw
-
            )
 
+(defonce CUSTKEY (atom nil))
+
+(defn create-new-cc-customer [first-name last-name]
+  (let  [res-obj (steps/process-collection (create-cc-collection first-name last-name))]
+    (reset! CUSTKEY (:cust-key res-obj))
+    (prn (str "Customer create with ID " (:custid res-obj)))))
+
 (comment
+  ;; Create a new credit-card customer with initial set of accounts
+  ;; #bookmark= 21ea216a-8446-4e6a-ae7d-9face4f7d8d1
   (api/setenv "env2")
-  (steps/process-collection create-cc-collection)
-  
+  (create-new-cc-customer "Apr24" "Tester3")
+
+
+  ;; [0] Next function deletes/zaps all loans for @CUSTKEY
+  ;; MK: Doesn't work yest
+  (ext/zap-all-loans2 @CUSTKEY)
+  (reset! CUSTKEY "8a818fbc80510e2501805bc3ee9e4230")
   )

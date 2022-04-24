@@ -20,6 +20,8 @@
  {:file "src/maths/interest.clj", :line 142},
  "4eae3949-dfde-4693-bd6d-ef4251b04ba3"
  {:file "src/maths/loan_schedule.clj", :line 3},
+ "21ea216a-8446-4e6a-ae7d-9face4f7d8d1"
+ {:file "src/http/api/mambu/demo/credit_card_pipe.clj", :line 221},
  "75413827-b6af-48ac-90f8-4a3f8da73ac6"
  {:file "src/maths/loan_schedule2.clj", :line 79},
  "9de28b85-a797-4682-9403-1329daaf8cc3"
