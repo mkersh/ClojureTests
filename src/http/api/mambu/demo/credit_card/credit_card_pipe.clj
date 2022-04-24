@@ -1,5 +1,5 @@
 ;;; https://github.com/mkersh/ClojureTests/tree/master/src/http/api/mambu/demo/credit_card_pipe.clj
-(ns http.api.mambu.demo.credit_card_pipe
+(ns http.api.mambu.demo.credit_card.credit_card_pipe
   (:require [http.api.json_helper :as api]
             [http.api.mambu.experiments.loan_schedule :as ext]
             [http.api.api_pipe :as steps]))
@@ -235,7 +235,7 @@
   ;; Create a new credit-card customer with initial set of accounts
   ;; #bookmark= 21ea216a-8446-4e6a-ae7d-9face4f7d8d1
   (api/setenv "env2")
-  (create-new-cc-customer "Apr24" "Tester3")
+  (create-new-cc-customer "Apr24" "Tester4")
 
 
   ;; [0] Next function deletes/zaps all loans for @CUSTKEY
