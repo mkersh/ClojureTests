@@ -100,11 +100,9 @@
 
 (defn remove-all-open-dep-accounts [context]
   (prn "remove-all-open-dep-accounts")
-  (let [accidList (get-all-open-dep-accounts context)
-        _ (prn (str "accList:") accidList)]
+  (let [accidList (get-all-open-dep-accounts context)]
     (for [accid accidList]
-      (let [context1 (assoc context :accid accid)
-            _ (prn "for " accid)]
+      (let [context1 (assoc context :accid accid)]
         (remove-dep-account context1)))))
 
 ;; *** [2] Functions to remove loan accounts
@@ -210,9 +208,7 @@
     (try
       (steps/apply-api delete-ca context)
       (catch Exception _
-        (try
-          (steps/apply-api close-ca context)
-          (catch Exception _ (withdraw-and-close context)))))))
+        (steps/apply-api close-ca context)))))
 
 (defn remove-all-CAs [context]
   (let [accidList (:last-call (steps/apply-api find-CA-accounts context))]
@@ -260,7 +256,7 @@
 (defn zap-cust [context]
   (zap-all-loans (:cust-key context))
   (doall (remove-all-open-dep-accounts context))
-  (remove-all-CAs context)
+  (doall (remove-all-CAs context))
   (steps/apply-api exit-customer context))
 
 ;; zap all customners with firstName == (:first-name context)
