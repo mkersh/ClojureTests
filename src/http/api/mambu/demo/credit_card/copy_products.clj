@@ -1,4 +1,6 @@
-(ns http.api.mambu.demo.copy-products
+;; Functions to copy credit-card products across environments
+;; #bookmark= 0b7e23fe-532f-47c0-aa6b-234955f47215
+(ns http.api.mambu.demo.credit_card.copy-products
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
             [clojure.data.json :as json]
