@@ -238,7 +238,7 @@
   ;; Create a new credit-card customer with initial set of accounts
   ;; #bookmark= 21ea216a-8446-4e6a-ae7d-9face4f7d8d1
   (api/setenv "env2")
-  (create-new-cc-customer "Apr24" "Tester12")
+  (create-new-cc-customer "Apr24" "Tester13")
   @CUSTKEY
   @CUSTID
 

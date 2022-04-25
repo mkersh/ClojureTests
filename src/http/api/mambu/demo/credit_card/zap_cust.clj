@@ -1,6 +1,5 @@
 (ns http.api.mambu.demo.credit_card.zap_cust
   (:require [http.api.json_helper :as api]
-            [http.api.mambu.customer_account :as cust]
             [http.api.api_pipe :as steps])
 )
 
@@ -222,13 +221,60 @@
           context1 (assoc context :caid caid)]
         (remove-CA-account context1)))))
 
+;; *** [4] Functions to remove customer and linked accounts
+
+(defn find-all-customers-with-name [context]
+  {:url (str "{{*env*}}/clients:search")
+   :method api/POST
+   :query-params {}
+   :body {"filterCriteria" [{"field" "firstName"
+                             "operator" "EQUALS"
+                             "value" (:first-name context)}]}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn exit-customer [context]
+  {:url (str "{{*env*}}/clients/" (:custid context))
+   :method api/PUT
+   :query-params {}
+   :body { 
+        "id" (:custid context)
+        "firstName" "**DELETED**"
+        "lastName" "**ZAPPED**"
+        "encodedKey" (:cust-key context)
+       "state" "EXITED"}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+;; Another way of doing the exit using a PATCH
+(defn exit-customer2 [context]
+  {:url (str "{{*env*}}/clients/" (:custid context))
+   :method api/PATCH
+   :query-params {}
+   :body [{"op" "ADD"
+           "path" "state"
+           "value" "EXITED"}]
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
 (defn zap-cust [context]
   (zap-all-loans (:cust-key context))
   (doall (remove-all-open-dep-accounts context))
   (remove-all-CAs context)
-  ;;(cust/close-customer (:custid context))
-  
-  )
+  (steps/apply-api exit-customer context))
+
+;; zap all customners with firstName == (:first-name context)
+(defn zap-all-matching-name [context]
+  (let [cust-list  (:last-call (steps/apply-api find-all-customers-with-name context))]
+    (map (fn [cust-obj]
+           (let [cust-key (get cust-obj "encodedKey")
+            _ (prn "HERE" cust-obj)
+                 custid (get cust-obj "id")
+                 fname (get cust-obj "firstName")
+                 lname (get cust-obj "lastName")
+                 _ (prn (str "Zapping customer " fname " " lname))]
+             (zap-cust {:cust-key cust-key :custid custid})))
+         cust-list)))
 
 (comment
   (api/setenv "env2")
@@ -239,7 +285,10 @@
   (remove-dep-account {:accid "IVSI570"})
  (remove-all-CAs {:custid "106607775"})
   (steps/apply-api find-CA-accounts {:custid "106607775"})
-  (cust/close-customer "922796880")
+  (steps/apply-api exit-customer2 {:custid "106607775"})
+  (steps/apply-api find-all-customers-with-name {:first-name "Apr24"})
+  
+  (zap-all-matching-name {:first-name "Apr24"})
 
 
   (steps/apply-api deposit-to-account {:accid "IXPS551" :deposit-amount 1.0})
