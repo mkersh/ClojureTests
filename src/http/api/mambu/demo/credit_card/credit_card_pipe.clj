@@ -249,5 +249,4 @@
   (ext/zap-cust {:cust-key @CUSTKEY :custid @CUSTID})
   (reset! CUSTKEY "8a818fbc80510e2501805bc3ee9e4230")
 
-(- 8749.67 7653 )
   )
