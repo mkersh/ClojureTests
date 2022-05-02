@@ -1,3 +1,5 @@
+;;; OLD library for creating a credit-card custoner
+;;; See http://localhost:3000/goto-file?&bookmark=21ea216a-8446-4e6a-ae7d-9face4f7d8d1 for new version
 (ns http.api.mambu.demo.credit_card.clj
   (:require [http.api.json_helper :as api]))
 

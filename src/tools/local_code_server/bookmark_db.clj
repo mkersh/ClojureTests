@@ -138,7 +138,8 @@
 (save-bookmarks {:f1 :v1 :f2 [2 3 4 5 6 7]})
 (save-bookmarks @BOOKMARK_CACHE)
 (read-bookmarks)
-(delete-BM)
+;; Run the following to remove the BOOKMARK_CACHE
+(delete-BM) ;; #bookmark= e81fe6a0-b2d3-4fe1-ad72-93d7a9b379fd
 (add-bookmark "sgsgsgs" {})
 (add-bookmark "sgsgsgs2" {})
 (add-bookmark "sgsgsgs3" {})

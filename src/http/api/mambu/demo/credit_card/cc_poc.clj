@@ -1,4 +1,4 @@
-(ns http.api.mambu.demo.cc-poc
+(ns http.api.mambu.demo.credit_card.cc_poc
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]))
 

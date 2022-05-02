@@ -7,12 +7,12 @@
  "b331f4c7-75f0-4a23-9d4b-cfa49cdfe973"
  {:file "src/http/api/mambu/demo/loyalty_points.clj", :line 1},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
- {:file "src/tools/local_code_server/bookmark_db.clj", :line 150},
+ {:file "src/tools/local_code_server/bookmark_db.clj", :line 151},
  "7501ef93-3bb5-414e-9bc4-8726e8ac2611"
  {:file "src/maths/loan_schedule_tests/loan_schedule_tests.clj",
   :line 2},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafccc"
- {:file "src/tools/local_code_server/bookmark_db.clj", :line 152},
+ {:file "src/tools/local_code_server/bookmark_db.clj", :line 153},
  "30c41be8-396e-491a-ac51-cec8b41b6859"
  {:file "src/mambu/extensions/product_factory/product_factory.clj",
   :line 11},
@@ -20,6 +20,9 @@
  {:file "src/maths/interest.clj", :line 142},
  "4eae3949-dfde-4693-bd6d-ef4251b04ba3"
  {:file "src/maths/loan_schedule.clj", :line 3},
+ "21ea216a-8446-4e6a-ae7d-9face4f7d8d1"
+ {:file "src/http/api/mambu/demo/credit_card/credit_card_pipe.clj",
+  :line 239},
  "75413827-b6af-48ac-90f8-4a3f8da73ac6"
  {:file "src/maths/loan_schedule2.clj", :line 79},
  "9de28b85-a797-4682-9403-1329daaf8cc3"
@@ -30,12 +33,17 @@
  {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253},
  "1989a54f-774f-46f0-a1da-5c50645c7394"
  {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 181},
+ "e81fe6a0-b2d3-4fe1-ad72-93d7a9b379fd"
+ {:file "src/tools/local_code_server/bookmark_db.clj", :line 142},
  "7f8f53c0-ea5e-4dc3-ad22-d29aebf2669c"
  {:file "src/maths/loan_schedule4.clj", :line 365},
  "0ca2a676-ac5d-4022-85a0-56f81592be83"
  {:file "src/maths/algebra2.clj", :line 1},
  "4f2ec93d-9e4c-4a8e-9588-a0d38d73a3b2"
  {:file "src/banking/iban/iban.clj", :line 1},
+ "0b7e23fe-532f-47c0-aa6b-234955f47215"
+ {:file "src/http/api/mambu/demo/credit_card/copy_products.clj",
+  :line 2},
  "a07afdb9-608d-4f57-af44-81abcb558da6"
  {:file "src/maths/interest.clj", :line 61},
  "9d814ac2-02dc-47a5-980d-3a23108de57a"
