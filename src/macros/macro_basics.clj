@@ -48,3 +48,61 @@
 (test-mac 56)
 ;;  
 )
+
+
+(defmacro code-critic
+  "Phrases are courtesy Hermes Conrad from Futurama"
+  [bad good]
+  `(do (println "Great squid of Madrid, this is bad code:"
+                (quote ~bad))
+       (println "Sweet gorilla of Manila, this is good code:"
+                (quote ~good))))
+
+;; Refinement of code-critic 
+(defn criticize-code
+  [criticism code]
+  `(println ~criticism (quote ~code)))
+
+(defmacro code-critic2
+  [bad good]
+  `(do ~(criticize-code "Cursed bacteria of Liberia, this is bad code:" bad)
+       ~(criticize-code "Sweet sacred boa of Western and Eastern Samoa, this is good code:" good)))
+
+(comment
+  (macroexpand '(code-critic "bad code" "good code"))
+  (code-critic "bad code" "good code")
+
+  (code-critic2 "bad code" "good code")
+;;  
+  )
+
+;; create an automatic symbol
+(defmacro test-mac2 []
+  `(let [x# 12] x#)
+  )
+
+(comment 
+  (macroexpand '(test-mac2))
+  (test-mac2)
+  )
+
+;; Seeing if I know enough to write the threading macro
+
+(defmacro ->2 [obj & rest]
+  `(prn "here:" ~obj ~(first rest))
+  `(let [f1 ~(first rest)
+         res# (~(first rest) ~obj)]
+    ;;   (if ~(next rest)
+    ;;      (->2 res# ~(next rest))
+    ;;      res#
+    ;;      )
+     res#
+     )
+  )
+
+(comment 
+ (macroexpand '(->2 23 inc))
+  (->2 23 inc)
+  (next [3])
+  ;;
+  )
