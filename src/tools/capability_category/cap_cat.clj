@@ -169,7 +169,7 @@
 
 (comment
 (terminal-ui)
-(select-tags "arch")
+(select-tags "product-factory")
 
 ;;;
 )
@@ -395,6 +395,7 @@
 (read-cat-index)
 (terminal-ui)
 @ALLCATSMAP
+ANSWERS-DIR
 (pop [])
 (sort [1 6 7 8 2 3 4])
 (Integer/parseInt "1g")
