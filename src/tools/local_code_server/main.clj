@@ -37,7 +37,8 @@
 (import '[java.awt.datatransfer DataFlavor StringSelection Transferable])
 (defonce LAST-PLACEHOLDER (atom ""))
 ;; declare(s) to suppress clj-kondo unresolved-symbol
-(declare defroutes GET app request query-params)
+;; NOTE: Below stopped working (noticed 30 May 2022), so have had to disable
+;;(declare defroutes GET app request query-params)
 
 (defn clipboard []
   (.getSystemClipboard (java.awt.Toolkit/getDefaultToolkit)))
