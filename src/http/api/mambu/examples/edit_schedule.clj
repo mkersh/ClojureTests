@@ -329,7 +329,7 @@
   (api/PRINT (:last-call (steps/apply-api get-loan-schedule {:accid @ACCID})))
   (api/PRINT (:last-call (steps/apply-api get-account {:accid @ACCID})))
 
-
+(/ 500 365.0)
 
   ;; [7] Change the repayment amount of a balloon loan
 (let [value-date (ext/adjust-timezone2 "2022-02-26T00:00:50+01:00" "Europe/Berlin")]
