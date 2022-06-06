@@ -1,12 +1,12 @@
 (ns SICP.abstraction)
 
+;; From watching https://www.youtube.com/watch?v=DrFkf-T-6Co:
 ;; Wanted to test whether defn in clojure workss the same as define in scheme:
 ;; In terms of inner defn declarations only being available in the block they are defined
 
-
 (defn outer-func []
 
-  (defn inner-func []
+  (defn inner-func []  ;; The kondo warning is a warning that you should not do this
     (println "inner func called"))
 
   (println "outer func called" (inner-func)))
