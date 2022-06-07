@@ -62,6 +62,11 @@
   (map (fn [obj] (get obj "type")) prod-list)
   (map (fn [obj] (get obj "name")) prod-list)
 
+  ;; Show all INACTIVE loan products
+  (let [prod-list (:last-call (steps/apply-api get-all-loan-products-api {}))
+      obj-list (filter (fn [obj] (= (get obj "state") "INACTIVE")) prod-list)]
+    (map (fn [obj] (get obj "name")) obj-list))
+
   ;; Get product details
   (reset! prod-details (:last-call (steps/apply-api get-loan-product-api {:prodid "CC-BT1"})))
   (get @prod-details "state")
