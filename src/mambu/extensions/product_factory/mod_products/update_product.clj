@@ -154,6 +154,8 @@
                        "value" "updated notes via patch"}])
   (steps/apply-api patch-loan-product-api {:prodid "TBIO2" :body @patch-body})
   (get-in (steps/apply-api get-loan-product-api {:prodid "TBIO2"}) [:last-call "notes"])
+  (steps/apply-api get-loan-product-api {:prodid "8a818e447f3c6cfc017f3f613f9659d2"})
+  
 
   (steps/apply-api patch-deposit-product-api {:prodid "FXPOT_AUD"  :body @patch-body})
   (steps/apply-api get-deposit-product-api {:prodid "FXPOT_AUD"})
