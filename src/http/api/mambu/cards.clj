@@ -103,18 +103,21 @@
         url (str "{{*env*}}/cards/" card-token "/financialtransactions")]
     (api/PRINT (api/POST url options))))
 
-(defn create-transaction [card-token amount transRef]
-  (let [tref (or transRef (api/uuid))
-        options {:headers {"Accept" "application/vnd.mambu.v2+json"
-                           "Content-Type" "application/json"}
-                 :query-params {}
-                 :body {"amount" amount
-                        "advice" false
-                        "notes" "Note associated with the transaction"
-                        "externalReferenceId" tref
-                        "transactionChannelId" "8a818e74677a2e9201677ec2b4c336a6"}}
-        url (str "{{*env*}}/cards/" card-token "/financialtransactions")]
-    (api/PRINT (api/POST url options))))
+(defn create-transaction
+  ([card-token amount transRef]
+   (create-transaction card-token amount transRef false))
+  ([card-token amount transRef advice]
+   (let [tref (or transRef (api/uuid))
+         options {:headers {"Accept" "application/vnd.mambu.v2+json"
+                            "Content-Type" "application/json"}
+                  :query-params {}
+                  :body {"amount" amount
+                         "advice" advice
+                         "notes" "Note associated with the transaction"
+                         "externalReferenceId" tref
+                         "transactionChannelId" "8a818e74677a2e9201677ec2b4c336a6"}}
+         url (str "{{*env*}}/cards/" card-token "/financialtransactions")]
+     (api/PRINT (api/POST url options)))))
 
 ; Test in your REPL: Select line to run ctl+alt+c <space>
 ; Use api/find-path and api/extract-attrs to navigate through results
@@ -129,6 +132,7 @@
 
 
   (api/setenv "env1")
+  (api/setenv "env2")
   (api/set-show-only true)
   (time (list-holds "BUKO329"))
   (time (list-holds "BUKO329" {:status "PENDING"}))
@@ -155,18 +159,23 @@
   (time (create-hold "token3" 1000 transRef))
   (time (increase-hold "token3" 20.00 transRef))
 
+  ;; LTCA1 - env2
+  (time (link-card "LTCA1" "token1506"))
+  (time (create-hold "token1506" 500 transRef))
+  (time (create-transaction "token1506" 333 nil))
+
 
   (defn perf-test [n]
     (let [start-time (System/currentTimeMillis)
           _ (doall (for [_ (range n)]
-              (let [transRef (api/uuid)]
+                     (let [transRef (api/uuid)]
                 ;;(prn "create hold")
-                (create-hold "token1" 3.87 transRef true))))
+                       (create-hold "token1" 3.87 transRef true))))
           end-time (System/currentTimeMillis)]
       (prn "Total Time (millisecs): " (- end-time start-time))))
-          
+
   (perf-test 100)
 
-(/ 100 15.019)
+  (/ 100 15.019)
 ;
-)
+  )
