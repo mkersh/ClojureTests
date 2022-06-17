@@ -162,7 +162,7 @@
   ;; LTCA1 - env2
   (time (link-card "LTCA1" "token1506"))
   (time (create-hold "token1506" 500 transRef))
-  (time (create-transaction "token1506" 333 nil))
+  (time (create-transaction "token1506" 1000 nil true)) ;; use technical-overdraft (if needed)
 
 
   (defn perf-test [n]
