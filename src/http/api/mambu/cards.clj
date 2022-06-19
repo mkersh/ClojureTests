@@ -160,6 +160,7 @@
   (time (increase-hold "token3" 20.00 transRef))
 
   ;; LTCA1 - env2
+  ;; #bookmark= 62b4af3d-78a5-4e55-b8b9-990745baab6c
   (time (link-card "LTCA1" "token1506"))
   (time (create-hold "token1506" 500 transRef))
   (time (create-transaction "token1506" 1000 nil true)) ;; use technical-overdraft (if needed)
