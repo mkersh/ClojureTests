@@ -25,18 +25,37 @@
         sum-of-15s (sum-mult 15 1 ceil 0)]
     (- (+ sum-of-3s sum-of-5s) sum-of-15s)))
 
+;; Let's see f we can make it even more efficient
+(defn sum-multiples-3-or-5-v3 [n]
+  (let [ceil (- n 1)
+        max-3mult (quot ceil 3)
+        max-5mult (quot ceil 5)
+        max-15mult (quot ceil 15)
+        sum-of-3s (* 3 (reduce + (range (+ max-3mult 1))))
+        sum-of-5s (* 5 (reduce + (range (+ max-5mult 1))))
+        sum-of-15s (* 15 (reduce + (range (+ max-15mult 1))))]
+    (- (+ sum-of-3s sum-of-5s) sum-of-15s)))
+
 (comment
+  ;; [1] - Using simple sum-multiples-3-or-5
   (sum-multiples-3-or-5 10)
   (time (sum-multiples-3-or-5 1000))
   ;; This next one would take to long
   ;; (sum-multiples-3-or-5 1000000000)
 
+  ;; [2] - Using more efficient sum-multiples-3-or-5-v2
   (sum-multiples-3-or-5-v2 10)
   (time (sum-multiples-3-or-5-v2 1000))
   ;; answer for next one 233333333166666668
   ;; still take "Elapsed time: 116332.769858 msecs"
   (time (sum-multiples-3-or-5-v2 1000000000))
 
+  ;; [3] - Using even more efficient sum-multiples-3-or-5-v3
+  (sum-multiples-3-or-5-v3 10)
+  (sum-multiples-3-or-5-v3 1000)
+  ;; answer for next one 233333333166666668
+  ;; still take "Elapsed time: 19587.430091 msecs"
+  (time (sum-multiples-3-or-5-v3 1000000000))
 
 
  ;; 
