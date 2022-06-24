@@ -25,7 +25,7 @@
         sum-of-15s (sum-mult 15 1 ceil 0)]
     (- (+ sum-of-3s sum-of-5s) sum-of-15s)))
 
-;; Let's see f we can make it even more efficient
+;; Let's see if we can make it even more efficient
 (defn sum-multiples-3-or-5-v3 [n]
   (let [ceil (- n 1)
         max-3mult (quot ceil 3)
