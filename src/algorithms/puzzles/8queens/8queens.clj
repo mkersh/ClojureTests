@@ -25,7 +25,7 @@
     (reduce #(loop-through-items %1 %2 new-perm remain) res-list remain)))
 
 (defn permute
-  "Given a sequence 2 return all the permutations of the items"
+  "Given a sequence return all the permutations of the items"
   [s]
   (permute2 s [] []))
 
@@ -100,6 +100,7 @@
    )
   )
 
+(permute (range 8))
 (count (eight-queens))
 
 (time (count (eight-queens)))

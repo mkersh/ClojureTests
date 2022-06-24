@@ -132,7 +132,7 @@
   ;; Get all products (filtered on type)
   (def prod-list0 (filter-apply-to-all-products "REVOLVING_CREDIT" identity))
   prod-list0
-
+  
   ;; Get all loan-products
   (def prod-list (:last-call (steps/apply-api get-all-loan-products-api {})))
   (count prod-list)
@@ -190,6 +190,7 @@
   (change-prod-active "CC-Cash1")
   (change-prod-inactive "RevMort3")
 
+(* 45 (* 2 82.2))
 
   ;;
   )
