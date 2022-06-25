@@ -29,3 +29,16 @@
 (sum-even-fib-term 4000000)
 ;;
 )
+
+
+
+;;; Other peoples stuff
+;; https://github.com/DestructHub/ProjectEuler/blob/master/Problem002/Clojure/solution_1.clj
+(def fib (cons 0 (cons 1 (lazy-seq (map + fib (rest fib))))))
+
+(comment
+  (take 5 fib)
+(take 5 (map + fib (rest fib)))
+(map + [1 1 1] [2 3 4])
+  ;;
+  )
