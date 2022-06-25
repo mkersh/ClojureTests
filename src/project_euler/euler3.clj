@@ -44,3 +44,35 @@
   ;;
   )
 
+
+
+
+;;; Related stuff from others
+
+
+;; Another way of generating primes
+;;https://github.com/AndrewSinclair/euler12-clojure/blob/master/src/euler12/core.clj
+;;https://crossclj.info/fun/clojure.contrib.lazy-seqs/primes.html
+(def primes
+  (concat
+   [2 3 5 7]
+   (lazy-seq
+    (let [primes-from
+          (fn primes-from [n [f & r]]
+            (if (some #(zero? (rem n %))
+                      (take-while #(<= (* % %) n) primes))
+              (recur (+ n f) r)
+              (lazy-seq (cons n (primes-from (+ n f) r)))))
+          wheel (cycle [2 4 2 4 6 2 6 4 2 4 6 6 2 6  4  2
+                        6 4 6 8 4 2 4 2 4 8 6 4 6 2  4  6
+                        2 6 6 4 2 4 6 2 6 4 2 4 2 10 2 10])]
+      (primes-from 11 wheel)))))
+
+
+(comment 
+
+(time (last (take 100000 primes)))
+
+(last (prime-seq 3 [2 3] 100000))
+;;
+)
