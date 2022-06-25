@@ -3,13 +3,15 @@
 ;;; The sum of these multiples is 23.
 ;;; Find the sum of all the multiples of 3 or 5 below 1000.
 
-(ns project-euler.problem1)
+(ns project_euler.euler1)
 
+;; [1] Simple'ish approach
 (defn sum-multiples-3-or-5 [n]
   (let [num-list (range n)
         multiples-list (filter #(or (= (mod % 3) 0) (= (mod % 5) 0)) num-list)]
     (reduce + multiples-list)))
 
+;; [2] Approach-2 - More efficient
 (defn sum-mult [mult n ceil total]
   (let [res (* mult n)]
     (if (> res ceil)
@@ -25,6 +27,7 @@
         sum-of-15s (sum-mult 15 1 ceil 0)]
     (- (+ sum-of-3s sum-of-5s) sum-of-15s)))
 
+;; [3] Approach-3 - Even more efficient
 ;; Let's see if we can make it even more efficient
 (defn sum-multiples-3-or-5-v3 [n]
   (let [ceil (- n 1)
@@ -35,6 +38,10 @@
         sum-of-5s (* 5 (reduce + (range (+ max-5mult 1))))
         sum-of-15s (* 15 (reduce + (range (+ max-15mult 1))))]
     (- (+ sum-of-3s sum-of-5s) sum-of-15s)))
+
+;; [4] Approach-4 - Remove the reduce steps using n/2*(1 + max-3mult) formula
+;; TBD 
+;; This will be the quickest method
 
 (comment
   ;; [1] - Using simple sum-multiples-3-or-5

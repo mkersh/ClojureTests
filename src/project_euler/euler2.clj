@@ -3,7 +3,7 @@
 ;;; 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, ...
 ;;; By considering the terms in the Fibonacci sequence whose values do not exceed four million, find the sum of the even-valued terms.
 
-(ns project-euler.problem2)
+(ns project_euler.euler2)
 
 (defn fib-seq
   ([max] (fib-seq 1 2 max [1 2]))
