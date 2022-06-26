@@ -42,10 +42,16 @@
         (recur prime1 (inc multiple) not-prime-map max)
         (recur prime1 (inc multiple) (assoc not-prime-map mult-prime true) max)))))
 
+;; Generate a sequence of prime using a sieve approach
+;; In summary: 
+;; (1) as primes are added maintain a not-prime-map which is all the multiples of the prime
+;; (2) To check whether a new-num is a prime you just need to check that it is not on the  not-prime-map
+;; (3) My concern is that for large max the not-prime-map is going to get too big
+;; (3.1) Planning to reduce the size of max to mitigate this concern
 (defn prime-seq2
   ([max] (prime-seq2 3 [2] {} max))
   ([num1 prime-list not-prime-map max]
-   (if (> num1 (quot max 2))
+   (if (> num1 (quot max 2)) ;; TBD - Need to do better than this to reduce the max-prime-num we need to consider
      prime-list
      (if (get not-prime-map num1)
        ;; num1 is not a prime
@@ -57,8 +63,10 @@
   (is-prime? 6 [2 3])
   (prime-seq 3 [2 3] 20)
   (prime-seq 3 [2 3] 13195)
-  (time (last (prime-seq 3 [2 3] 1319500)))
-  
+  (supp/start-task :job-lpf0 (fn [] (time (last (prime-seq 3 [2 3] 1319500)))))
+  (supp/wait-task :job-lpf0 4000)
+  (supp/kill-task :job-lpf0)
+
   ;; test against the example result given
   ;; answer = (5 7 13 29)
   (prime-factors 13195)
@@ -72,13 +80,15 @@
   (supp/wait-task :job-lpf1 4000)
   (supp/kill-task :job-lpf1)
  ;; (largest-prime-factor 600851475143)
- @LAST-PRIME
+  @LAST-PRIME
 
 
   ;; [2] Approach-2: prime-eq2
   (prime-seq2 300)
-  (time (last (prime-seq2 1319500)))
-
+  (supp/start-task :job-lpf2 (fn [] (time (last (prime-seq2 1319500)))))
+  (supp/start-task :job-lpf2 (fn [] (time (last (prime-seq2 600851475143)))))
+  (supp/wait-task :job-lpf2 4000)
+  (supp/kill-task :job-lpf2)
 
 
   ;;
