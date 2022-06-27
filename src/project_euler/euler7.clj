@@ -4,6 +4,7 @@
 ;;;
 ;;; MK: Reusing my prime-generator from euler3. This is not the most efficient method
 ;;; to generate prime numbers. Make look at some point to improve
+;;; See https://projecteuler.net/overview=007 for tips on how to do this
 
 (ns project-euler.euler7
   (:require [project-euler.support :as supp]
