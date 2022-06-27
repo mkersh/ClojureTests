@@ -6,8 +6,8 @@
 ;;;
 ;;; If I had known the maths though then I should have gone with Approach-04
 ;;;
-;;; Approach-04 will still take a very long time when the number to find factors for includes
-;;; a very large prime factor. 
+;;; Approach-04 will still take a very long time when the number-to-find-factors-for includes
+;;; a very large prime-factor. 
 ;;; TBD - There are hints in https://projecteuler.net/overview=003 as to how to handle this
 ;;;
 
