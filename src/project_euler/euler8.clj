@@ -37,6 +37,7 @@
         (if eof?
           largest-prod
           (let [curr-adjacent-str (subs  search-str start-pos (+ start-pos num-adjacent))
+                ;; Probably should adstract this next line into a function to make more readable
                 digit-list (map (fn [str1] (Integer/parseInt str1)) (map str (into [] curr-adjacent-str)))
                 prod-digits (apply * digit-list)]
             (recur (+ start-pos 1) (max largest-prod prod-digits))))))))
