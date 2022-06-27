@@ -45,3 +45,6 @@ resources-dev/public/test3.html
 resources-dev/public/folder1/t1.txt
 resources-dev/public/folder1/t2.txt
 .lsp/.cache/db.transit.json
+heapdump.*
+javacore.*
+Snap.*
