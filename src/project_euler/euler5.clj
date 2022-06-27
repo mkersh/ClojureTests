@@ -1,7 +1,8 @@
+;; https://projecteuler.net/problem=5 
 ;; 2520 is the smallest number that can be divided by each of the numbers from 1 to 10 without any remainder.
 ;; What is the smallest positive number that is evenly divisible by all of the numbers from 1 to 20?
 ;;
-;; MK: Not sure if this is the best approach but euler3 was till fresh in my mind
+;; MK: Not sure if this is the best approach but euler3 was still fresh in my mind
 ;; So I have devised and algorithm that is based around prime-factors
 (ns project-euler.euler5
   (:require [project-euler.support :as supp]
