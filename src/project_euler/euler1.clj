@@ -2,6 +2,8 @@
 ;;; If we list all the natural numbers below 10 that are multiples of 3 or 5, we get 3, 5, 6 and 9. 
 ;;; The sum of these multiples is 23.
 ;;; Find the sum of all the multiples of 3 or 5 below 1000.
+;;;
+;;; See Approach-4 for my best solution. The other method work but are slow.
 
 (ns project_euler.euler1)
 
@@ -40,10 +42,23 @@
     (- (+ sum-of-3s sum-of-5s) sum-of-15s)))
 
 ;; [4] Approach-4 - Remove the reduce steps using n/2*(1 + max-3mult) formula
-;; TBD 
 ;; This will be the quickest method
 
+(defn sumof-range [n]
+  (* (/ (bigint n) 2) (+ n 1)))
+
+(defn sum-multiples-3-or-5-v4 [n]
+  (let [ceil (- n 1)
+        max-3mult (quot ceil 3)
+        max-5mult (quot ceil 5)
+        max-15mult (quot ceil 15)
+        sum-of-3s (* 3 (sumof-range max-3mult))
+        sum-of-5s (* 5 (sumof-range max-5mult))
+        sum-of-15s (* 15 (sumof-range max-15mult))]
+    (- (+ sum-of-3s sum-of-5s) sum-of-15s)))
+
 (comment
+
   ;; [1] - Using simple sum-multiples-3-or-5
   (sum-multiples-3-or-5 10)
   (time (sum-multiples-3-or-5 1000))
@@ -63,6 +78,13 @@
   ;; answer for next one 233333333166666668
   ;; still take "Elapsed time: 19587.430091 msecs"
   (time (sum-multiples-3-or-5-v3 1000000000))
+
+  ;; [4] - Using the most efficient method
+  (sum-multiples-3-or-5-v4 10)
+  (sum-multiples-3-or-5-v4 1000)
+  ;; answer for next one 233333333166666668
+  ;; "Elapsed time: 0.334154 msecs"
+  (time (sum-multiples-3-or-5-v4 1000000000))
 
 
  ;; 
