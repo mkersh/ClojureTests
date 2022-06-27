@@ -204,6 +204,9 @@
 
 
   ;; ************************  Approach-1
+  ;; My first attempt - based around generating a sequence of primes and dividing these into num
+  ;; Works for small numbers but not a chance with 600851475143
+  ;; Ended up writen (supp/start-task, supp/kill-task) to avoid crashing/locking my REPL
 
   (get-max-prime 600851475143)
   (is-prime? 6 [2 3])
@@ -230,6 +233,11 @@
 
 
   ;; ************************  Approach-2
+  ;; My second attempt - Same basic approach as approach-01 but a slightly more efficient
+  ;; way of generating the prime-seq generation
+  ;; Still not a chance to calculate tthe result for 600851475143
+
+
 
   ;; [2] Approach-2: prime-eq2
   (last (prime-seq2 1319500))
