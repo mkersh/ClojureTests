@@ -52,6 +52,7 @@
   (supp/wait-task :job-pp1 4000)
   (supp/kill-task :job-pp1)
 
+(/ (+ 0.0 1 1 1 1 1 1 2 2 2 2 3 3 3 3 4) 16)
   (apply * (map (fn [str1] (Integer/parseInt str1)) (map str (into [] "1234"))))
   ;;
   )

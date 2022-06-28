@@ -175,6 +175,9 @@
 
 
 
-  
+
+(count (into #{} (permute [:white :white :white :white])))
+(count (into #{} (permute [:black :white :white :white])))
+(count (into #{} (permute [:black :black :black :black])))
   
 )
