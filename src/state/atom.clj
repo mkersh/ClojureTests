@@ -35,6 +35,8 @@
 
   (time (fac 100))
 
+  (fac 16)
+
   (def fac (memoize fac)))
 
 
