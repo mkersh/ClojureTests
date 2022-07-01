@@ -48,6 +48,17 @@
 
 
 
+
+;;; What I need to do
+
+
+;; number of permutations 2^n  e.g 2x2 -> n=4 p = 16
+;; calculate thee permutations with func perms (wlist black)
+;; wlist will contain a list of whites etc
+;; use similar technic to get-options above
+;; if there are items leeft on wlist and blist then first try white route and then black
+;; if there isn't ant white or blacks left only try one path
+
 (comment
 
   (supp/start-task :job-pp1  (fn [] (get-options 4 [] [])))
@@ -72,5 +83,7 @@
   (number-2x2-blocks)
 
   (colour (black))
+
+  (* 50.1 2 45)
   ;;
   )
