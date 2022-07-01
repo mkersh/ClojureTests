@@ -58,6 +58,11 @@
 ;; use similar technic to get-options above
 ;; if there are items leeft on wlist and blist then first try white route and then black
 ;; if there isn't ant white or blacks left only try one path
+;;
+;; Once I have the above will need a way to detect edges
+;; Foe each of the perms create white or black objects with coordinates
+;; Interprete the black squares to find the linked edges. Don't think this will be too difficult :)
+
 
 (comment
 
