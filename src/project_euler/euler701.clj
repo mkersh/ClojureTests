@@ -1,14 +1,15 @@
 (ns project-euler.euler701
   (:require [project-euler.support :as supp]
-            [algorithms.puzzles.8queens.8queens :as maths]))
+            [algorithms.puzzles.8queens.8queens :as maths]
+            [functions.pow :as maths2]))
 
 (defn gen-piece [colour & other-attrs]
   (fn [] {:colour colour :attrs other-attrs}))
 
-(defn white [] (gen-piece :white) )
+(defn white [] (gen-piece :white))
 (defn black [] (gen-piece :black))
 
-(defn colour[sq] (:colour (sq)))
+(defn colour [sq] (:colour (sq)))
 
 (defn permutations-of-squares [sqr-list]
   (prn "permutations-of-squares" sqr-list)
@@ -46,25 +47,76 @@
     (reduce (fn [res it]
               (+ res (count (permutations-of-squares it)))) 0 sq-lists)))
 
+;; *****************************************************
+;; 2nd Attempt to do solve this
 
+(defn number-nxn-alternatives [n]
+  (let [num-squares (* n n)]
+    (maths2/pow 2 num-squares)))
+
+;; Let's see if it is possible to iterate through 562949953421312N
+;; The answer is no, you can't process this many items
+;; So there must be a clever mathematical way to determine the answer
+(defonce PROCESS-COUNT (atom 0))
+(defn process-perm [_res-list _perm-res]
+  (swap! PROCESS-COUNT inc))
+
+(defn gen-nxn-perm-aux [res-list black-list white-list n perm-res]
+  (if (= n 0)
+    (process-perm res-list perm-res)
+    (let [res1 (if (empty? black-list)
+                 res-list
+                 (gen-nxn-perm-aux res-list (rest black-list) white-list (dec n) (conj perm-res :black)))]
+      (if (empty? white-list)
+        res1
+        (gen-nxn-perm-aux res1 black-list (rest white-list) (dec n) (conj perm-res :white))))))
+
+(defn gen-nxn-perm [n]
+  (let [num-squares (* n n)
+        num-black-list (range (+ num-squares 1))]
+    (loop [bl-list num-black-list
+           perm-list []]
+      (if (empty? bl-list)
+        perm-list
+        (let [num-blacks (first bl-list)
+              black-list (repeat num-blacks :black)
+              num-whites (- num-squares num-blacks)
+              white-list (repeat num-whites :white)
+              perm-list2 (gen-nxn-perm-aux perm-list black-list white-list num-squares [])]
+          (recur (rest bl-list) perm-list2))))))
 
 
 ;;; What I need to do
 
 
-;; number of permutations 2^n  e.g 2x2 -> n=4 p = 16
-;; calculate thee permutations with func perms (wlist black)
+;; DONE - number of permutations 2^n  e.g 2x2 -> n=4 p = 16
+;; See number-nxn-alternatives
+;; DONE calculate thee permutations with func perms (wlist black)
+;; See gen-nxn-perm
 ;; wlist will contain a list of whites etc
 ;; use similar technic to get-options above
 ;; if there are items leeft on wlist and blist then first try white route and then black
 ;; if there isn't ant white or blacks left only try one path
 ;;
+;; Idea/plan i flawed though. Doesn't work for (gen-nxn-perm 7) - There is just too many permutations (562949953421312N)
+;; You simply can't store these in a list and process
+;;
 ;; Once I have the above will need a way to detect edges
-;; Foe each of the perms create white or black objects with coordinates
+;; For each of the perms create white or black objects with coordinates
 ;; Interprete the black squares to find the linked edges. Don't think this will be too difficult :)
 
 
 (comment
+
+  (gen-nxn-perm 2)
+  (number-nxn-alternatives 7)
+  (supp/start-task :job-pp1  (fn [] (gen-nxn-perm 7)))
+  (supp/wait-task :job-pp1 4000)
+  (supp/kill-task :job-pp1)
+  ;; Number of items we need to process for a 7x7 grid = 562949953421312N
+  @PROCESS-COUNT
+
+
 
   (supp/start-task :job-pp1  (fn [] (get-options 4 [] [])))
   (supp/start-task :job-pp1  (fn [] (number-wxh-blocks 2 2)))
