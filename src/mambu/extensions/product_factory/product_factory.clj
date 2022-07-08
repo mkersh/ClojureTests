@@ -9,7 +9,9 @@
 ;;; illegal combination is passed there will not be an error but the product will not work properly.
 ;;;
 ;;; #bookmark= 30c41be8-396e-491a-ac51-cec8b41b6859
-(ns mambu.extensions.product-factory.product-factory)
+(ns mambu.extensions.product-factory.product-factory
+  (:require [http.api.json_helper :as api]
+            [http.api.api_pipe :as steps]))
 
 ;; if prod-def has config-prop=config-val then check dep-list are valid
 ;; dep-list is a list of [config-prop config-val-set]
@@ -25,6 +27,11 @@
           dep-list)
      )))
 
+(defn assoc-step [obj stepid prop-keyword val]
+  (let [prop-str (subs (str prop-keyword) 1)
+        step-prop-keyword (keyword (str stepid "-" prop-str))]
+    (assoc obj step-prop-keyword val)))
+
 ;; [STEP-1] Add product name and ID
 (defn prod-name-id-desc
   ([prod-def name id desc]
@@ -32,17 +39,17 @@
    (prod-name-id-desc prod-def name id desc true))
    ;; main entry point
   ([prod-def name id desc active]
-   (let [prod-def2 (assoc prod-def :prod-name name)
-         prod-def3 (assoc prod-def2 :prod-desc desc)
-         prod-def4 (assoc prod-def3 :active active)]
-     (assoc prod-def4 :prod-id id))))
+   (let [prod-def2 (assoc-step prod-def "step01" :prod-name name)
+         prod-def3 (assoc-step prod-def2 "step01" :prod-desc desc)
+         prod-def4 (assoc-step prod-def3 "step01" :active active)]
+     (assoc-step prod-def4 "step01" :prod-id id))))
 
 ;; [STEP-2] Add the product-type to the prod-def
 ;; product-type = (:fixed-term|:dynamic-term|:interest-free|:tranched|:revolving-credit)
 ;;
 (defn product-type-def [prod-def product-type]
   (assert (#{:fixed-term :dynamic-term :interest-free :tranched :revolving-credit} product-type) (str "ERROR: Invalid product-type: " product-type))
-  (assoc prod-def :product-type product-type))
+  (assoc-step prod-def "step02" :product-type product-type))
 
 
 ;; [STEP-3] Add availability details to the prod-def
@@ -50,25 +57,25 @@
 ;;    NOTE: This is higher level than the Mambu core API that requires encodedKey
 (defn prod-avail [prod-def cient-type-avail branches-list]
   (assert (#{:client :group :both} cient-type-avail) (str "ERROR: Invalid cient-type-avail: " cient-type-avail))
-  (let [prod-def2 (assoc prod-def :prod-avail-clients cient-type-avail)]
-    (assoc prod-def2 :prod-avail-branches branches-list)))
+  (let [prod-def2 (assoc-step prod-def "step03" :prod-avail-clients cient-type-avail)]
+    (assoc-step prod-def2 "step03" :prod-avail-branches branches-list)))
 
 ;; [STEP-4] Specify how the (internal) Accid will be generated
 ;;
 (defn prod-accid [prod-def type template-or-start-num]
   (assert (#{:random-pattern :inc-number } type) (str "ERROR: Invalid prod-accid type: " type))
-  (let [prod-def2 (assoc prod-def :accid-gen type)]
-  (assoc prod-def2 :accid-gen-template template-or-start-num)))
+  (let [prod-def2 (assoc-step prod-def "step04" :accid-gen type)]
+  (assoc-step prod-def2 "step04" :accid-gen-template template-or-start-num)))
 
 ;; [STEP-5] Specify initial state
 (defn prod-initial-state [prod-def state]
   (assert (#{:pend-approval :partial-app } state) (str "ERROR: Invalid prod-initial-state state: " state))
-  (assoc prod-def :initial-state state))
+  (assoc-step prod-def "step05" :initial-state state))
 
 ;; [STEP-6] Specify Amount Constraints
 ;; This step is optional. If not called then there will be no amount contraint
 (defn prod-amount-constrain [prod-def min-amount max-amount def-amount]
-  (assoc prod-def :amount-constraint
+  (assoc-step prod-def "step06" :amount-constraint
          {:min-amount min-amount
           :max-amount max-amount
           :def-amount def-amount}))
@@ -76,7 +83,7 @@
 ;; [STEP-7] Managed under a credit arrangement
 (defn prod-under-ca-setting [prod-def ca-setting]
   (assert (#{:optional :required :no} ca-setting) (str "ERROR: Invalid prod-under-ca-setting: " ca-setting))
-  (assoc prod-def :prod-under-ca-setting
+  (assoc-step prod-def "step07" :prod-under-ca-setting
          ca-setting))
 
 ;; [STEP-8] Define the instalment calculation type
@@ -87,7 +94,7 @@
   (assert (#{:db :emi :emi2 :fixed-flat} calc-type) (str "ERROR: Invalid prod-instalment-calc-type: " calc-type))
   (DEP-CHECK ":fixed-flat pre-conditions" prod-def :prod-instalment-calc-type :fixed-flat calc-type
              [[:product-type #{:fixed-term}]])
-  (assoc prod-def :prod-instalment-calc-type
+  (assoc-step prod-def "step08" :prod-instalment-calc-type
          calc-type))
 
 ;; [STEP-8b] Interest posting frequency
@@ -95,7 +102,7 @@
   (assert (#{:on-repayment :on-disbursement } freq) (str "ERROR: Invalid prod-interest-posting-freq: " freq))
   (DEP-CHECK ":fixed-flat pre-conditions" prod-def :prod-interest-posting-freq :on-disbursement freq
              [[:product-type #{:fixed-term}]])
-  (assoc prod-def :prod-interest-posting-freq
+  (assoc-step prod-def "step08b" :prod-interest-posting-freq
          freq))
 
 ;; [STEP-8c] Interest Type Settings
@@ -118,20 +125,20 @@
     (assert (#{:30E-360 :actual-365 :actual-360} day-count-model) (str "ERROR: Invalid prod-interest-type day-count-model: " day-count-model))
 
    (-> prod-def
-       (assoc :int-rate-source int-rate-source)
-       (assoc :int-rate-type int-rate-type)
-       (assoc :int-rate-scope int-rate-scope)
-       (assoc :index-source index-source)
-       (assoc :index-spread-constrain index-spread-constrain)
-       (assoc :index-floor index-floor)
-       (assoc :index-ceiling index-ceiling)
-       (assoc :index-review-frequency-type index-review-frequency-type)
-       (assoc :index-review-frequency-val index-review-frequency-val)
-       (assoc :day-count-model day-count-model))))
+       (assoc-step "step08c" :int-rate-source int-rate-source)
+       (assoc-step "step08c" :int-rate-type int-rate-type)
+       (assoc-step "step08c" :int-rate-scope int-rate-scope)
+       (assoc-step "step08c" :index-source index-source)
+       (assoc-step "step08c" :index-spread-constrain index-spread-constrain)
+       (assoc-step "step08c" :index-floor index-floor)
+       (assoc-step "step08c" :index-ceiling index-ceiling)
+       (assoc-step "step08c" :index-review-frequency-type index-review-frequency-type)
+       (assoc-step "step08c" :index-review-frequency-val index-review-frequency-val)
+       (assoc-step "step08c" :day-count-model day-count-model))))
 
 ;; [STEP-8c] Interest Type Settings
 (defn prod-interest-rate-constrain [prod-def min-amount max-amount def-amount]
-  (assoc prod-def :interest-rate-constraint
+  (assoc-step prod-def "step08c" :interest-rate-constraint
          {:min-amount min-amount
           :max-amount max-amount
           :def-amount def-amount}))
@@ -140,7 +147,7 @@
 (defn prod-repayment-interest-calc [prod-def freq]
   (assert (#{:repayment-periodicity :actual-days} freq) (str "ERROR: Invalid prod-repayment-interest-calc: " freq))
   (assert (= (:product-type prod-def) :fixed-term) "ERROR: You can only set prod-repayment-interest-calc for :product-type = :fixed-term ")
-  (assoc prod-def :prod-repayment-interest-calc
+  (assoc-step prod-def "step08d" :prod-repayment-interest-calc
          freq))
 
 
@@ -149,7 +156,7 @@
   (assert (#{:interval :fixed} int-method) (str "ERROR: Invalid prod-payment-interval-method: " int-method))
   (when (= int-method :interval)
     (assert (#{:days :weeks :months :years} int-period) (str "ERROR: Invalid prod-payment-interval-method period: " int-period)))
-  (assoc prod-def :prod-payment-interval-method 
+  (assoc-step prod-def "step09" :prod-payment-interval-method 
          {:int-method int-method
           :int-period int-period
           :int-val int-val
@@ -168,10 +175,10 @@
     (when total-amount-type (assert (#{:flat :total :all} total-amount-type) (str "ERROR: Invalid prod-repayment-amount total-amount-type: " total-amount-type)))
 
     (-> prod-def
-        (assoc  :repayment-amount-type repayment-amount-type)
-        (assoc  :principal-amount-type principal-amount-type)
-        (assoc  :total-amount-type total-amount-type)
-        (assoc  :repayment-amount-constraint repayment-amount-constraint))
+        (assoc-step "step09b"  :repayment-amount-type repayment-amount-type)
+        (assoc-step "step09b"  :principal-amount-type principal-amount-type)
+        (assoc-step "step09b"  :total-amount-type total-amount-type)
+        (assoc-step "step09b"  :repayment-amount-constraint repayment-amount-constraint))
     
     ))
 
@@ -179,7 +186,7 @@
 ;; [STEP-10] Specify Installments Constraints
 ;; This step is optional. If not called then there will be no Instalment contraints
 (defn prod-installments-constrain [prod-def min-num max-num def-num]
-  (assoc prod-def :installments-constraint
+  (assoc-step prod-def "step10" :installments-constraint
          {:min-num min-num
           :max-num max-num
           :def-num def-num}))
@@ -187,7 +194,7 @@
 ;; [STEP-10b] Specify first-payment-date Constraints
 ;; This step is optional. If not called then there will be no first-payment-date contraints
 (defn prod-first-payment-date-constrain [prod-def min-num max-num def-num]
-  (assoc prod-def :first-payment-date-constraint
+  (assoc-step prod-def "step10b" :first-payment-date-constraint
          {:min-num min-num
           :max-num max-num
           :def-num def-num}))
@@ -195,14 +202,14 @@
 ;; [STEP-11] Collect principal every n Installments
 ;; Normally should be set to 1 but can be less frequent
 (defn prod-principal-collect-frequency [prod-def num]
-  (assoc prod-def :prod-principal-collect-frequency num))
+  (assoc-step prod-def "step11" :prod-principal-collect-frequency num))
 
 ;; [STEP-12] Grace period settings
 (defn prod-grace-period 
 ([prod-def grace-type] (prod-grace-period prod-def grace-type nil nil nil))
 ([prod-def grace-type grace-period-min grace-period-max grace-period-def ]
   (assert (#{:none :principal :pure} grace-type) (str "ERROR: Invalid prod-grace-period: " grace-type))
-  (assoc prod-def :prod-grace-period
+  (assoc-step prod-def "step12" :prod-grace-period
          {:grace-type grace-type
           :grace-period-constraint {:min grace-period-min :max grace-period-max :def grace-period-def}})))
 
@@ -212,7 +219,7 @@
   [prod-def install-round currency-round]
    (assert (#{:no-round :into-last} install-round) (str "ERROR: Invalid prod-repayment-rounding  install-round: " install-round))
    (assert (#{:no-round :round :round-up} currency-round) (str "ERROR: Invalid prod-repayment-rounding  currency-round: " currency-round))
-   (assoc prod-def :prod-repayment-rounding
+   (assoc-step prod-def "step13" :prod-repayment-rounding
           {:install-round install-round
            :currency-round currency-round}))
 
@@ -220,7 +227,7 @@
 (defn prod-non-working-days-reschedule
   [prod-def setting]
   (assert (#{:no :forward :backward :extend} setting) (str "ERROR: Invalid prod-non-working-days-reschedule: " setting))
-  (assoc prod-def :prod-non-working-days-reschedule setting))
+  (assoc-step prod-def "step14" :prod-non-working-days-reschedule setting))
 
 ;; [STEP-15] Schedule Ediing
 (defn prod-schedule-edit
@@ -236,7 +243,7 @@
     (when (= product-type :revolving-credit)
       (assert (not (or (:principal? edit-obj) (:holidays? edit-obj)
                         (:interest? edit-obj) (:fee? edit-obj) (:penalty? edit-obj))) "edit schedule not available on :tranched")))
-  (assoc prod-def :prod-schedule-edit 
+  (assoc-step prod-def "step15" :prod-schedule-edit 
   {:dates? (:dates? edit-obj)
    :principal? (:principal? edit-obj)
    :num? (:num? edit-obj)
@@ -269,25 +276,25 @@
     (assert (#{true false} allow-custom-repayment-allocation) (str "ERROR: Invalid prod-repayment-collection allow-custom-repayment-allocation: " allow-custom-repayment-allocation))
 
     (-> prod-def
-        (assoc  :payment-allocation-method payment-allocation-method)
-        (assoc  :payment-allocation-order payment-allocation-order)
-        (assoc  :pre-payments-accept pre-payments-accept)
-        (assoc  :pre-payments-apply-interest pre-payments-apply-interest)
-        (assoc  :pre-payments-recalculation pre-payments-recalculation)
-        (assoc  :overdue-payments overdue-payments)
-        (assoc  :pre-payments-future-interest pre-payments-future-interest)
-        (assoc  :allow-custom-repayment-allocation allow-custom-repayment-allocation))))
+        (assoc-step "step16"  :payment-allocation-method payment-allocation-method)
+        (assoc-step "step16"  :payment-allocation-order payment-allocation-order)
+        (assoc-step "step16"  :pre-payments-accept pre-payments-accept)
+        (assoc-step "step16"  :pre-payments-apply-interest pre-payments-apply-interest)
+        (assoc-step "step16"  :pre-payments-recalculation pre-payments-recalculation)
+        (assoc-step "step16"  :overdue-payments overdue-payments)
+        (assoc-step "step16"  :pre-payments-future-interest pre-payments-future-interest)
+        (assoc-step "step16"  :allow-custom-repayment-allocation allow-custom-repayment-allocation))))
 
 ;; [STEP-17] Arrears Tollerance Period Consraints
 (defn prod-arrears-tolerance-period-constrain [prod-def min-num max-num def-num]
-  (assoc prod-def :prod-arrears-tolerance-period-constrain
+  (assoc-step prod-def "step17" :prod-arrears-tolerance-period-constrain
          {:min-num min-num
           :max-num max-num
           :def-num def-num}))
 
 ;; [STEP-18] Arrears Tollerance Consraints
 (defn prod-arrears-tolerance-amount-constrain [prod-def min-num max-num def-num]
-  (assoc prod-def :prod-arrears-tolerance-amount-constrain
+  (assoc-step prod-def "step18" :prod-arrears-tolerance-amount-constrain
          {:min-num min-num
           :max-num max-num
           :def-num def-num}))
@@ -303,13 +310,128 @@
     (assert (#{:include :exclude} non-working-days) (str "ERROR: Invalid prod-repayment-collection payment-allocation-method: " non-working-days))
 
     (-> prod-def
-        (assoc  :arrears-days-calculated-from arrears-days-calculated-from)
-        (assoc  :non-working-days non-working-days)
-        (assoc  :pre-payments-accept arrears-floor))))
+        (assoc-step "step19"  :arrears-days-calculated-from arrears-days-calculated-from)
+        (assoc-step "step19"  :non-working-days non-working-days)
+        (assoc-step "step19"  :pre-payments-accept arrears-floor))))
 
+(defn create-loan-product [body-obj]
+  body-obj)
+
+(defn get-loan-product-api [context]
+  {:url (str "{{*env*}}/loanproducts/" (:prodid context))
+   :method api/GET
+   :query-params {"detailsLevel" "FULL"}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn get-branch-api [context]
+  {:url (str "{{*env*}}/branches/" (:id context))
+   :method api/GET
+   :query-params {"detailsLevel" "FULL"}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn get-branch-encid-from-id [branch-id]
+  (if-let [val (get-in (steps/apply-api get-branch-api {:id branch-id}) [:last-call "encodedKey"])]
+    val
+    (assert false (str "ERROR: Unable to find branch with ID " branch-id))))
+
+(defn branch-settings [branch-list]
+ (if (empty? branch-list)
+   {"forAllBranches" true,
+    "availableProductBranches" []}
+    (let [branch-list2 (mapv get-branch-encid-from-id branch-list)]
+      branch-list2)
+  )
+)
+
+(defn add-to-body
+  ([body-obj prod-spec spec-item body-attr] (add-to-body body-obj prod-spec spec-item body-attr {}))
+  ([body-obj prod-spec spec-item body-attr val-func]
+   (let [val (get prod-spec spec-item)
+         val2 (if (map? val-func)
+                (get val-func val val)
+                (val-func val))]
+     (if (coll? body-attr)
+       (assoc-in body-obj body-attr val2)
+       (assoc body-obj body-attr val2)))))
+
+(defn create-loan-feature [body-obj prod-spec spec-item]
+  (condp = spec-item
+    :step01-active (add-to-body body-obj prod-spec spec-item "state" {true "ACTIVE" false "INACTIVE"})
+    :step01-prod-desc (add-to-body body-obj prod-spec spec-item "notes")
+    :step01-prod-id (add-to-body body-obj prod-spec spec-item "id")
+    :step01-prod-name (add-to-body body-obj prod-spec spec-item "name")
+    ;; repaymentScheduleMethod" "DYNAMIC"??
+    :step02-product-type (add-to-body body-obj prod-spec spec-item "type" {:fixed-term "FIXED_TERM_LOAN" :dynamic-term "DYNAMIC_TERM_LOAN"})
+    :step03-prod-avail-branches (add-to-body body-obj prod-spec spec-item ["availabilitySettings" "branchSettings"] branch-settings)
+    :step03-prod-avail-clients (add-to-body body-obj prod-spec spec-item ["availabilitySettings" "availableFor"] {:client ["INDIVIDUALS"] :group ["PURE_GROUPS"] :both ["INDIVIDUALS" "PURE_GROUPS"]})
+    :step04-accid-gen  (add-to-body body-obj prod-spec spec-item ["newAccountSettings" "idGeneratorType"] {:random-pattern "RANDOM_PATTERN" :inc-number "INCREMENTAL_NUMBER"})
+    :step04-accid-gen-template (add-to-body body-obj prod-spec spec-item ["newAccountSettings" "idPattern"])
+    :step05-initial-state (add-to-body body-obj prod-spec spec-item ["newAccountSettings" "accountInitialState"] {:pend-approval "PENDING_APPROVAL" :partial-app "PARTIAL_APPLICATION"})
+    :step06-amount-constraint body-obj ;; TBD
+    :step07-prod-under-ca-setting body-obj ;; TBD
+    ;;     "paymentSettings"
+    ;;  
+    ;;   "amortizationMethod" "OPTIMIZED_PAYMENTS",
+    :step08-prod-instalment-calc-type (-> (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestCalculationMethod"] {:db "DECLINING_BALANCE" :emi "DECLINING_BALANCE_DISCOUNTED" :emi2 "DECLINING_BALANCE_DISCOUNTED" :fixed-flat "FLAT"})
+                                          (add-to-body prod-spec spec-item ["paymentSettings" "amortizationMethod"] {:db "STANDARD_PAYMENTS" :emi "STANDARD_PAYMENTS" :emi2 "OPTIMIZED_PAYMENTS" :fixed-flat "STANDARD_PAYMENTS"}))
+    :step08b-prod-interest-posting-freq body-obj ;; TBD
+    :step08c-day-count-model (add-to-body body-obj prod-spec spec-item [ "interestSettings" "daysInYear"] {:30E-360 "E30_360" :actual-365 "ACTUAL_365_FIXED" :actual-360 "ACTUAL_360"})
+    :step08c-index-ceiling body-obj ;; TBD
+    :step08c-index-floor body-obj ;; TBD
+    :step08c-index-review-frequency-type body-obj ;; TBD
+    :step08c-index-review-frequency-val body-obj ;; TBD
+    :step08c-index-source body-obj ;; TBD
+    :step08c-index-spread-constrain body-obj ;; TBD
+    :step08c-int-rate-scope body-obj ;; TBD
+    :step08c-int-rate-source (add-to-body body-obj prod-spec spec-item ["interestSettings"  "indexRateSettings" "interestRateSource"] {:fixed "FIXED_INTEREST_RATE" :index "INDEX_INTEREST_RATE"})
+    :step08c-int-rate-type (add-to-body body-obj prod-spec spec-item ["interestSettings"  "interestType" ] {:simple "SIMPLE_INTEREST" :capitalized "CAPITALIZED_INTEREST" :compound "COMPOUNDING_INTEREST"})
+    :step09-prod-payment-interval-method body-obj
+    :step10-installments-constraint body-obj
+    :step10b-first-payment-date-constraint body-obj
+    :step11-prod-principal-collect-frequency body-obj
+    :step12-prod-grace-period body-obj
+    :step13-prod-repayment-rounding body-obj
+    :step14-prod-non-working-days-reschedule body-obj
+    :step15-prod-schedule-edit body-obj
+    :step16-allow-custom-repayment-allocation body-obj
+    :step16-overdue-payments body-obj
+    :step16-payment-allocation-method body-obj
+    :step16-payment-allocation-order body-obj
+    :step16-pre-payments-accept body-obj
+    :step16-pre-payments-apply-interest body-obj
+    :step16-pre-payments-future-interest body-obj
+    :step16-pre-payments-recalculation body-obj
+    :step17-prod-arrears-tolerance-period-constrain body-obj
+    :step18-prod-arrears-tolerance-amount-constrain body-obj
+    :step19-arrears-days-calculated-from body-obj
+    :step19-non-working-days body-obj
+    :step19-pre-payments-accept body-obj
+    (do (prn "ERROR: Unknown item" spec-item) body-obj)))
+
+(defn generate-loan-product [prod-spec]
+  (let [spec-list0 (sort (keys prod-spec))]
+    (loop [spec-list spec-list0
+           body-obj {}]
+      (let [spec-item (first spec-list)
+            _ (prn "build:" spec-item)]
+        (if (= spec-item nil)
+          (create-loan-product body-obj)
+          (let [body-obj2 (create-loan-feature body-obj prod-spec spec-item)]
+            (recur (rest spec-list) body-obj2)))))))
+
+(declare prod-spec1)
 (comment
 
-(-> {}
+(assert 1 "hhh")
+(api/setenv "env2") ;; MK prod  
+
+(generate-loan-product prod-spec1)
+
+(:last-call (steps/apply-api get-loan-product-api {:prodid "PROVEQ3" }))
+
+(def prod-spec1 (-> {}
     (prod-name-id-desc "Product name XXX" "PROD1a" "")
     (product-type-def :dynamic-term)
     ;;(product-type-def :fixed-term)
@@ -318,7 +440,7 @@
     (prod-initial-state :pend-approval) ;; Optional step
     (prod-amount-constrain 0 1000 500)  ;; Optional step
     (prod-under-ca-setting :no)
-    (prod-instalment-calc-type :emi2)
+    (prod-instalment-calc-type :emi)
     ;;(prod-instalment-calc-type :fixed-flat) ;; pre-conditions as to when this val is possible
     (prod-interest-posting-freq :on-repayment)
     (prod-interest-type
@@ -369,8 +491,8 @@
     (prod-arrears-settings {:arrears-days-calculated-from  :first
                             :non-working-days :include
                             :arrears-floor 1000}))
+)
 
-(* 12 60)
 
 
 )
