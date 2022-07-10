@@ -272,7 +272,7 @@
     (assert (#{:increase-installments} overdue-payments) (str "ERROR: Invalid prod-repayment-collection overdue-payments: " overdue-payments))
     (map (fn [order-item] (assert (#{:fee :penalty :interest :principal} order-item) (str "ERROR: Invalid prod-repayment-collection payment-allocation-order: " order-item))) payment-allocation-order)
     (assert (= (count (into #{} payment-allocation-order)) 4) "ERROR :payment-allocation-order needs order of all :fee :penalty :interest :principal defining")
-    (assert (#{:none :accept} pre-payments-future-interest) (str "ERROR: Invalid prod-repayment-collection pre-payments-future-interest: " pre-payments-future-interest))
+    (assert (#{:none :accept :accept-future} pre-payments-future-interest) (str "ERROR: Invalid prod-repayment-collection pre-payments-future-interest: " pre-payments-future-interest))
     (assert (#{true false} allow-custom-repayment-allocation) (str "ERROR: Invalid prod-repayment-collection allow-custom-repayment-allocation: " allow-custom-repayment-allocation))
 
     (-> prod-def
@@ -437,9 +437,9 @@
     :step16-payment-allocation-method body-obj ;; TBD
     :step16-payment-allocation-order body-obj ;; TBD
     :step16-pre-payments-accept (add-to-body body-obj prod-spec spec-item ["paymentSettings" "prepaymentSettings" "prepaymentAcceptance"] {:no "NO_PREPAYMENTS" :accept "ACCEPT_PREPAYMENTS"})
-    :step16-pre-payments-apply-interest body-obj
-    :step16-pre-payments-future-interest body-obj
-    :step16-pre-payments-recalculation body-obj
+    :step16-pre-payments-apply-interest (add-to-body body-obj prod-spec spec-item ["paymentSettings" "prepaymentSettings" "applyInterestOnPrepaymentMethod"] {:auto "AUTOMATIC" :manual "MANUAL"})
+    :step16-pre-payments-future-interest (add-to-body body-obj prod-spec spec-item ["paymentSettings" "prepaymentSettings" "futurePaymentsAcceptance"] {:none "NO_FUTURE_PAYMENTS" :accept "ACCEPT_OVERPAYMENTS" :accept-future "ACCEPT_FUTURE_PAYMENTS"})
+    :step16-pre-payments-recalculation (add-to-body body-obj prod-spec spec-item ["paymentSettings" "prepaymentSettings" "prepaymentRecalculationMethod"] {:none "NO_RECALCULATION" :next-installments "RESCHEDULE_REMAINING_REPAYMENTS" :reduce-term "REDUCE_NUMBER_OF_INSTALLMENTS_NEW" :reduce-amount "REDUCE_AMOUNT_PER_INSTALLMENT"})
     :step17-prod-arrears-tolerance-period-constrain body-obj
     :step18-prod-arrears-tolerance-amount-constrain body-obj
     :step19-arrears-days-calculated-from body-obj
