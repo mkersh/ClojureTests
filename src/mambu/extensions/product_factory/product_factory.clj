@@ -510,9 +510,6 @@
 
 (declare prod-spec1)
 (comment
-(merge {:f1 {:f11 1 :f13 3} :f2 2} {:f1 {:f11 2 :f12 2}:f3 3})
-  (filter (fn [val] val) [1 nil nil 2])
-  (assert 1 "hhh")
   (api/setenv "env2") ;; MK prod  
 
   (generate-loan-product prod-spec1)
