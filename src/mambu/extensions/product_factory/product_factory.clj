@@ -11,7 +11,23 @@
 ;;; #bookmark= 30c41be8-396e-491a-ac51-cec8b41b6859
 (ns mambu.extensions.product-factory.product-factory
   (:require [http.api.json_helper :as api]
-            [http.api.api_pipe :as steps]))
+            [http.api.api_pipe :as steps]
+            [mambu.extensions.product-factory.templates.pf-temps :as temp]
+            ))
+
+
+(defn create-loan-product-api [context]
+  {:url (str "{{*env*}}/loanproducts/")
+   :method api/POST
+   :body (:body context)
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn delete-loan-product-api [context]
+  {:url (str "{{*env*}}/loanproducts/" (:prodid context))
+   :method api/DELETE
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
 
 ;; if prod-def has config-prop=config-val then check dep-list are valid
 ;; dep-list is a list of [config-prop config-val-set]
@@ -318,8 +334,14 @@
         (assoc-step "step19"  :accrue-late-interest accrue-late-interest)
         )))
 
+(defonce CREATE-FOR_REAL (atom true))
 (defn create-loan-product [body-obj]
-  body-obj)
+  (if @CREATE-FOR_REAL
+    (let [_ (prn "create-loan-product - start")
+          res (steps/apply-api create-loan-product-api {:body body-obj})
+          _ (prn "create-loan-product - end")]
+      res)
+    body-obj))
 
 (defn get-loan-product-api [context]
   {:url (str "{{*env*}}/loanproducts/" (:prodid context))
@@ -341,11 +363,14 @@
     (assert false (str "ERROR: Unable to find branch with ID " branch-id))))
 
 (defn branch-settings [branch-list]
+ (prn "branch-settings" branch-list)
  (if (empty? branch-list)
    {"forAllBranches" true,
     "availableProductBranches" []}
     (let [branch-list2 (mapv get-branch-encid-from-id branch-list)]
-      branch-list2)
+      {"forAllBranches" false,
+       "availableProductBranches" branch-list2}
+      )
   )
 )
 
@@ -400,7 +425,7 @@
           _ (assert (get val-map val) (str "ERROR: prepayment-recalculation-val - " val))]
       [body-obj2 (get val-map val)])))
 
-(defn arrears-tollerance-period-val [arrears-obj]
+(defn arrears-tollerance-val [arrears-obj]
   (let [min (get arrears-obj :min 0)
         def (get arrears-obj :def min)
         max (get arrears-obj :max 9999)]
@@ -464,10 +489,10 @@
                                           (add-to-body prod-spec spec-item ["paymentSettings" "amortizationMethod"] {:db "STANDARD_PAYMENTS" :emi "STANDARD_PAYMENTS" :emi2 "OPTIMIZED_PAYMENTS" :fixed-flat "STANDARD_PAYMENTS"}))
     :step08b-prod-interest-posting-freq (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestApplicationMethod"] {:on-repayment "REPAYMENT_DUE_DATE" :on-disbursement "AFTER_DISBURSEMENT"})
     :step08c-day-count-model (add-to-body body-obj prod-spec spec-item [ "interestSettings" "daysInYear"] {:30E-360 "E30_360" :actual-365 "ACTUAL_365_FIXED" :actual-360 "ACTUAL_360"})
-    :step08c-index-ceiling (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestRateCeilingValue"])
-    :step08c-index-floor (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestRateFloorValue"])
-    :step08c-index-review-frequency-type (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestRateReviewUnit"] {:days "DAYS" :weeks "WEEKS" :months "MONTHS"})
-    :step08c-index-review-frequency-val (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestRateReviewCount"] )
+    :step08c-index-ceiling (add-to-body body-obj prod-spec spec-item ["interestSettings" "indexRateSettings" "interestRateCeilingValue"])
+    :step08c-index-floor (add-to-body body-obj prod-spec spec-item ["interestSettings" "indexRateSettings" "interestRateFloorValue"])
+    :step08c-index-review-frequency-type (add-to-body body-obj prod-spec spec-item ["interestSettings" "indexRateSettings" "interestRateReviewUnit"] {:days "DAYS" :weeks "WEEKS" :months "MONTHS"})
+    :step08c-index-review-frequency-val (add-to-body body-obj prod-spec spec-item ["interestSettings" "indexRateSettings" "interestRateReviewCount"] )
     :step08c-index-source (add-to-body body-obj prod-spec spec-item ["interestSettings" "indexRateSettings" "indexSourceKey"], get-index-encid-from-id)
     :step08c-index-spread-constrain body-obj ;; TBD
     :step08c-int-rate-scope (add-to-body body-obj prod-spec spec-item ["interestSettings" "indexRateSettings" "interestChargeFrequency"], {:year "ANNUALIZED" :month "EVERY_MONTH" :4weeks "EVERY_FOUR_WEEKS" :week "EVERY_WEEK" :day "EVERY_DAY"} )
@@ -489,13 +514,23 @@
     :step16-pre-payments-apply-interest (add-to-body body-obj prod-spec spec-item ["paymentSettings" "prepaymentSettings" "applyInterestOnPrepaymentMethod"] {:auto "AUTOMATIC" :manual "MANUAL"})
     :step16-pre-payments-future-interest (add-to-body body-obj prod-spec spec-item ["paymentSettings" "prepaymentSettings" "futurePaymentsAcceptance"] {:none "NO_FUTURE_PAYMENTS" :accept "ACCEPT_OVERPAYMENTS" :accept-future "ACCEPT_FUTURE_PAYMENTS"})
     :step16-pre-payments-recalculation (add-to-body2 body-obj prod-spec spec-item ["paymentSettings" "prepaymentSettings" "prepaymentRecalculationMethod"] (prepayment-recalculation-val prod-spec spec-item) )
-    :step17-prod-arrears-tolerance-period-constrain (add-to-body body-obj prod-spec spec-item ["arrearsSettings" "tolerancePeriod"] arrears-tollerance-period-val)
-    :step18-prod-arrears-tolerance-amount-constrain body-obj
-    :step19-arrears-days-calculated-from body-obj
-    :step19-non-working-days body-obj
-    :step19-arrears-floor body-obj
+    :step17-prod-arrears-tolerance-period-constrain (add-to-body body-obj prod-spec spec-item ["arrearsSettings" "tolerancePeriod"] arrears-tollerance-val)
+    :step18-prod-arrears-tolerance-amount-constrain (add-to-body body-obj prod-spec spec-item ["arrearsSettings" "tolerancePercentageOfOutstandingPrincipal"] arrears-tollerance-val)
+    :step19-arrears-days-calculated-from (add-to-body body-obj prod-spec spec-item ["arrearsSettings" "dateCalculationMethod"] {:first "ACCOUNT_FIRST_WENT_TO_ARREARS" :oldest "LAST_LATE_REPAYMENT"})
+    :step19-non-working-days (add-to-body body-obj prod-spec spec-item ["arrearsSettings" "nonWorkingDaysMethod"] {:include "INCLUDED" :exclude "EXCLUDED"} )
+    :step19-arrears-floor (add-to-body body-obj prod-spec spec-item ["arrearsSettings" "toleranceFloorAmount"])
     :step19-accrue-late-interest (add-to-body body-obj prod-spec spec-item ["interestSettings" "accrueLateInterest"] )
     (do (prn "ERROR: Unknown item" spec-item) body-obj)))
+
+(defn into2 [to from]
+  (if (coll? to)
+    (into to from)
+    from))
+
+(defn merge-body-objs [prod-spec body-obj]
+  (let [common-body {"creditArrangementSettings" {"creditArrangementRequirement" "OPTIONAL"}}
+        dt_basics (temp/dt-basics)]
+    (merge-with into2 common-body dt_basics body-obj)))
 
 (defn generate-loan-product [prod-spec]
   (let [spec-list0 (sort (keys prod-spec))]
@@ -504,24 +539,33 @@
       (let [spec-item (first spec-list)
             _ (prn "build:" spec-item)]
         (if (= spec-item nil)
-          (create-loan-product body-obj)
+          (create-loan-product (merge-body-objs prod-spec body-obj))
           (let [body-obj2 (create-loan-feature body-obj prod-spec spec-item)]
             (recur (rest spec-list) body-obj2)))))))
 
 (declare prod-spec1)
 (comment
+(temp/dt-basics)
   (api/setenv "env2") ;; MK prod  
-
+  (merge-with into2 {:f1 {:f11 1 :f13 3}} {:f1 {:f12 2} :f3 3}) 
+  (merge-with into2 {:f1 "fff"} {:f1 "222"})
+  (reset! CREATE-FOR_REAL false) 
   (generate-loan-product prod-spec1)
+  
   prod-spec1
   (get-index-encid-from-id "459709177")
   (:last-call (steps/apply-api get-loan-product-api {:prodid "PF-DT1"}))
+  (:last-call (steps/apply-api get-loan-product-api {:prodid "PF_DTB1"}))
+  
+  (:last-call (steps/apply-api delete-loan-product-api {:prodid "PROD1a"}))
+  
+  
 
   (def prod-spec1 (-> {}
-                      (prod-name-id-desc "Product name XXX" "PROD1a" "")
+                      (prod-name-id-desc "PROD1a XXX" "PROD1a" "")
                       (product-type-def :dynamic-term)
                       ;;(product-type-def :fixed-term)
-                      (prod-avail :client [])
+                      (prod-avail :client ["prodfac1"])
                       (prod-accid :random-pattern "@@@@###")
                       (prod-initial-state :pend-approval) ;; Optional step
                       (prod-amount-constrain 0 1000 500)  ;; Optional step
@@ -529,55 +573,67 @@
                       (prod-instalment-calc-type :emi)
                       ;;(prod-instalment-calc-type :fixed-flat) ;; pre-conditions as to when this val is possible
                       (prod-interest-posting-freq :on-repayment)
-                      (prod-interest-type
-                       {:int-rate-source :fixed
-                        :int-rate-type :simple
-                        :index-source nil
-                        :index-spread-constrain {:min-amount 0 :max-amount 0 :def-amount 0}
-                        :index-floor 0
-                        :index-ceiling 0
-                        :index-review-frequency-type :months
-                        :index-review-frequency-val 0
-                        :int-rate-scope :year
-                        :day-count-model :actual-365})
-                      (prod-payment-interval-method :interval :months 1 nil)
+
+                      ;; (prod-interest-type
+                      ;;  {:int-rate-source :fixed
+                      ;;   :int-rate-type :simple
+                      ;;   :index-source nil
+                      ;;   :index-spread-constrain {:min-amount 0 :max-amount 0 :def-amount 0}
+                      ;;   :index-floor 0
+                      ;;   :index-ceiling 0
+                      ;;   :index-review-frequency-type :months
+                      ;;   :index-review-frequency-val 0
+                      ;;   :int-rate-scope :year
+                      ;;   :day-count-model :actual-365})
+
+                      ;;(prod-payment-interval-method :interval :months 1 nil)
                       ;;(prod-payment-interval-method :fixed nil nil [1 3 4])
-                      (prod-installments-constrain 0 600 10)
+                      ;;(prod-installments-constrain 0 600 10)
+                      
                       ;; (prod-repayment-amount  ;; Only available on :product-type = :revolving-credit
                       ;;  {:repayment-amount-type :principal
                       ;;   :principal-amount-type :flat
                       ;;   :total-amount-type :flat
                       ;;   :repayment-amount-constraint {:min-amount 0 :max-amount 0 :def-amount 0}})
-                      (prod-first-payment-date-constrain 0 100 50)
-                      (prod-principal-collect-frequency 1)
-                      (prod-grace-period :none)
-                      (prod-grace-period :pure nil nil nil)
-                      (prod-grace-period :principal nil nil nil)
-                      (prod-repayment-rounding :no-round :no-round)
-                      (prod-non-working-days-reschedule :no)
-                      (prod-schedule-edit {:dates? false
-                                           :principal? true
-                                           :num? false
-                                           :holidays? false
-                                           :interest? false ;; only available for :fixed-term
-                                           :fee? false      ;; only available for :fixed-term
-                                           :penalty? false  ;; only available for :fixed-term
-                                           })
-                      (prod-repayment-collection {:payment-allocation-method :horizontal
-                                                  :payment-allocation-order [:fee :penalty :interest :principal]
-                                                  :pre-payments-accept :accept
-                                                  :pre-payments-apply-interest :auto
-                                                  :pre-payments-recalculation :reduce-amount ;; :none :next-installments :reduce-term :reduce-amount
-                                                  :overdue-payments :increase-installments
-                                                  :pre-payments-future-interest :accept
-                                                  :allow-custom-repayment-allocation true})
+                      
+                      ;;(prod-first-payment-date-constrain 0 100 50)
+                      ;;(prod-principal-collect-frequency 1)
+                      ;;(prod-grace-period :none)
+                      ;;(prod-grace-period :pure nil nil nil)
+                      ;;(prod-grace-period :principal nil nil nil)
+                      ;;(prod-repayment-rounding :no-round :no-round)
+                      ;;(prod-non-working-days-reschedule :no)
 
-                      (prod-arrears-tolerance-period-constrain 0 0 77)
-                      (prod-arrears-tolerance-amount-constrain 0 0 0)
-                      (prod-arrears-settings {:arrears-days-calculated-from  :first
-                                              :non-working-days :include
-                                              :arrears-floor 1000
-                                              :accrue-late-interest true})))
+
+                      ;; (prod-schedule-edit {:dates? false
+                      ;;                      :principal? true
+                      ;;                      :num? false
+                      ;;                      :holidays? false
+                      ;;                      :interest? false ;; only available for :fixed-term
+                      ;;                      :fee? false      ;; only available for :fixed-term
+                      ;;                      :penalty? false  ;; only available for :fixed-term
+                      ;;                      })
+
+
+                      ;; (prod-repayment-collection {:payment-allocation-method :horizontal
+                      ;;                             :payment-allocation-order [:fee :penalty :interest :principal]
+                      ;;                             :pre-payments-accept :accept
+                      ;;                             :pre-payments-apply-interest :auto
+                      ;;                             :pre-payments-recalculation :reduce-amount ;; :none :next-installments :reduce-term :reduce-amount
+                      ;;                             :overdue-payments :increase-installments
+                      ;;                             :pre-payments-future-interest :accept
+                      ;;                             :allow-custom-repayment-allocation true})
+
+                      ;;(prod-arrears-tolerance-period-constrain 0 0 77)
+                      ;;(prod-arrears-tolerance-amount-constrain 0 0 0)
+
+
+                      ;; (prod-arrears-settings {:arrears-days-calculated-from  :first
+                      ;;                         :non-working-days :include
+                      ;;                         :arrears-floor 1000
+                      ;;                         :accrue-late-interest true})
+                                              
+                                              ))
 
 
 
