@@ -8,7 +8,7 @@
  "accountLinkSettings" {"enabled" false, "linkedAccountOptions" [], "settlementMethod" "FULL_DUE_AMOUNTS"},
  "allowCustomRepaymentAllocation" true,
  "id" "PROD1a",
- "lastModifiedDate" "2022-07-11T10:28:46+02:00",
+ "lastModifiedDate" "2022-07-11T10:31:07+02:00",
  "creditArrangementSettings" {"creditArrangementRequirement" "OPTIONAL"},
  "name" "PROD1a XXX",
  "arrearsSettings"
@@ -40,8 +40,6 @@
   {"interestChargeFrequencyCount" 1,
    "interestChargeFrequency" "ANNUALIZED",
    "interestRateTerms" "FIXED",
-   "interestRateCeilingValue" 0,
-   "interestRateFloorValue" 0,
    "allowNegativeInterestRate" false,
    "encodedKey" "8a818e6781dee6000181ec60088f793c",
    "interestRateSource" "FIXED_INTEREST_RATE",
@@ -60,11 +58,7 @@
    "repaymentCurrencyRounding" "NO_ROUNDING",
    "repaymentElementsRoundingMethod" "NO_ROUNDING"},
   "repaymentReschedulingMethod" "NONE",
-  "repaymentScheduleEditOptions"
-  ["ADJUST_PAYMENT_DATES"
-   "ADJUST_PRINCIPAL_PAYMENT_SCHEDULE"
-   "ADJUST_NUMBER_OF_INSTALLMENTS"
-   "ADJUST_PAYMENT_HOLIDAYS"],
+  "repaymentScheduleEditOptions" ["ADJUST_PAYMENT_DATES" "ADJUST_PAYMENT_HOLIDAYS"],
   "scheduleDueDatesMethod" "INTERVAL",
   "repaymentScheduleMethod" "DYNAMIC",
   "numInstallments" {},
@@ -81,11 +75,11 @@
  {"paymentMethod" "HORIZONTAL",
   "amortizationMethod" "STANDARD_PAYMENTS",
   "prepaymentSettings"
-  {"prepaymentRecalculationMethod" "NO_RECALCULATION",
+  {"prepaymentRecalculationMethod" "REDUCE_AMOUNT_PER_INSTALLMENT",
    "prepaymentAcceptance" "ACCEPT_PREPAYMENTS",
    "futurePaymentsAcceptance" "NO_FUTURE_PAYMENTS",
-   "applyInterestOnPrepaymentMethod" "MANUAL",
-   "principalPaidInstallmentStatus" "PARTIALLY_PAID"},
+   "applyInterestOnPrepaymentMethod" "AUTOMATIC",
+   "principalPaidInstallmentStatus" "PAID"},
   "latePaymentsRecalculationMethod" "OVERDUE_INSTALLMENTS_INCREASE",
   "repaymentAllocationOrder" ["FEE" "PENALTY" "INTEREST" "PRINCIPAL"],
   "principalPaymentSettings" {"amount" {}, "percentage" {}, "defaultPrincipalRepaymentInterval" 1}}}
