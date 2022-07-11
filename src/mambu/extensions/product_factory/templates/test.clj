@@ -8,7 +8,7 @@
  "accountLinkSettings" {"enabled" false, "linkedAccountOptions" [], "settlementMethod" "FULL_DUE_AMOUNTS"},
  "allowCustomRepaymentAllocation" true,
  "id" "PROD1a",
- "lastModifiedDate" "2022-07-11T15:04:03+02:00",
+ "lastModifiedDate" "2022-07-11T15:06:08+02:00",
  "creditArrangementSettings" {"creditArrangementRequirement" "OPTIONAL"},
  "name" "PROD1a XXX",
  "arrearsSettings"
@@ -41,8 +41,6 @@
   {"interestChargeFrequencyCount" 1,
    "interestChargeFrequency" "ANNUALIZED",
    "interestRateTerms" "FIXED",
-   "interestRateCeilingValue" 0,
-   "interestRateFloorValue" 0,
    "allowNegativeInterestRate" false,
    "encodedKey" "8a818e9881da3d4b0181ecef7d277a2c",
    "interestRateSource" "FIXED_INTEREST_RATE",
@@ -76,13 +74,14 @@
   "availableFor" ["INDIVIDUALS"]},
  "paymentSettings"
  {"paymentMethod" "HORIZONTAL",
-  "amortizationMethod" "STANDARD_PAYMENTS",
+  "amortizationMethod" "BALLOON_PAYMENTS",
   "prepaymentSettings"
-  {"prepaymentRecalculationMethod" "REDUCE_AMOUNT_PER_INSTALLMENT",
+  {"prepaymentRecalculationMethod" "REDUCE_NUMBER_OF_INSTALLMENTS_NEW",
+   "elementsRecalculationMethod" "TOTAL_EXPECTED_FIXED",
    "prepaymentAcceptance" "ACCEPT_PREPAYMENTS",
    "futurePaymentsAcceptance" "NO_FUTURE_PAYMENTS",
    "applyInterestOnPrepaymentMethod" "AUTOMATIC",
    "principalPaidInstallmentStatus" "PAID"},
-  "latePaymentsRecalculationMethod" "OVERDUE_INSTALLMENTS_INCREASE",
+  "latePaymentsRecalculationMethod" "LAST_INSTALLMENT_INCREASE",
   "repaymentAllocationOrder" ["FEE" "PENALTY" "INTEREST" "PRINCIPAL"],
   "principalPaymentSettings" {"amount" {}, "percentage" {}, "defaultPrincipalRepaymentInterval" 1}}}

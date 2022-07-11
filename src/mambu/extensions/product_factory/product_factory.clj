@@ -152,11 +152,13 @@
         index-review-frequency-val (:index-review-frequency-val int-type-settings)
         day-count-model (:day-count-model int-type-settings)]
 
-    (assert (#{:fixed :index} int-rate-source) (str "ERROR: Invalid prod-interest-type int-rate-source: " int-rate-source))
-    (assert (#{:simple :capitalized :compound} int-rate-type) (str "ERROR: Invalid prod-interest-type int-type: " int-rate-type))
-    (assert (#{:year :month :4weeks :week :day} int-rate-scope) (str "ERROR: Invalid prod-interest-type int-rate-scope: " int-rate-scope))
-    (assert (or (nil? index-review-frequency-type)(#{:days :weeks :months} index-review-frequency-type)) (str "ERROR: Invalid prod-interest-type index-review-frequency-type: " index-review-frequency-type))
-    (assert (#{:30E-360 :actual-365 :actual-360} day-count-model) (str "ERROR: Invalid prod-interest-type day-count-model: " day-count-model))
+    (assert (nil-or-in-set? #{:fixed :index} int-rate-source) (str "ERROR: Invalid prod-interest-type int-rate-source: " int-rate-source))
+    (assert (nil-or-in-set? #{:simple :capitalized :compound} int-rate-type) (str "ERROR: Invalid prod-interest-type int-type: " int-rate-type))
+    (assert (nil-or-in-set? #{:year :month :4weeks :week :day} int-rate-scope) (str "ERROR: Invalid prod-interest-type int-rate-scope: " int-rate-scope))
+    (assert (nil-or-in-set? #{:days :weeks :months} index-review-frequency-type) (str "ERROR: Invalid prod-interest-type index-review-frequency-type: " index-review-frequency-type))
+    (assert (nil-or-in-set? #{:30E-360 :actual-365 :actual-360} day-count-model) (str "ERROR: Invalid prod-interest-type day-count-model: " day-count-model))
+
+     (when (= ( :step02-product-type prod-def) :fixed-term) (assert (= day-count-model nil) (str "ERROR: day-count-model " day-count-model " not compatible with product-type :fixed-term")))
 
    (-> prod-def
        (assoc-step "step08c" :int-rate-source int-rate-source)
@@ -298,7 +300,8 @@
         pre-payments-recalculation (:pre-payments-recalculation collect-settings)
         overdue-payments (:overdue-payments collect-settings)
         pre-payments-future-interest (:pre-payments-future-interest collect-settings)
-        allow-custom-repayment-allocation (:allow-custom-repayment-allocation collect-settings)]
+        allow-custom-repayment-allocation (:allow-custom-repayment-allocation collect-settings)
+        amortisation-method (:step08b-prod-instalment-amortize-method prod-def)]
 
     ;;(assert (= (:product-type prod-def) :revolving-credit) "ERROR: prod-repayment-amount only available on :revolving-credit")
     (assert (nil-or-in-set? #{:horizontal :vertcal} payment-allocation-method) (str "ERROR: Invalid prod-repayment-collection payment-allocation-method: " payment-allocation-method))
@@ -310,6 +313,10 @@
     (assert (= (count (into #{} payment-allocation-order)) 4) "ERROR :payment-allocation-order needs order of all :fee :penalty :interest :principal defining")
     (assert (nil-or-in-set? #{:none :accept :accept-future} pre-payments-future-interest) (str "ERROR: Invalid prod-repayment-collection pre-payments-future-interest: " pre-payments-future-interest))
     (assert (nil-or-in-set? #{true false} allow-custom-repayment-allocation) (str "ERROR: Invalid prod-repayment-collection allow-custom-repayment-allocation: " allow-custom-repayment-allocation))
+
+    ;; Check any specific rules around settings
+    (when (and (= amortisation-method :balloon) (= (:step02-product-type prod-def) :dynamic-term)) (assert (= pre-payments-recalculation :reduce-term) (str "ERROR: pre-payments-recalculation " pre-payments-recalculation " not compatible with amortisation-method = :balloon")))
+    (when (and (= amortisation-method :balloon) (= (:step02-product-type prod-def) :fixed-term)) (assert (= pre-payments-accept :accept) (str "ERROR: pre-payments-accept " pre-payments-accept " not compatible with amortisation-method = :balloon")))
 
     (-> prod-def
         (assoc-step "step16"  :payment-allocation-method payment-allocation-method)
@@ -470,13 +477,21 @@
       )
 )
 
-(defn instalment-amortize-method [body-obj amort-val]
-  (let [val-map {:standard "STANDARD_PAYMENTS" :balloon "BALLOON_PAYMENTS" :payment-plan "PAYMENT_PLAN"}
-        body-obj2 (if (= amort-val :balloon)
-                    (-> (assoc-in body-obj ["paymentSettings" "prepaymentSettings" "elementsRecalculationMethod"] "TOTAL_EXPECTED_FIXED")
-                        (assoc-in ["paymentSettings" "latePaymentsRecalculationMethod"] "LAST_INSTALLMENT_INCREASE"))
-                    body-obj)]
-    [body-obj2 (get val-map amort-val)]))
+(defn instalment-amortize-method [prod-spec]
+  (fn [body-obj amort-val]
+    (let [product-type (:step02-product-type prod-spec)
+          val-map {:standard "STANDARD_PAYMENTS" :balloon "BALLOON_PAYMENTS" :payment-plan "PAYMENT_PLAN"}
+          body-obj2 (if (and (= product-type :dynamic-term) (= amort-val :balloon))
+                      (-> (assoc-in body-obj ["paymentSettings" "prepaymentSettings" "elementsRecalculationMethod"] "TOTAL_EXPECTED_FIXED")
+                          (assoc-in ["paymentSettings" "latePaymentsRecalculationMethod"] "LAST_INSTALLMENT_INCREASE")
+                          (assoc-in ["paymentSettings" "prepaymentSettings" "prepaymentRecalculationMethod"] "REDUCE_NUMBER_OF_INSTALLMENTS_NEW"))
+                      body-obj)
+          body-obj3 (if (and (= product-type :fixed-term) (= amort-val :balloon))
+                      (-> (assoc-in body-obj2 ["paymentSettings" "prepaymentSettings" "prepaymentAcceptance"] "ACCEPT_PREPAYMENTS")
+                          (assoc-in ["paymentSettings" "latePaymentsRecalculationMethod"] "LAST_INSTALLMENT_INCREASE"))
+                      body-obj2)]
+      [body-obj3 (get val-map amort-val)]))
+    )
 
 ;; This is a more complex version of add-to-body
 ;; Difference: It pase the body-obj to the val-func
@@ -520,7 +535,7 @@
     :step07-prod-under-ca-setting body-obj ;; TBD
     :step08-prod-instalment-calc-type (-> (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestCalculationMethod"] {:db "DECLINING_BALANCE" :emi "DECLINING_BALANCE_DISCOUNTED" :emi2 "DECLINING_BALANCE_DISCOUNTED" :fixed-flat "FLAT"})
                                           (add-to-body prod-spec spec-item ["paymentSettings" "amortizationMethod"] {:db "STANDARD_PAYMENTS" :emi "STANDARD_PAYMENTS" :emi2 "OPTIMIZED_PAYMENTS" :fixed-flat "STANDARD_PAYMENTS"}))
-    :step08b-prod-instalment-amortize-method (add-to-body2 body-obj prod-spec spec-item ["paymentSettings" "amortizationMethod"] instalment-amortize-method) 
+    :step08b-prod-instalment-amortize-method (add-to-body2 body-obj prod-spec spec-item ["paymentSettings" "amortizationMethod"] (instalment-amortize-method prod-spec)) 
     :step08b-prod-interest-posting-freq (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestApplicationMethod"] {:on-repayment "REPAYMENT_DUE_DATE" :on-disbursement "AFTER_DISBURSEMENT"})
     :step08b-prod-first-interest-adjust (add-to-body body-obj prod-spec spec-item "adjustInterestForFirstInstallment" )
     :step08c-day-count-model (add-to-body body-obj prod-spec spec-item [ "interestSettings" "daysInYear"] {:30E-360 "E30_360" :actual-365 "ACTUAL_365_FIXED" :actual-360 "ACTUAL_360"})
@@ -635,7 +650,8 @@
                          (prod-amount-constrain 0 1000 500)  ;; Optional step
                          (prod-under-ca-setting :no)
                          (prod-instalment-calc-type :emi)
-                         (prod-instalment-amortize-method :standard ) ;; :standard :balloon :payment-plan
+                         ;; if next = :balloon then :pre-payments-recalculation needs to be :reduce-term
+                         (prod-instalment-amortize-method :balloon ) ;; :standard :balloon :payment-plan
                          ;;(prod-instalment-calc-type :fixed-flat) ;; pre-conditions as to when this val is possible
                          (prod-interest-posting-freq :on-repayment)
                          (prod-first-interest-adjust false)
@@ -685,18 +701,18 @@
                                                      :payment-allocation-order [:fee :penalty :interest :principal] ;; :fee :penalty :interest :principal
                                                      :pre-payments-accept :accept ;; :no :accept
                                                      :pre-payments-apply-interest :auto ;; nil :auto :manual - nil if previous :no
-                                                     :pre-payments-recalculation :reduce-amount ;; :none :next-installments :reduce-term :reduce-amount
+                                                     :pre-payments-recalculation :reduce-term ;; :none :next-installments :reduce-term :reduce-amount
                                                      :overdue-payments :increase-installments ;; :increase-installments
                                                      :pre-payments-future-interest :none ;; :none :accept :accept-future
                                                      :allow-custom-repayment-allocation true})
 
                          (prod-arrears-tolerance-period-constrain 0 0 77)
-                         (prod-arrears-tolerance-amount-constrain 0 0 0)
+                         (prod-arrears-tolerance-amount-constrain nil nil nil)
 
 
                          (prod-arrears-settings {:arrears-days-calculated-from  :first
                                                  :non-working-days :include
-                                                 :arrears-floor 1000
+                                                 :arrears-floor nil
                                                  :accrue-late-interest true})))
 
   (def prod-ft-spec1 (-> {}
@@ -708,8 +724,9 @@
                          (prod-amount-constrain 0 1000 500)  ;; Optional step
                          (prod-under-ca-setting :no)
                          (prod-instalment-calc-type :emi)
+                         (prod-instalment-amortize-method :standard)
                          (prod-interest-posting-freq :on-repayment)
-                         (prod-first-interest-adjust true)
+                         (prod-first-interest-adjust false)
 
                          (prod-interest-type
                           {:int-rate-source :fixed
@@ -721,7 +738,21 @@
                            :index-review-frequency-type nil  ;;:months
                            :index-review-frequency-val nil
                            :int-rate-scope :year
-                           :day-count-model :actual-365})
+                           :day-count-model nil ;; must be nil for :fixed-term
+                           })
+
+                          ;;  (prod-interest-type
+                          ;;   {:int-rate-source nil
+                          ;;    :int-rate-type nil
+                          ;;    :index-source nil
+                          ;;    :index-spread-constrain nil
+                          ;;    :index-floor nil
+                          ;;    :index-ceiling nil
+                          ;;    :index-review-frequency-type nil  ;;:months
+                          ;;    :index-review-frequency-val nil
+                          ;;    :int-rate-scope nil
+                          ;;    :day-count-model nil ;; must be nil for :fixed-term
+                          ;;    })
 
                          (prod-payment-interval-method :interval :months 1 nil)
                          ;;(prod-payment-interval-method :fixed nil nil [1 3 4])
@@ -736,7 +767,7 @@
                          (prod-first-payment-date-constrain 0 100 50)
                          (prod-principal-collect-frequency 1)
                          ;;(prod-grace-period :none)
-                         (prod-grace-period :pure nil nil nil)
+                         ;;(prod-grace-period :pure nil nil nil)
                          ;;(prod-grace-period :principal nil nil nil)
                          ;;(prod-repayment-rounding :no-round :no-round)
                          (prod-non-working-days-reschedule :no) ;; :no :forward :backward :extend
@@ -754,7 +785,7 @@
 
                          (prod-repayment-collection {:payment-allocation-method :horizontal ;; :horizontal :vertcal
                                                      :payment-allocation-order [:fee :penalty :interest :principal] ;; :fee :penalty :interest :principal
-                                                     :pre-payments-accept nil ;; :no :accept
+                                                     :pre-payments-accept :accept ;; :no :accept
                                                      :pre-payments-apply-interest nil ;; nil :auto :manual - nil if previous :no
                                                      :pre-payments-recalculation nil ;; :none :next-installments :reduce-term :reduce-amount
                                                      :overdue-payments :increase-installments ;; :increase-installments
@@ -762,8 +793,8 @@
                                                      :allow-custom-repayment-allocation nil}) ;; nil true false
 
 
-                         (prod-arrears-tolerance-period-constrain 0 0 77)
-                         (prod-arrears-tolerance-amount-constrain 0 0 0)
+                         (prod-arrears-tolerance-period-constrain nil nil nil)
+                         (prod-arrears-tolerance-amount-constrain nil nil nil)
 
 
                          (prod-arrears-settings {:arrears-days-calculated-from  :first
