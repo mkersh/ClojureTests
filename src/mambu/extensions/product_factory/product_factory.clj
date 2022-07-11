@@ -45,6 +45,10 @@
 (defn nil-or-in-set? [s v]
   (or (nil? v) (get s v)))
 
+(defn nil-or-boolean? [v]
+(or (nil? v) (boolean? v))
+)
+
 (defn assoc-step [obj stepid prop-keyword val]
   (let [prop-str (subs (str prop-keyword) 1)
         step-prop-keyword (keyword (str stepid "-" prop-str))]
@@ -115,6 +119,11 @@
   (assoc-step prod-def "step08" :prod-instalment-calc-type
          calc-type))
 
+(defn prod-instalment-amortize-method [prod-def amort-type]
+  (assert (#{:standard :balloon :payment-plan} amort-type) (str "ERROR: Invalid prod-instalment-amortize-method: " amort-type))
+  (assoc-step prod-def "step08b" :prod-instalment-amortize-method
+              amort-type))
+
 ;; [STEP-8b] Interest posting frequency
 (defn prod-interest-posting-freq [prod-def freq]
   (assert (#{:on-repayment :on-disbursement } freq) (str "ERROR: Invalid prod-interest-posting-freq: " freq))
@@ -122,6 +131,13 @@
              [[:product-type #{:fixed-term}]])
   (assoc-step prod-def "step08b" :prod-interest-posting-freq
          freq))
+
+;; [STEP-8c] First-payment Interest adjust
+(defn prod-first-interest-adjust [prod-def val]
+  (assert (nil-or-boolean?  val) (str "ERROR: Invalid prod-first-interest-adjust: " val))
+  (assoc-step prod-def "step08b" :prod-first-interest-adjust
+              val))
+
 
 ;; [STEP-8c] Interest Type Settings
 (defn prod-interest-type [prod-def int-type-settings]
@@ -454,6 +470,14 @@
       )
 )
 
+(defn instalment-amortize-method [body-obj amort-val]
+  (let [val-map {:standard "STANDARD_PAYMENTS" :balloon "BALLOON_PAYMENTS" :payment-plan "PAYMENT_PLAN"}
+        body-obj2 (if (= amort-val :balloon)
+                    (-> (assoc-in body-obj ["paymentSettings" "prepaymentSettings" "elementsRecalculationMethod"] "TOTAL_EXPECTED_FIXED")
+                        (assoc-in ["paymentSettings" "latePaymentsRecalculationMethod"] "LAST_INSTALLMENT_INCREASE"))
+                    body-obj)]
+    [body-obj2 (get val-map amort-val)]))
+
 ;; This is a more complex version of add-to-body
 ;; Difference: It pase the body-obj to the val-func
 ;; The val-func can modify this body-obj as well as return a val for a specific attribute
@@ -496,7 +520,9 @@
     :step07-prod-under-ca-setting body-obj ;; TBD
     :step08-prod-instalment-calc-type (-> (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestCalculationMethod"] {:db "DECLINING_BALANCE" :emi "DECLINING_BALANCE_DISCOUNTED" :emi2 "DECLINING_BALANCE_DISCOUNTED" :fixed-flat "FLAT"})
                                           (add-to-body prod-spec spec-item ["paymentSettings" "amortizationMethod"] {:db "STANDARD_PAYMENTS" :emi "STANDARD_PAYMENTS" :emi2 "OPTIMIZED_PAYMENTS" :fixed-flat "STANDARD_PAYMENTS"}))
+    :step08b-prod-instalment-amortize-method (add-to-body2 body-obj prod-spec spec-item ["paymentSettings" "amortizationMethod"] instalment-amortize-method) 
     :step08b-prod-interest-posting-freq (add-to-body body-obj prod-spec spec-item ["interestSettings" "interestApplicationMethod"] {:on-repayment "REPAYMENT_DUE_DATE" :on-disbursement "AFTER_DISBURSEMENT"})
+    :step08b-prod-first-interest-adjust (add-to-body body-obj prod-spec spec-item "adjustInterestForFirstInstallment" )
     :step08c-day-count-model (add-to-body body-obj prod-spec spec-item [ "interestSettings" "daysInYear"] {:30E-360 "E30_360" :actual-365 "ACTUAL_365_FIXED" :actual-360 "ACTUAL_360"})
     :step08c-index-ceiling (add-to-body body-obj prod-spec spec-item ["interestSettings" "indexRateSettings" "interestRateCeilingValue"])
     :step08c-index-floor (add-to-body body-obj prod-spec spec-item ["interestSettings" "indexRateSettings" "interestRateFloorValue"])
@@ -594,6 +620,7 @@
   (:last-call (steps/apply-api get-loan-product-api {:prodid "PF_DTB1"}))
   (:last-call (steps/apply-api get-loan-product-api {:prodid "PF_FTB1"}))
   (:last-call (steps/apply-api get-loan-product-api {:prodid "PROD1a"}))
+  (:last-call (steps/apply-api get-loan-product-api {:prodid "PROD_FT2a"}))
 
 
 
@@ -608,8 +635,10 @@
                          (prod-amount-constrain 0 1000 500)  ;; Optional step
                          (prod-under-ca-setting :no)
                          (prod-instalment-calc-type :emi)
-                      ;;(prod-instalment-calc-type :fixed-flat) ;; pre-conditions as to when this val is possible
+                         (prod-instalment-amortize-method :standard ) ;; :standard :balloon :payment-plan
+                         ;;(prod-instalment-calc-type :fixed-flat) ;; pre-conditions as to when this val is possible
                          (prod-interest-posting-freq :on-repayment)
+                         (prod-first-interest-adjust false)
 
                          (prod-interest-type
                           {:int-rate-source :fixed
@@ -680,6 +709,7 @@
                          (prod-under-ca-setting :no)
                          (prod-instalment-calc-type :emi)
                          (prod-interest-posting-freq :on-repayment)
+                         (prod-first-interest-adjust true)
 
                          (prod-interest-type
                           {:int-rate-source :fixed
