@@ -724,7 +724,7 @@
                          (prod-amount-constrain 0 1000 500)  ;; Optional step
                          (prod-under-ca-setting :no)
                          (prod-instalment-calc-type :emi)
-                         (prod-instalment-amortize-method :standard)
+                         (prod-instalment-amortize-method :payment-plan)
                          (prod-interest-posting-freq :on-repayment)
                          (prod-first-interest-adjust false)
 
@@ -740,19 +740,20 @@
                            :int-rate-scope :year
                            :day-count-model nil ;; must be nil for :fixed-term
                            })
-
-                          ;;  (prod-interest-type
-                          ;;   {:int-rate-source nil
-                          ;;    :int-rate-type nil
-                          ;;    :index-source nil
-                          ;;    :index-spread-constrain nil
-                          ;;    :index-floor nil
-                          ;;    :index-ceiling nil
-                          ;;    :index-review-frequency-type nil  ;;:months
-                          ;;    :index-review-frequency-val nil
-                          ;;    :int-rate-scope nil
-                          ;;    :day-count-model nil ;; must be nil for :fixed-term
-                          ;;    })
+                         
+                         ;; This next one works for payment-plan
+                         (prod-interest-type
+                          {:int-rate-source :fixed
+                           :int-rate-type :simple
+                           :index-source nil
+                           :index-spread-constrain nil
+                           :index-floor nil
+                           :index-ceiling nil
+                           :index-review-frequency-type nil  ;;:months
+                           :index-review-frequency-val nil
+                           :int-rate-scope nil
+                           :day-count-model nil ;; must be nil for :fixed-term
+                           })
 
                          (prod-payment-interval-method :interval :months 1 nil)
                          ;;(prod-payment-interval-method :fixed nil nil [1 3 4])
