@@ -361,6 +361,16 @@
         (assoc-step "step19"  :accrue-late-interest accrue-late-interest)
         )))
 
+;; [STEP-20] Penalty Setup
+(defn prod-penalty-settings [prod-def penalty-settings]
+  (let [penalty-calc-method (:penalty-calc-method penalty-settings)
+        penalty-tollerance-period (:penalty-tollerance-period penalty-settings)
+        penalty-rate-constraint (:penalty-rate-constraint penalty-settings)]
+    (assert (nil-or-in-set? #{:no :overdue-principal :overdue-principal-interest :outstanding-principal} penalty-calc-method) (str "ERROR: Invalid prod-penalty-settings : " penalty-calc-method))
+    (-> (assoc-step prod-def "step20"  :penalty-calc-method penalty-calc-method)
+        (assoc-step  "step20"  :penalty-tollerance-period penalty-tollerance-period)
+        (assoc-step  "step20"  :penalty-rate-constraint penalty-rate-constraint))))
+
 (defonce CREATE-FOR_REAL (atom true))
 (defn create-loan-product [body-obj]
   (if @CREATE-FOR_REAL
@@ -570,6 +580,9 @@
     :step19-non-working-days (add-to-body body-obj prod-spec spec-item ["arrearsSettings" "nonWorkingDaysMethod"] {:include "INCLUDED" :exclude "EXCLUDED"} )
     :step19-arrears-floor (add-to-body body-obj prod-spec spec-item ["arrearsSettings" "toleranceFloorAmount"])
     :step19-accrue-late-interest (add-to-body body-obj prod-spec spec-item ["interestSettings" "accrueLateInterest"] )
+    :step20-penalty-calc-method (add-to-body body-obj prod-spec spec-item ["penaltySettings" "loanPenaltyCalculationMethod"] {:no "NONE" :overdue-principal "OVERDUE_BALANCE" :overdue-principal-interest "OVERDUE_BALANCE_AND_INTEREST" :outstanding-principal "OUTSTANDING_PRINCIPAL"})
+    :step20-penalty-tollerance-period (add-to-body body-obj prod-spec spec-item ["penaltySettings" "loanPenaltyGracePeriod"])
+    :step20-penalty-rate-constraint (add-to-body body-obj prod-spec spec-item ["penaltySettings" "penaltyRate"] arrears-tollerance-val)
     (do (prn "ERROR: Unknown item" spec-item) body-obj)))
 
 ;; Was originally using this with (merge-with into2 & maps) from merge-body-objs
@@ -611,6 +624,7 @@
 
 (declare prod-dt-spec1 prod-ft-spec1)
 (comment
+(/ 260 60.0)
   (temp/dt-basics)
   (api/setenv "env2") ;; MK prod  
   (merge-with into2 {:f1 {:f11 1 :f13 3}} {:f1 {:f12 2} :f3 3})
@@ -624,7 +638,7 @@
   
   ;; [2] Create fixed-term product
   (generate-loan-product prod-ft-spec1)
-  (:last-call (steps/apply-api delete-loan-product-api {:prodid "PROD_FT2a"}))
+  (:last-call (steps/apply-api delete-loan-product-api {:prodid "PROD_FT2b"}))
 
 
   ;; TBD - Add support for "Adjust interest to the first repayment"
@@ -635,7 +649,7 @@
   (:last-call (steps/apply-api get-loan-product-api {:prodid "PF_DTB1"}))
   (:last-call (steps/apply-api get-loan-product-api {:prodid "PF_FTB1"}))
   (:last-call (steps/apply-api get-loan-product-api {:prodid "PROD1a"}))
-  (:last-call (steps/apply-api get-loan-product-api {:prodid "PROD_FT2a"}))
+  (:last-call (steps/apply-api get-loan-product-api {:prodid "PROD_FT2b"}))
 
 
 
@@ -651,7 +665,7 @@
                          (prod-under-ca-setting :no)
                          (prod-instalment-calc-type :emi)
                          ;; if next = :balloon then :pre-payments-recalculation needs to be :reduce-term
-                         (prod-instalment-amortize-method :balloon ) ;; :standard :balloon :payment-plan
+                         (prod-instalment-amortize-method :balloon) ;; :standard :balloon :payment-plan
                          ;;(prod-instalment-calc-type :fixed-flat) ;; pre-conditions as to when this val is possible
                          (prod-interest-posting-freq :on-repayment)
                          (prod-first-interest-adjust false)
@@ -713,10 +727,14 @@
                          (prod-arrears-settings {:arrears-days-calculated-from  :first
                                                  :non-working-days :include
                                                  :arrears-floor nil
-                                                 :accrue-late-interest true})))
+                                                 :accrue-late-interest true})
+
+                         (prod-penalty-settings {:penalty-calc-method :overdue-principal ;; :no :overdue-principal :overdue-principal-interest :outstanding-principal
+                                                 :penalty-tollerance-period 0
+                                                 :penalty-rate-constraint {:min 0 :max 999 :def 0}})))
 
   (def prod-ft-spec1 (-> {}
-                         (prod-name-id-desc "PROD_FT1" "PROD_FT2a" "")
+                         (prod-name-id-desc "PROD_FT1" "PROD_FT2b" "")
                          (product-type-def :fixed-term) ;; :fixed-term :dynamic-term :interest-free :tranched :revolving-credit
                          (prod-avail :client ["prodfac1"])
                          (prod-accid :random-pattern "@@@@###")
@@ -724,7 +742,7 @@
                          (prod-amount-constrain 0 1000 500)  ;; Optional step
                          (prod-under-ca-setting :no)
                          (prod-instalment-calc-type :emi)
-                         (prod-instalment-amortize-method :payment-plan)
+                         (prod-instalment-amortize-method :standard) ;; :balloon :payment-plan
                          (prod-interest-posting-freq :on-repayment)
                          (prod-first-interest-adjust false)
 
@@ -742,18 +760,18 @@
                            })
                          
                          ;; This next one works for payment-plan
-                         (prod-interest-type
-                          {:int-rate-source :fixed
-                           :int-rate-type :simple
-                           :index-source nil
-                           :index-spread-constrain nil
-                           :index-floor nil
-                           :index-ceiling nil
-                           :index-review-frequency-type nil  ;;:months
-                           :index-review-frequency-val nil
-                           :int-rate-scope nil
-                           :day-count-model nil ;; must be nil for :fixed-term
-                           })
+                        ;;  (prod-interest-type
+                        ;;   {:int-rate-source :fixed
+                        ;;    :int-rate-type :simple
+                        ;;    :index-source nil
+                        ;;    :index-spread-constrain nil
+                        ;;    :index-floor nil
+                        ;;    :index-ceiling nil
+                        ;;    :index-review-frequency-type nil  ;;:months
+                        ;;    :index-review-frequency-val nil
+                        ;;    :int-rate-scope nil
+                        ;;    :day-count-model nil ;; must be nil for :fixed-term
+                        ;;    })
 
                          (prod-payment-interval-method :interval :months 1 nil)
                          ;;(prod-payment-interval-method :fixed nil nil [1 3 4])
