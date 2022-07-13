@@ -7,8 +7,12 @@
 ;; **************************************************
 ;; Various APIs to generate events in the audit-trail
 
-(def create-customer
-  (fn [context]
+(defonce CUSTID (atom "")) ;; remeber the last custid created so we can delete
+
+(defn call-api [api context]
+  (:last-call (steps/apply-api api context)))
+
+(defn create-customer-api [context]
     {:url (str "{{*env*}}/clients")
      :method api/POST
      :headers {"Accept" "application/vnd.mambu.v2+json"
@@ -20,7 +24,21 @@
             "addresses" [{"country" "UK"
                           "city" "Liverpool"}]
             "notes" "Some Notes on this person"
-            "assignedBranchKey" (:branchid context)}}))
+            "assignedBranchKey" (:branchid context)}})
+
+
+(defn create-customer [context]
+  (let [resp (:last-call (steps/apply-api create-customer-api context))
+        id (get resp "id")
+        _ (reset! CUSTID id)]
+    resp))
+
+(defn delete-client-api [context]
+  {:url (str "{{*env*}}/clients/" (:clientid context))
+   :method api/DELETE
+   :query-params {}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
 
 (defn get-client-api [context]
   {:url (str "{{*env*}}/clients/" (:clientid context))
@@ -98,34 +116,46 @@
 (api/setenv "env15") ;; MH test 
 
 ;; [1] Get list of most recent events
-(:last-call (steps/apply-api get-events {:size 10}))
+(call-api get-events {:size 10})
 
 ;; [2] Get list events from a previous point of time (less-than)
-(:last-call (steps/apply-api get-events-from-previous-time {:size 10 :occurred_at_lt "2020-05-01T09:30:59.872Z"}))
+(call-api get-events-from-previous-time {:size 10 :occurred_at_lt "2020-05-01T09:30:59.872Z"})
 
 ;; [3] Get list events from a previous point of time (greater-than)
-(:last-call (steps/apply-api get-events-from-previous-time2 {:size 3 :occurred_at_gt "2020-05-01T09:30:59.872Z"}))
+(call-api get-events-from-previous-time2 {:size 3 :occurred_at_gt "2020-05-01T09:30:59.872Z"})
 
-;; [4] Call an API and see how it is reported in audit-trail
-(api/setenv-local "env16a" (:last-call (steps/apply-api create-customer {:first-name "Test" :last-name "Cust" :branchid "8a19225181f7aeac0181f7de7c2a3a0d"})))
-(api/setenv-local "env16a" (:last-call (steps/apply-api get-loan-detail-api {:accid "MZOH217"})))
-(api/setenv-local "env16a" (:last-call (steps/apply-api get-client-api {:clientid "426245829"})))
+;; [4] Call an API below and see how it is reported in the audit-trail
+;;     Perform one or more of the following API calls and then goto [4.2] below and see them appear in the audit-trail
+;;
+;; [4.1a] - create a new customer
+;;          NOTE: The api-key used needs to be different from the one used for the audit-trail APIs
+(api/setenv-local "env16a" (create-customer {:first-name "Test" :last-name "Cust" :branchid "8a19225181f7aeac0181f7de7c2a3a0d"}))
+;; [4.1b] - delete previous created customer
+(api/setenv-local "env16a" (call-api delete-client-api {:clientid @CUSTID }))
+;; [4.1c] - get a loan object
+(api/setenv-local "env16a" (call-api get-loan-detail-api {:accid "MZOH217"}))
+;; [4.1d] - get a client object
+(api/setenv-local "env16a" (call-api get-client-api {:clientid "426245829"}))
+;; [4.1e] - patch a loan-product
 (api/setenv-local "env16a" (let [patch-body [{"op" "REPLACE"
                                              "path" "notes"
                                              "value" "updated notes via patch - MK testing audit-trail"}]]
-                             (steps/apply-api patch-loan-product-api {:prodid "fees" :body patch-body})))
-;; Now see that the event is recorded in the audit-trail
-;; NOTE: There may be a tiny delay before it appears but it should be there in near-realtime
-(:last-call (steps/apply-api get-events {:size 1}))
+                             (call-api patch-loan-product-api {:prodid "fees" :body patch-body})))
+
+;; *******************************
+;; [4.2] - Now see that the event is recorded in the audit-trail
+;;         NOTE: There may be a tiny delay before it appears but it should be there in near-realtime
+;;
+(call-api get-events {:size 2})
 
 ;; [5] More specific searching of the audir-trail
-(:last-call (steps/apply-api get-object-viewed-by-user
-                             {:user "apiMambu1" 
+(call-api get-object-viewed-by-user
+                             {:user "apiMambu1" ;; apiMambu1
                               :size 3 
                               :event_source nil ;; UI, API
                               :resource nil ;; clients, client, loans, ...
                               :occurred_at "2020-05-01T09:30:59.872Z" ;; GTE
-                              }))
+                              })
 
 
 
