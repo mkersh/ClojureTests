@@ -62,6 +62,9 @@
   `(binding [*ENV* ~envId] ~@body)
 )
 
+(defn add-param [m p v]
+  (if v (assoc m p v) m))
+
 ;; Get the environment to use 
 (defn get-env-key []
   (if *ENV* *ENV* ENV))
@@ -412,6 +415,6 @@
 
 (setenv "env3b")
 (get-auth2)
-
+(add-param {} "param1" nil)
 ;;
 )
