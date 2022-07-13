@@ -60,8 +60,13 @@
  {:file
   "src/http/api/mambu/demo/multi-currency-daily-bank-account.clj",
   :line 1},
+ "62b4af3d-78a5-4e55-b8b9-990745baab6c"
+ {:file "src/http/api/mambu/cards.clj", :line 163},
  "ab6e3701-7ff2-47a3-8502-6c139ff101a1"
  {:file "src/maths/loan_schedule.clj", :line 100},
+ "87ebc69d-f743-44b9-affd-5d188b4a21f3"
+ {:file "src/http/api/mambu/demo/workshop0722/audit_trail.clj",
+  :line 2},
  "137fe633-9ede-4ab4-b6a4-82d97d057c97"
  {:file "src/mambu/extensions/product_factory/pf_poc/pf_poc.clj",
   :line 2}}
