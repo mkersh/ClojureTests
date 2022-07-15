@@ -185,16 +185,18 @@
   (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet")
   @LAST_FIELD_SET
   (get-fs-details @LAST_FIELD_SET)
-  (update-fieldset @LAST_FIELD_SET {:description "XXXX YYYY" :availableFor "CLIENT"})
+  (update-fieldset @LAST_FIELD_SET {:description "XXXX YYYY" :availableFor "LOAN_ACCOUNT"})
   (save-updates!)
 
   ;; [3] Create a new fieldet
   (create-new-fieldset {:id "_NewTestFieldSet" :name "NewTestFieldSet" :type "SINGLE" :availableFor "LOAN_ACCOUNT"})
   (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet")
-  (update-fieldset @LAST_FIELD_SET {:description "This is a dessc"})
+  (get-fs-details @LAST_FIELD_SET)
+  (update-fieldset @LAST_FIELD_SET {:description "This is a dessc" :type "GROUPED"})
   (save-updates!)
 
   ;; [4] Remove a fieldset
+  ;; TBD - This does not work at the moment
   (remove-fieldset "_NewTestFieldSet")
   (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet")
   (save-updates!)
