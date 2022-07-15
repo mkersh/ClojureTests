@@ -148,6 +148,31 @@
           _ (get-fieldset @ALL_CUST_FIELDS id)]
       new-fs)))
 
+(defn add-field [fs-obj field-obj]
+(let [id (:id field-obj)
+      type (:type field-obj)
+      state (:state field-obj)
+      validationRules (:validationRules field-obj)
+      displaySettings (:displaySettings field-obj)
+      viewRights (:viewRights field-obj)
+      editRights (:editRights field-obj)
+      availableForAll (:availableForAll field-obj)
+      required (:required field-obj)
+      default (:default field-obj)]
+{:id id,
+ :type type,
+ :state state,
+ :validationRules validationRules,
+ :displaySettings displaySettings,
+ :viewRights viewRights,
+ :editRights editRights,
+ :availableForAll availableForAll,
+ :required required,
+ :default default}
+)
+
+)
+
 ;; This next function will update changes to your tenant
 (defn save-updates! []
   (let [all-obj @ALL_CUST_FIELDS
@@ -173,13 +198,13 @@
   (prn-fieldset-ids @ALL_CUST_FIELDS)
 
   ;; [1.1] Get a specific fieldset
-  (get-fieldset @ALL_CUST_FIELDS "_Guarantor_Default_Guarantors")
+  (get-fieldset @ALL_CUST_FIELDS "_ClearBank")
   @LAST_FIELD_SET
   (prn-fields @LAST_FIELD_SET)
   (get-fs-details @LAST_FIELD_SET)
 
   ;; [1.2] Get a specific field
-  (get-field @LAST_FIELD_SET "ROUTING_NUMBER_TRANSACTION_CHANN")
+  (get-field @LAST_FIELD_SET "virtualAccountId")
 
   ;; [2] Updating fieldset
   (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet")
