@@ -159,16 +159,24 @@
       availableForAll (:availableForAll field-obj)
       required (:required field-obj)
       default (:default field-obj)]
-{:id id,
- :type type,
- :state state,
- :validationRules validationRules,
- :displaySettings displaySettings,
- :viewRights viewRights,
- :editRights editRights,
- :availableForAll availableForAll,
- :required required,
- :default default}
+
+(assert (and id type state validationRules displaySettings viewRights editRights (boolean? availableForAll) (boolean? required) (boolean? default)) "ERROR: add-field - mandatory params missing")
+
+(let [field-obj {:id id,
+                 :type type,
+                 :state state,
+                 :validationRules validationRules,
+                 :displaySettings displaySettings,
+                 :viewRights viewRights,
+                 :editRights editRights,
+                 :availableForAll availableForAll,
+                 :required required,
+                 :default default}
+      fields-list (:customFields fs-obj)
+      fields-list2 (conj fields-list field-obj)
+      fs-obj2 (assoc fs-obj :customFields fields-list2)
+      _ (reset! LAST_FIELD_SET fs-obj2)]
+  (update-fieldset fs-obj2 fs-obj2))
 )
 
 )
@@ -225,6 +233,18 @@
   (remove-fieldset "_NewTestFieldSet")
   (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet")
   (save-updates!)
+
+  ;; [5] Add a field
+  (add-field @LAST_FIELD_SET {:id "mk1",
+                              :type "FREE_TEXT",
+                              :state "ACTIVE",
+                              :validationRules {:unique true},
+                              :displaySettings {:displayName "mk1", :description "", :fieldSize "LONG"},
+                              :viewRights {:roles (), :allUsers true},
+                              :editRights {:roles (), :allUsers false},
+                              :availableForAll false,
+                              :required false,
+                              :default false})
 
 
 
