@@ -32,6 +32,7 @@
                  [org.clojars.bpsm/big-ivan "0.1.0"]
                  [org.clojure/test.check "1.1.0"]
                  [org.clojure/tools.namespace "1.2.0"]
+                 [clj-commons/clj-yaml "0.7.108"]
                  ]
   :profiles {:replxx {:plugins [[cider/cider-nrepl "0.27.2"]]}
     :dev {:resource-paths ["resources-dev"]

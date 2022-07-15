@@ -1,0 +1,262 @@
+customFieldSets:
+- id: _ClearBank
+  name: ClearBank
+  description: 'Test to see if this is updated XXXXX'
+  type: SINGLE
+  availableFor: LOAN_ACCOUNT
+  customFields:
+  - id: virtualAccountId
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: true}
+    displaySettings: {displayName: virtualAccountId, description: '', fieldSize: LONG}
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: false
+  - id: ibanLoan
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: true}
+    displaySettings: {displayName: ibanLoan, description: '', fieldSize: LONG}
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: false
+  - id: assignedLoanUser
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: assignedLoanUser, description: '', fieldSize: LONG}
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: false
+- id: _Guarantor_Default_Guarantors
+  name: Guarantor Default
+  description: Default custom field set used only for grouping guarantor custom fields
+  type: SINGLE
+  availableFor: GUARANTOR
+  customFields: []
+- id: _Asset_Default_Assets
+  name: Asset Default
+  description: Default custom field set used only for grouping asset custom fields
+  type: SINGLE
+  availableFor: ASSET
+  customFields: []
+- id: _Transaction_Details_Transaction
+  name: Transaction Details
+  description: Captures default transaction custom fields
+  type: SINGLE
+  availableFor: TRANSACTION_CHANNEL
+  customFields:
+  - id: IDENTIFIER_TRANSACTION_CHANNEL_I
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: true}
+    displaySettings: {displayName: Identifier, description: 'An unique user-defined identifier for each transaction. This field is optional, but if specified, it must be unique across all loan and deposit transactions', fieldSize: SHORT}
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    availableForAll: false
+  - id: BANK_NUMBER_TRANSACTION_CHANNEL_
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: 'Bank #', fieldSize: SHORT}
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    availableForAll: false
+  - id: RECEPIT_NUMBER_TRANSACTION_CHANN
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: 'Receipt #', fieldSize: SHORT}
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    availableForAll: false
+  - id: CHECK_NUMBER_TRANSACTION_CHANNEL
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: 'Check #', fieldSize: SHORT}
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    availableForAll: false
+  - id: ACCOUNT_NUMBER_TRANSACTION_CHANN
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: 'Account #', fieldSize: SHORT}
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    availableForAll: false
+  - id: ACCOUNT_NAME_TRANSACTION_CHANNEL
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: Account Name, fieldSize: SHORT}
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    availableForAll: false
+  - id: ROUTING_NUMBER_TRANSACTION_CHANN
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: 'Routing #', fieldSize: SHORT}
+    usage: []
+    viewRights:
+      roles: []
+      allUsers: true
+    editRights:
+      roles: []
+      allUsers: true
+    availableForAll: false
+- id: _ClearBank_Transaction_By_Channe
+  name: ClearBank
+  description: ''
+  type: SINGLE
+  availableFor: TRANSACTION_CHANNEL
+  customFields:
+  - id: creditorIBAN
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: creditorIBAN, description: '', fieldSize: SHORT}
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: true
+  - id: debtorName
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: debtorName, description: '', fieldSize: SHORT}
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: true
+  - id: creditorName
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: creditorName, description: '', fieldSize: SHORT}
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: true
+  - id: debtorIBAN
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: debtorIBAN, description: '', fieldSize: SHORT}
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: true
+  - id: paymentReference
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: paymentReference, description: '', fieldSize: SHORT}
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: true
+  - id: transactionEndToEndId
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: transactionEndToEndId, description: '', fieldSize: SHORT}
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: true
+  - id: transactionStatus
+    type: FREE_TEXT
+    state: ACTIVE
+    validationRules: {unique: false}
+    displaySettings: {displayName: transactionStatus, description: '', fieldSize: SHORT}
+    viewRights:
+      roles: []
+      allUsers: false
+    editRights:
+      roles: []
+      allUsers: false
+    availableForAll: false
+    required: false
+    default: true
