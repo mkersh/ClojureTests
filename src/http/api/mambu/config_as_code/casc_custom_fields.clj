@@ -297,7 +297,7 @@
                               :displaySettings {:displayName "mk1", :description "", :fieldSize "LONG"},
                               ;; :usage [{:id "client", :required false, :default false}
                               ;;         {:id "client-type2", :required false, :default false}]
-                              :usage [{:id "LP2", :required false, :default false}]
+                              ;; :usage [{:id "LP2", :required false, :default false}]
                               :viewRights {:roles (), :allUsers true},
                               :editRights {:roles (), :allUsers false},
                               :availableForAll false,
