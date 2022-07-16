@@ -14,6 +14,8 @@
 ;; Mambu core level APIs for custom-fields config-as-code 
 ;;
 
+(defonce CUSTID (atom nil))
+
 ;; Get all custom-fields in a tenant
 ;; NOTE: If :availableFor passed then you can filter
 (defn get-customfields-yaml-api [context]
@@ -31,11 +33,59 @@
    :headers {"Accept" "application/vnd.mambu.v2+yaml"
              "Content-Type" "application/yaml"}})
 
+
 ;; API to get an example YAML file for custom-fields
 (defn get-customfields-yaml-template-api [_context]
   {:url (str "{{*env*}}/configuration/customfields/template.yaml")
    :method api/GET
    :headers {"Accept" "application/vnd.mambu.v2+yaml"}})
+
+;; *****************************************************************
+;; Mambu core level APIs for attaching custom fields to objects
+;;
+
+(defn create-customer-api [context]
+  {:url (str "{{*env*}}/clients")
+   :method api/POST
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}
+   :query-params {}
+   :body (merge {"firstName" (:first-name context)
+                 "lastName" (:last-name context)
+                 "preferredLanguage" "ENGLISH"
+                 "addresses" [{"country" "UK"
+                               "city" "Liverpool"}]
+                 "notes" "Some Notes on this person"
+                 "assignedBranchKey" (:branchid context)} (:custom-fields context))
+          })
+
+(defn delete-client-api [context]
+  {:url (str "{{*env*}}/clients/" (:clientid context))
+   :method api/DELETE
+   :query-params {}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn get-client-api [context]
+  {:url (str "{{*env*}}/clients/" (:clientid context))
+   :method api/GET
+   :query-params {"detailsLevel" "FULL"}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn patch-customer-api [context]
+  {:url (str "{{*env*}}/clients/" (:clientId context))
+   :method api/PATCH
+   :body [{"op" "add"
+           "path" "/_MKExtraCustomer/MyCustomerField1"
+           "value" "Oh yes"}
+
+           ;; Patching a grouped DataFieldSet
+          {"op" "replace"
+           "path" "/_GlobalCreditLimits"
+           "value" (:value context)}]
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
 
 ;; *****************************************************************
 ;; Higher level helper functions
@@ -148,46 +198,50 @@
           _ (get-fieldset @ALL_CUST_FIELDS id)]
       new-fs)))
 
+;; Add or update field
 (defn add-field [fs-obj field-obj]
-(let [id (:id field-obj)
-      type (:type field-obj)
-      state (:state field-obj)
-      validationRules (:validationRules field-obj)
-      displaySettings (:displaySettings field-obj)
-      viewRights (:viewRights field-obj)
-      editRights (:editRights field-obj)
-      availableForAll (:availableForAll field-obj)
-      required (:required field-obj)
-      default (:default field-obj)]
+  (let [id (:id field-obj)
+        type (:type field-obj)
+        state (:state field-obj)
+        validationRules (:validationRules field-obj)
+        displaySettings (:displaySettings field-obj)
+        usage (:usage field-obj)
+        viewRights (:viewRights field-obj)
+        editRights (:editRights field-obj)
+        availableForAll (:availableForAll field-obj)
+        required (:required field-obj)
+        default (:default field-obj)]
 
-(assert (and id type state validationRules displaySettings viewRights editRights (boolean? availableForAll) (boolean? required) (boolean? default)) "ERROR: add-field - mandatory params missing")
+    (assert (and id type state validationRules displaySettings viewRights editRights (boolean? availableForAll) (boolean? required) (boolean? default)) "ERROR: add-field - mandatory params missing")
 
-(let [field-obj {:id id,
-                 :type type,
-                 :state state,
-                 :validationRules validationRules,
-                 :displaySettings displaySettings,
-                 :viewRights viewRights,
-                 :editRights editRights,
-                 :availableForAll availableForAll,
-                 :required required,
-                 :default default}
-      fields-list (:customFields fs-obj)
-      fields-list2 (conj fields-list field-obj)
-      fs-obj2 (assoc fs-obj :customFields fields-list2)
-      _ (reset! LAST_FIELD_SET fs-obj2)]
-  (update-fieldset fs-obj2 fs-obj2))
-)
-
-)
+    (let [field-obj0 {:id id,
+                     :type type,
+                     :state state,
+                     :validationRules validationRules,
+                     :displaySettings displaySettings,
+                     :viewRights viewRights,
+                     :editRights editRights,
+                     :availableForAll availableForAll
+                     }
+          field-obj (if usage (merge field-obj0 {:usage usage})
+                         (merge field-obj0 {:required required :default default}))
+          fields-list (:customFields fs-obj)
+          fields-list1 (filter (fn [obj] (not (= (:id obj) id))) fields-list)
+          _ (when (< (count fields-list1) (count fields-list)) (prn (str "Updating existing field ID = " id)))
+          fields-list2 (conj fields-list1 field-obj)
+          fs-obj2 (assoc fs-obj :customFields fields-list2)
+          _ (reset! LAST_FIELD_SET fs-obj2)]
+      (update-fieldset fs-obj2 fs-obj2))))
 
 ;; This next function will update changes to your tenant
 (defn save-updates! []
   (let [all-obj @ALL_CUST_FIELDS
         yaml-str (casc/edn-to-yaml-str all-obj)
-        tenant-env (api/get-env-domain)]
-    (prn (str "SAVING custom-fields to " tenant-env))
-    (when all-obj (casc/get-yaml-response (call-api put-customfields-yaml-api {:yaml-str yaml-str})))))
+        tenant-env (api/get-env-domain)
+        _  (prn (str "SAVING custom-fields to " tenant-env))
+        response-obj  (call-api put-customfields-yaml-api {:yaml-str yaml-str})
+        _ (prn "response - " response-obj)]
+    (when all-obj (casc/get-yaml-response response-obj))))
 
 
 (comment
@@ -206,7 +260,7 @@
   (prn-fieldset-ids @ALL_CUST_FIELDS)
 
   ;; [1.1] Get a specific fieldset
-  (get-fieldset @ALL_CUST_FIELDS "_ClearBank")
+  (get-fieldset @ALL_CUST_FIELDS "_NewClientFieldSet")
   @LAST_FIELD_SET
   (prn-fields @LAST_FIELD_SET)
   (get-fs-details @LAST_FIELD_SET)
@@ -223,6 +277,7 @@
 
   ;; [3] Create a new fieldet
   (create-new-fieldset {:id "_NewTestFieldSet" :name "NewTestFieldSet" :type "SINGLE" :availableFor "LOAN_ACCOUNT"})
+  (create-new-fieldset {:id "_NewClientFieldSet" :name "NewClientFieldSet" :type "SINGLE" :availableFor "CLIENT"})
   (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet")
   (get-fs-details @LAST_FIELD_SET)
   (update-fieldset @LAST_FIELD_SET {:description "This is a dessc" :type "GROUPED"})
@@ -230,21 +285,62 @@
 
   ;; [4] Remove a fieldset
   ;; TBD - This does not work at the moment
-  (remove-fieldset "_NewTestFieldSet")
-  (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet")
+  (remove-fieldset "_NewClientFieldSet")
+  (get-fieldset @ALL_CUST_FIELDS "_NewClientFieldSet")
   (save-updates!)
 
   ;; [5] Add a field
   (add-field @LAST_FIELD_SET {:id "mk1",
                               :type "FREE_TEXT",
                               :state "ACTIVE",
-                              :validationRules {:unique true},
+                              :validationRules {:unique false},
                               :displaySettings {:displayName "mk1", :description "", :fieldSize "LONG"},
+                              ;; :usage [{:id "client", :required false, :default false}
+                              ;;         {:id "client-type2", :required false, :default false}]
+                              :usage [{:id "LP2", :required false, :default false}]
                               :viewRights {:roles (), :allUsers true},
                               :editRights {:roles (), :allUsers false},
                               :availableForAll false,
                               :required false,
                               :default false})
+
+ 
+  ;; [6] Test adding some of th new custom-fields to objects
+  (reset! CUSTID (get (call-api create-customer-api
+                                {:first-name "CF" :last-name "Tester7"
+                                 :custom-fields {"_NewClientFieldSet" {"client-field-1" "value222d"}}})
+                      "id"))
+  
+  
+  (call-api delete-client-api {:clientid @CUSTID})
+  (call-api get-client-api {:clientid @CUSTID})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
