@@ -5,10 +5,19 @@
             [http.api.api_pipe :as steps]
             [http.api.mambu.config-as-code.casc-helper :as casc]
             [clj-yaml.core :as yaml]
-            [clojure.pprint :as pp]))
+            [clojure.pprint :as pp]
+            [clojure.string :as str]
+            ))
+
+(import java.util.UUID)
 
 (defn call-api [api context]
   (:last-call (steps/apply-api api context)))
+
+(defn get-uuid []
+  (let [uuid1 (UUID/randomUUID)
+        uuid2 (str/replace uuid1 #"-" "")]
+    (subs uuid2 0 16)))
 
 ;; *****************************************************************
 ;; Mambu core level APIs for custom-fields config-as-code 
@@ -92,7 +101,9 @@
 ;;
 
 (defonce ALL_CUST_FIELDS (atom nil))
+(defonce CF-DISPLAY-MAP (atom nil))
 (defonce LAST_FIELD_SET (atom {}))
+(defonce APPEND_FSNAME_TO_FIELD (atom false))
 
 (defn get-all-custom-fields []
   (let [cf-yaml (casc/get-yaml-response (call-api get-customfields-yaml-api {}))
@@ -144,7 +155,25 @@
   (let [fields-list (:customFields fs-obj)]
     (map #(:id %) fields-list))))
 
+(defn setup-cf-display-map-aux [disp-map fs-obj]
+  (reduce (fn [disp-map cf-obj]
+            (let [id (:id cf-obj)      
+                  display-name (get-in cf-obj [:displaySettings :displayName])
+                  unified-display-name (str/trim display-name)
+                  disp-obj (get disp-map unified-display-name)
+                  disp-obj2 (assoc disp-obj id display-name)]
+              (assoc disp-map unified-display-name disp-obj2)))
+          disp-map (:customFields fs-obj)))
 
+(defn setup-cf-display-map [cf-obj]
+  (reduce
+   (fn [disp-map fs-obj] (setup-cf-display-map-aux disp-map fs-obj))
+   {} (get-fieldsets cf-obj)))
+
+(comment 
+(+ 1 2)
+(setup-cf-display-map @ALL_CUST_FIELDS)
+)
 ;;************************************************
 ;; Update functions
 
@@ -200,11 +229,13 @@
 
 ;; Add or update field
 (defn add-field [fs-obj field-obj]
-  (let [id (:id field-obj)
+  (let [id0 (:id field-obj)
+        id (if @APPEND_FSNAME_TO_FIELD (str id0 "_" (subs (:id fs-obj) 1)) id0)
         type (:type field-obj)
         state (:state field-obj)
         validationRules (:validationRules field-obj)
-        displaySettings (:displaySettings field-obj)
+        displaySettings0 (:displaySettings field-obj)
+        displaySettings (if (:displayName displaySettings0) displaySettings0 (merge displaySettings0 {:displayName id}))
         usage (:usage field-obj)
         viewRights (:viewRights field-obj)
         editRights (:editRights field-obj)
@@ -249,6 +280,7 @@
   (api/setenv "env2") ;; MK Prod
   (api/setenv "env16a") ;; MH
   (api/setenv "env17") ;; SEUKDEMO
+  (get-uuid)
 
   ;; [1] Get custom-fields information
 
@@ -278,23 +310,28 @@
   ;; [3] Create a new fieldet
   (create-new-fieldset {:id "_NewTestFieldSet" :name "NewTestFieldSet" :type "SINGLE" :availableFor "LOAN_ACCOUNT"})
   (create-new-fieldset {:id "_NewClientFieldSet" :name "NewClientFieldSet" :type "SINGLE" :availableFor "CLIENT"})
-  (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet")
+  (create-new-fieldset {:id "_bb1be4204d574d95" :name "NewClientFieldSet3333" :type "SINGLE" :availableFor "CLIENT"})
+
+ 
+  (get-fieldset @ALL_CUST_FIELDS "_bb1be4204d574d95")
   (get-fs-details @LAST_FIELD_SET)
-  (update-fieldset @LAST_FIELD_SET {:description "This is a dessc" :type "GROUPED"})
+  (update-fieldset @LAST_FIELD_SET {:description "This is a dessc" :type "SINGLE" :name "NewClientFieldSet222"})
   (save-updates!)
 
   ;; [4] Remove a fieldset
   ;; TBD - This does not work at the moment
-  (remove-fieldset "_NewClientFieldSet")
+  (remove-fieldset "_bb1be4204d574d95")
   (get-fieldset @ALL_CUST_FIELDS "_NewClientFieldSet")
   (save-updates!)
 
   ;; [5] Add a field
+  (reset! APPEND_FSNAME_TO_FIELD true)
+  (reset! APPEND_FSNAME_TO_FIELD false) ;; You need to enure that ID are unique
   (add-field @LAST_FIELD_SET {:id "mk1",
                               :type "FREE_TEXT",
                               :state "ACTIVE",
                               :validationRules {:unique false},
-                              :displaySettings {:displayName "mk1", :description "", :fieldSize "LONG"},
+                              :displaySettings {:displayName nil, :description "", :fieldSize "LONG"},
                               ;; :usage [{:id "client", :required false, :default false}
                               ;;         {:id "client-type2", :required false, :default false}]
                               ;; :usage [{:id "LP2", :required false, :default false}]
