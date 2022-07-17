@@ -187,7 +187,9 @@
         disp-obj (or (get disp-map cfname) {})
         cfname-count (count disp-obj)
         unique-cfname0 (get disp-obj cfid) ;; If already in map use this as name
-        unique-cfname (or unique-cfname0 (str cfname (pad-str "\u00A0" cfname-count)))]
+        ;; Add a space-like char to make the name unique.
+        unique-cfname (or unique-cfname0 (str cfname (pad-str "\u00A0" cfname-count)))
+        ]
 
     (when (not unique-cfname0)
       (let [disp-obj2 (assoc disp-obj cfid unique-cfname)
