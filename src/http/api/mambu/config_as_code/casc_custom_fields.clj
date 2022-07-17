@@ -105,11 +105,13 @@
 (defonce LAST_FIELD_SET (atom {}))
 (defonce APPEND_FSNAME_TO_FIELD (atom false))
 
+(declare setup-cf-display-map)
+
 (defn get-all-custom-fields []
   (let [cf-yaml (casc/get-yaml-response (call-api get-customfields-yaml-api {}))
         cf-obj (casc/yaml-str-to-edn cf-yaml)
-         _ (reset! ALL_CUST_FIELDS cf-obj)
-        ]
+        _ (reset! ALL_CUST_FIELDS cf-obj)
+        _ (setup-cf-display-map @ALL_CUST_FIELDS)]
     "Loaded all fieldssets into @ALL_CUST_FIELDS"))
 
 (defn get-fieldsets [cf-obj]
@@ -166,13 +168,41 @@
           disp-map (:customFields fs-obj)))
 
 (defn setup-cf-display-map [cf-obj]
-  (reduce
-   (fn [disp-map fs-obj] (setup-cf-display-map-aux disp-map fs-obj))
-   {} (get-fieldsets cf-obj)))
+  (let [disp-map (reduce
+                  (fn [disp-map fs-obj] (setup-cf-display-map-aux disp-map fs-obj))
+                  {} (get-fieldsets cf-obj))
+        _ (reset! CF-DISPLAY-MAP disp-map)]
+    disp-map))
+
+(defn pad-str [ch count]
+  (let [pad-list (repeat count ch)]
+    (apply str pad-list)))
+
+
+;; Display names have to be unique (??)
+;; This function appends spaces onto end to make them so
+;; Uses CF-DISPLAY-MAP cache (from setup-cf-display-map) to determine what's already in use
+(defn get-unique-display-name [cfid cfname]
+  (let [disp-map @CF-DISPLAY-MAP
+        disp-obj (or (get disp-map cfname) {})
+        cfname-count (count disp-obj)
+        unique-cfname0 (get disp-obj cfid) ;; If already in map use this as name
+        unique-cfname (or unique-cfname0 (str cfname (pad-str "\u00A0" cfname-count)))]
+
+    (when (not unique-cfname0)
+      (let [disp-obj2 (assoc disp-obj cfid unique-cfname)
+            disp-map2 (assoc disp-map cfname disp-obj2)]
+        (reset! CF-DISPLAY-MAP disp-map2)))
+
+    unique-cfname))
 
 (comment 
-(+ 1 2)
+(count {:f1 1 :f2 2})
 (setup-cf-display-map @ALL_CUST_FIELDS)
+(get-unique-display-name "cf1" "ID")
+(get-unique-display-name "cf2" "ID")
+(get-unique-display-name "cf3" "ID")
+(get-unique-display-name "cf4" "ID")
 )
 ;;************************************************
 ;; Update functions
@@ -235,7 +265,9 @@
         state (:state field-obj)
         validationRules (:validationRules field-obj)
         displaySettings0 (:displaySettings field-obj)
-        displaySettings (if (:displayName displaySettings0) displaySettings0 (merge displaySettings0 {:displayName id}))
+        display-name (:displayName displaySettings0)
+        display-name2 (if display-name (get-unique-display-name id display-name) id)
+        displaySettings (assoc displaySettings0 :displayName display-name2)
         usage (:usage field-obj)
         viewRights (:viewRights field-obj)
         editRights (:editRights field-obj)
@@ -320,18 +352,20 @@
 
   ;; [4] Remove a fieldset
   ;; TBD - This does not work at the moment
-  (remove-fieldset "_bb1be4204d574d95")
+  (remove-fieldset "_NewClientFieldSet")
   (get-fieldset @ALL_CUST_FIELDS "_NewClientFieldSet")
   (save-updates!)
 
   ;; [5] Add a field
   (reset! APPEND_FSNAME_TO_FIELD true)
   (reset! APPEND_FSNAME_TO_FIELD false) ;; You need to enure that ID are unique
+  (get-fieldset @ALL_CUST_FIELDS "_NewClientFieldSet")
+  @LAST_FIELD_SET
   (add-field @LAST_FIELD_SET {:id "mk1",
                               :type "FREE_TEXT",
                               :state "ACTIVE",
                               :validationRules {:unique false},
-                              :displaySettings {:displayName nil, :description "", :fieldSize "LONG"},
+                              :displaySettings {:displayName "cf1", :description "", :fieldSize "LONG"},
                               ;; :usage [{:id "client", :required false, :default false}
                               ;;         {:id "client-type2", :required false, :default false}]
                               ;; :usage [{:id "LP2", :required false, :default false}]
