@@ -1,6 +1,6 @@
 ;; Helper functions for Mambu config-as-code
 ;; #bookmark= f60f1934-2d31-4435-b6d3-246578a56644
-(ns http.api.mambu.config-as-code.casc_custom_fields
+(ns http.api.mambu.config_as_code.casc_custom_fields
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
             [http.api.mambu.config-as-code.casc-helper :as casc]
@@ -103,9 +103,8 @@
 (defonce ALL_CUST_FIELDS (atom nil))
 (defonce CF-DISPLAY-MAP (atom nil))
 (defonce LAST_FIELD_SET (atom {}))
-(defonce APPEND_FSNAME_TO_FIELD (atom false))
 
-(declare setup-cf-display-map)
+(declare setup-cf-display-map trim-display-name)
 
 (defn get-all-custom-fields []
   (let [cf-yaml (casc/get-yaml-response (call-api get-customfields-yaml-api {}))
@@ -161,7 +160,7 @@
   (reduce (fn [disp-map cf-obj]
             (let [id (:id cf-obj)      
                   display-name (get-in cf-obj [:displaySettings :displayName])
-                  unified-display-name (str/trim display-name)
+                  unified-display-name (trim-display-name display-name)
                   disp-obj (get disp-map unified-display-name)
                   disp-obj2 (assoc disp-obj id display-name)]
               (assoc disp-map unified-display-name disp-obj2)))
@@ -177,6 +176,10 @@
 (defn pad-str [ch count]
   (let [pad-list (repeat count ch)]
     (apply str pad-list)))
+
+;; remove the space-like char from str1
+(defn trim-display-name [str1]
+  (str/replace str1 #"\u00A0" ""))
 
 
 ;; Display names have to be unique (??)
@@ -201,10 +204,10 @@
 (comment 
 (count {:f1 1 :f2 2})
 (setup-cf-display-map @ALL_CUST_FIELDS)
-(get-unique-display-name "cf1" "ID")
-(get-unique-display-name "cf2" "ID")
-(get-unique-display-name "cf3" "ID")
-(get-unique-display-name "cf4" "ID")
+(get-unique-display-name "cf1" "ID2")
+(get-unique-display-name "cf2" "ID2")
+(get-unique-display-name "cf3" "ID2")
+(get-unique-display-name "cf4" "ID2")
 )
 ;;************************************************
 ;; Update functions
@@ -246,11 +249,13 @@
         description (or (:description update-obj) "")
         type (:type update-obj) ;; SINGLE GROUPED
         availableFor (:availableFor update-obj) ;; CLIENT, GROUP, CREDIT_ARRANGEMENT, LOAN_ACCOUNT, GUARANTOR, ASSET, DEPOSIT_ACCOUNT, TRANSACTION_CHANNEL, BRANCH, CENTRE, orUSER.
-        check-obj (get-fieldset2 @ALL_CUST_FIELDS id)]
+        check-obj (get-fieldset2 @ALL_CUST_FIELDS id)
+        customFields (or (:customFields update-obj) [])
+        ]
     (assert (= (subs id 0 1) "_") (str "ERROR: create-new-fieldset - :id should begin with _ " id))
     (assert (nil? check-obj) (str "ERROR: create-new-fieldset - fieldset already exists " id))
-    (assert (and id name type availableFor) "ERROR: create-new-fieldset - mandatory field missing")
-    (let [new-fs {:id id :name name :description description :type type :availableFor availableFor :customFields []}
+    (assert (and id name type availableFor) (str "ERROR: create-new-fieldset - mandatory field missing" update-obj) )
+    (let [new-fs {:id id :name name :description description :type type :availableFor availableFor :customFields customFields}
           all-obj @ALL_CUST_FIELDS
           fs-list (get-fieldsets all-obj)
           fs-list2 (conj fs-list new-fs)
@@ -259,10 +264,24 @@
           _ (get-fieldset @ALL_CUST_FIELDS id)]
       new-fs)))
 
+(defn create-update-fieldset [cfs-obj]
+  (let [exists-already?  (get-fieldset @ALL_CUST_FIELDS (:id cfs-obj))]
+    (if exists-already?
+      (update-fieldset @LAST_FIELD_SET cfs-obj)
+      (create-new-fieldset cfs-obj))))
+      
+(declare save-updates!)
+(defn create-update-fieldset-save [cfs-obj]
+  (get-all-custom-fields)
+  (create-update-fieldset cfs-obj)
+  (save-updates!))
+
 ;; Add or update field
-(defn add-field [fs-obj field-obj]
+(defn add-field 
+([fs-obj field-obj] (add-field fs-obj field-obj false))
+([fs-obj field-obj append-fsid]
   (let [id0 (:id field-obj)
-        id (if @APPEND_FSNAME_TO_FIELD (str id0 "_" (subs (:id fs-obj) 1)) id0)
+        id (if append-fsid (str id0 "_" (subs (:id fs-obj) 1)) id0)
         type (:type field-obj)
         state (:state field-obj)
         validationRules (:validationRules field-obj)
@@ -277,7 +296,7 @@
         required (:required field-obj)
         default (:default field-obj)]
 
-    (assert (and id type state validationRules displaySettings viewRights editRights (boolean? availableForAll) (boolean? required) (boolean? default)) "ERROR: add-field - mandatory params missing")
+    (assert (and id type state validationRules displaySettings viewRights editRights) (str "ERROR: add-field - mandatory params missing" field-obj))
 
     (let [field-obj0 {:id id,
                      :type type,
@@ -296,7 +315,10 @@
           fields-list2 (conj fields-list1 field-obj)
           fs-obj2 (assoc fs-obj :customFields fields-list2)
           _ (reset! LAST_FIELD_SET fs-obj2)]
-      (update-fieldset fs-obj2 fs-obj2))))
+      (update-fieldset fs-obj2 fs-obj2)))))
+
+(defn add-field2 [fs-obj field-obj]
+  (add-field fs-obj field-obj true))
 
 ;; This next function will update changes to your tenant
 (defn save-updates! []
@@ -359,11 +381,9 @@
   (save-updates!)
 
   ;; [5] Add a field
-  (reset! APPEND_FSNAME_TO_FIELD true)
-  (reset! APPEND_FSNAME_TO_FIELD false) ;; You need to enure that ID are unique
-  (get-fieldset @ALL_CUST_FIELDS "_NewClientFieldSet")
+  (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet2")
   @LAST_FIELD_SET
-  (add-field @LAST_FIELD_SET {:id "mk1",
+  (add-field2 @LAST_FIELD_SET {:id "mk1",
                               :type "FREE_TEXT",
                               :state "ACTIVE",
                               :validationRules {:unique false},

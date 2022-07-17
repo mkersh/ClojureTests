@@ -1,4 +1,4 @@
-(ns http.api.mambu.config-as-code.casc-helper
+(ns http.api.mambu.config_as_code.casc_helper
   (:require [clojure.java.io :as io]
             [clj-yaml.core :as yaml] ;; https://github.com/clj-commons/clj-yaml
             
