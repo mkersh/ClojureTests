@@ -1,0 +1,164 @@
+{
+   "id": "mkair1",
+   "name": "MK AIR PROD1",
+   "notes": "",
+   "type": "DYNAMIC_TERM_LOAN",
+   "category": "PERSONAL_LENDING",
+   "state": "ACTIVE",
+   "loanAmountSettings": {
+       "loanAmount": {},
+       "trancheSettings": {
+           "maxNumberOfTranches": 1
+       }
+   },
+   "scheduleSettings": {
+       "repaymentScheduleMethod": "DYNAMIC",
+       "scheduleDueDatesMethod": "INTERVAL",
+       "fixedDaysOfMonth": [],
+       "roundingSettings": {
+           "roundingRepaymentScheduleMethod": "ROUND_REMAINDER_INTO_LAST_REPAYMENT",
+           "repaymentCurrencyRounding": "NO_ROUNDING",
+           "repaymentElementsRoundingMethod": "NO_ROUNDING"
+       },
+       "numInstallments": {},
+       "firstRepaymentDueDateOffset": {},
+       "repaymentScheduleEditOptions": [],
+       "repaymentReschedulingMethod": "NEXT_WORKING_DAY"
+   },
+   "paymentSettings": {
+       "paymentMethod": "HORIZONTAL",
+       "amortizationMethod": "STANDARD_PAYMENTS",
+       "prepaymentSettings": {
+           "prepaymentRecalculationMethod": "REDUCE_NUMBER_OF_INSTALLMENTS_NEW",
+           "prepaymentAcceptance": "ACCEPT_PREPAYMENTS",
+           "futurePaymentsAcceptance": "NO_FUTURE_PAYMENTS",
+           "applyInterestOnPrepaymentMethod": "AUTOMATIC",
+           "principalPaidInstallmentStatus": "PAID"
+       },
+       "latePaymentsRecalculationMethod": "OVERDUE_INSTALLMENTS_INCREASE",
+       "repaymentAllocationOrder": [
+           "FEE",
+           "PENALTY",
+           "INTEREST",
+           "PRINCIPAL"
+       ],
+       "principalPaymentSettings": {
+           "amount": {},
+           "percentage": {},
+           "defaultPrincipalRepaymentInterval": 1
+       }
+   },
+   "gracePeriodSettings": {
+       "gracePeriod": {},
+       "gracePeriodType": "NONE"
+   },
+   "newAccountSettings": {
+       "idGeneratorType": "RANDOM_PATTERN",
+       "idPattern": "@@@@###",
+       "accountInitialState": "PENDING_APPROVAL"
+   },
+   "interestSettings": {
+       "interestApplicationMethod": "REPAYMENT_DUE_DATE",
+       "daysInYear": "E30_360",
+       "scheduleInterestDaysCountMethod": "ACTUAL_DAYS_COUNT",
+       "interestType": "SIMPLE_INTEREST",
+       "indexRateSettings": {
+        
+           "interestRateTerms": "FIXED",
+           "interestChargeFrequency": "ANNUALIZED",
+           "interestChargeFrequencyCount": 1,
+           "accrueInterestAfterMaturity": false,
+           "allowNegativeInterestRate": false,
+           "interestRateTiers": []
+       },
+       "accrueLateInterest": true,
+       "interestRateSettings": [
+           {
+              "interestRateSource": "FIXED_INTEREST_RATE",
+              "interestRate": {
+                  "minValue": 0,
+                  "maxValue": 20,
+                  "defaultValue": 5
+              }
+          },
+          {
+              "interestRateSource": "INDEX_INTEREST_RATE",
+              "indexSourceKey": "8a194466793b77a601793d0be8da691c",
+              "interestRate": {
+                  "minValue": 0,
+                  "maxValue": 10,
+                  "defaultValue": 4
+              },
+              "interestRateCeilingValue": 20,
+              "interestRateFloorValue": 4,
+              "interestRateReviewCount": 1,
+              "interestRateReviewUnit": "DAYS"
+          }
+ 
+       ]
+   },
+   "penaltySettings": {
+       "penaltyRate": {},
+       "loanPenaltyCalculationMethod": "NONE"
+   },
+   "arrearsSettings": {
+       "encodedKey": "8a84b7147d0d296f017d0e1c2c7e0005",
+       "toleranceCalculationMethod": "ARREARS_TOLERANCE_PERIOD",
+       "dateCalculationMethod": "ACCOUNT_FIRST_WENT_TO_ARREARS",
+       "nonWorkingDaysMethod": "EXCLUDED",
+       "tolerancePeriod": {},
+       "tolerancePercentageOfOutstandingPrincipal": {}
+   },
+   "feesSettings": {
+       "allowArbitraryFees": false,
+       "fees": []
+   },
+   "accountingSettings": {
+       "accountingMethod": "NONE",
+       "interestAccruedAccountingMethod": "NONE",
+       "interestAccrualCalculation": "NONE",
+       "accountingRules": []
+   },
+   "accountLinkSettings": {
+       "enabled": false,
+       "linkedAccountOptions": [],
+       "settlementMethod": "FULL_DUE_AMOUNTS"
+   },
+   "taxSettings": {
+       "taxesOnInterestEnabled": false,
+       "taxesOnFeesEnabled": false,
+       "taxesOnPenaltyEnabled": false
+   },
+   "internalControls": {
+       "lockSettings": {},
+       "fourEyesPrinciple": {
+           "activeForLoanApproval": false
+       }
+   },
+   "securitySettings": {
+       "isGuarantorsEnabled": false,
+       "isCollateralEnabled": false
+   },
+   "creditArrangementSettings": {
+       "creditArrangementRequirement": "OPTIONAL"
+   },
+   "fundingSettings": {
+       "enabled": false
+   },
+   "availabilitySettings": {
+       "branchSettings": {
+           "forAllBranches": true,
+           "availableProductBranches": []
+       },
+       "availableFor": [
+           "INDIVIDUALS"
+       ]
+   },
+
+   
+   "allowCustomRepaymentAllocation": false,
+   "templates": [],
+   "currency": {
+       "code": "EUR"
+   }
+}

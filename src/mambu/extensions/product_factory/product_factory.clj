@@ -9,7 +9,7 @@
 ;;; illegal combination is passed there will not be an error but the product will not work properly.
 ;;;
 ;;; #bookmark= 30c41be8-396e-491a-ac51-cec8b41b6859
-(ns mambu.extensions.product-factory.product-factory
+(ns mambu.extensions.product_factory.product_factory
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
             [mambu.extensions.product-factory.templates.pf-temps :as temp]
@@ -53,6 +53,13 @@
   (let [prop-str (subs (str prop-keyword) 1)
         step-prop-keyword (keyword (str stepid "-" prop-str))]
     (assoc obj step-prop-keyword val)))
+
+;; [STEP-0] Identify a product-template on which to base this one
+;; e.g (temp/ft-basics)
+;; NOTE: This step is optional. If not provided will choose a suitable template for you
+;;
+(defn product-default-template [prod-def product-temp]
+  (assoc-step prod-def "step00" :product-temp product-temp))
 
 ;; [STEP-1] Add product name and ID
 (defn prod-name-id-desc
@@ -530,6 +537,7 @@
 
 (defn create-loan-feature [body-obj prod-spec spec-item]
   (condp = spec-item
+    :step00-product-temp nil ;; will be used in merge-body-objs below if passed
     :step01-active (add-to-body body-obj prod-spec spec-item "state" {true "ACTIVE" false "INACTIVE"})
     :step01-prod-desc (add-to-body body-obj prod-spec spec-item "notes")
     :step01-prod-id (add-to-body body-obj prod-spec spec-item "id")
@@ -603,12 +611,13 @@
     (reduce m maps)))
 
 (defn merge-body-objs [prod-spec body-obj]
-  (let [product-type (:step02-product-type prod-spec)
+  (let [prod-temp (:step00-product-temp prod-spec)
+        product-type (:step02-product-type prod-spec)
         common-body {"creditArrangementSettings" {"creditArrangementRequirement" "OPTIONAL"}}
-        prod-template (condp = product-type
+        prod-template (or prod-temp (condp = product-type
                         :dynamic-term (temp/dt-basics)
                         :fixed-term (temp/ft-basics)
-                        (assert false (str "ERROR: Cannot (currently) create: " product-type)))]
+                        (assert false (str "ERROR: Cannot (currently) create: " product-type))))]
     (deep-merge common-body prod-template body-obj)))
 
 (defn generate-loan-product [prod-spec]
@@ -656,6 +665,7 @@
   ;; "repaymentScheduleEditOptions" ["ADJUST_PAYMENT_DATES" "ADJUST_PRINCIPAL_PAYMENT_SCHEDULE"],
 
   (def prod-dt-spec1 (-> {}
+                         (product-default-template (temp/dt-basics))
                          (prod-name-id-desc "PROD1a XXX" "PROD1a" "")
                          (product-type-def :dynamic-term) ;; :fixed-term :dynamic-term :interest-free :tranched :revolving-credit
                          (prod-avail :client ["prodfac1"])
