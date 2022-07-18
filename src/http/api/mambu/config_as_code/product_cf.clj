@@ -5,7 +5,9 @@
              [http.api.api_pipe :as steps]
              [http.api.mambu.config_as_code.casc_custom_fields :as cf]
              [http.api.mambu.config-as-code.branch-casc :as br]
-             [http.api.mambu.config_as_code.centre_casc :as cc]))
+             [http.api.mambu.config_as_code.centre_casc :as cc]
+             [http.api.mambu.config_as_code.casc_helper :as casc]
+             ))
 
 
 (defn call-api [api context]
@@ -34,13 +36,14 @@
                                                                        :notes "",
                                                                        :assignedBranchId "8ee9174fc3ea4d60",
                                                                        :address {}}))
-        usage-list [{:id product-centre-id, :required false, :default false}]
-        cfs-obj2 (assoc cfs-obj :usage usage-list)]
-    (cf/create-update-fieldset-save cfs-obj2)))
+        ;;usage-list [{:id product-centre-id, :required false, :default false}]
+        ;;cfs-obj2 (assoc cfs-obj :usage usage-list)
+        ]
+    (cf/create-update-fieldset-save cfs-obj)))
 
 
 (defn loan-product01-custom-fields []
-  (let [_ (cf/create-update-fieldset {:id "_4816116c6cf34b9f" :name "loan-product01 custom fields" :type "SINGLE" :availableFor "CENTRE"})
+  (let [_ (cf/create-update-fieldset {:id "_4816116c6cf34b9f" :name "loan-product01 custom fields" :type "SINGLE" :availableFor "CENTRE"  :required false, :default false})
         _ (cf/add-field2 @cf/LAST_FIELD_SET {:id "mk1", :type "FREE_TEXT", :state "ACTIVE", :validationRules {:unique false}, :displaySettings {:displayName nil, :description "", :fieldSize "LONG"}, :viewRights {:roles (), :allUsers true},  :editRights {:roles (), :allUsers false}})]
   @cf/LAST_FIELD_SET
   )
@@ -56,6 +59,6 @@
 
   (loan-product01-custom-fields)
   (add-product-cf "loan-product01" (loan-product01-custom-fields))
-
+  (casc/create-custom-fieldset-obj (casc/get-custom-field-single-obj "_4816116c6cf34b9f" [["mk1_4816116c6cf34b9f" "value of mk1"]]))
  ;; 
   )

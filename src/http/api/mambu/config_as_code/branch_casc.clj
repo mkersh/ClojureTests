@@ -1,8 +1,7 @@
 (ns http.api.mambu.config-as-code.branch-casc
   (:require  [http.api.json_helper :as api]
              [http.api.api_pipe :as steps]
-             [http.api.mambu.config-as-code.casc-helper :as casc]))
-
+             [http.api.mambu.config_as_code.casc_helper :as casc]))
 
 (defn call-api [api context]
   (:last-call (steps/apply-api api context)))

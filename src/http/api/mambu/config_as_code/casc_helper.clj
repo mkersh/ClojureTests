@@ -37,6 +37,19 @@
 (defn edn-to-yaml-str [obj]
   (yaml/generate-string obj))
 
+;; functions for attaching custom-fields to objects within a config-as-code
+(defn get-custom-field-single-obj [fsid field-val-list]
+  (let [field-val-objs (mapv (fn [[fieldid val]] {:customFieldId fieldid :value val}) field-val-list)]
+    {:id fsid :standardCustomFieldValues field-val-objs})) 
+
+(defn get-custom-field-table-obj []
+  nil ;; TBD
+  )
+
+  (defn create-custom-fieldset-obj [obj-list]
+    {:customFieldValueSets obj-list})
+
+
 (comment
   ;; refer to public functions to remove kondo warnings above
   get-yaml-response
@@ -45,6 +58,6 @@
   yaml-str-to-edn
   edn-to-yaml-str
 
-
+  (create-custom-fieldset-obj (get-custom-field-single-obj "fieldsetid" [["f1id" 1] ["f2id" 2]]))
   ;;
   )
