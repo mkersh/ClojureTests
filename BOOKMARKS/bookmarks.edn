@@ -22,9 +22,16 @@
  {:file "src/maths/interest.clj", :line 142},
  "4eae3949-dfde-4693-bd6d-ef4251b04ba3"
  {:file "src/maths/loan_schedule.clj", :line 3},
+ "8564e243-eb88-4cdc-990b-f611de7e79f4"
+ {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 6},
  "21ea216a-8446-4e6a-ae7d-9face4f7d8d1"
  {:file "src/http/api/mambu/demo/credit_card/credit_card_pipe.clj",
   :line 239},
+ "f60f1934-2d31-4435-b6d3-246578a56644"
+ {:file "src/http/api/mambu/config_as_code/casc_custom_fields.clj",
+  :line 2},
+ "c5af6434-7b30-49e2-92ec-7f5178a3a06b"
+ {:file "src/http/api/mambu/demo/workshop0722/air_demo.clj", :line 4},
  "75413827-b6af-48ac-90f8-4a3f8da73ac6"
  {:file "src/maths/loan_schedule2.clj", :line 79},
  "9de28b85-a797-4682-9403-1329daaf8cc3"
@@ -34,7 +41,7 @@
  "c6906f02-3c46-4919-ba7b-058831bd90f7"
  {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253},
  "1989a54f-774f-46f0-a1da-5c50645c7394"
- {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 181},
+ {:file "src/http/api/mambu/demo/training/stream_api.clj", :line 184},
  "e81fe6a0-b2d3-4fe1-ad72-93d7a9b379fd"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 142},
  "7f8f53c0-ea5e-4dc3-ad22-d29aebf2669c"

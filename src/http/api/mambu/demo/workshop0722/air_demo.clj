@@ -1,7 +1,7 @@
 ;;; adjustable-interest-rate (AIR) mechanism examples
 ;;;
 ;;; TBD - Merge into http://localhost:3000/goto-file?&bookmark=30c41be8-396e-491a-ac51-cec8b41b6859
-;;;
+;;; #bookmark= c5af6434-7b30-49e2-92ec-7f5178a3a06b
 
 (ns http.api.mambu.demo.workshop0722.air_demo
 (:require [http.api.json_helper :as api]
@@ -109,11 +109,17 @@
         ]
     loanid))
 
+(declare PRODKEY)
+(defn set-PRODKEY! [res-obj]
+(let [prod-key (get res-obj "encodedKey")
+      _ (reset! PRODKEY prod-key)]
+  res-obj)
+)
+
 (defonce CUSTKEY (atom "8a1936ca8210c27a018211cfa8f05e48"))
-(defonce PRODKEY (atom "8a194fd982119c470182119ebb1903ea"))
+(defonce PRODKEY (atom "8a194fd982119c470182119ebb1903ea")) ;; See set-PRODKEY! below to set
 
 (comment
-
   (api/setenv "env18") ;; SalS demo
 
   ;; [1] Create a new adjustable-interest-rate product
@@ -122,13 +128,13 @@
   ;; [1.1] DBEI product
   (create-air-product proddef-airprod1 "AIR/air-prod1.txt")
   (call-api delete-loan-product-api {:prodid "mkairprod3"})
-  (get (call-api get-loan-product-api {:prodid "mkairprod3"}) "encodedKey")
-
+  (set-PRODKEY! (call-api get-loan-product-api {:prodid "mkairprod3"}) )
+ 
   ;; [2] Create a loan-account linked to AIR product
   (create-loan-account {:prod-key @PRODKEY :acc-name "AIR ACCOUNT1"
                         :cust-key @CUSTKEY :amount 100000 :grace_period 0 :num-installments 60
                         :accountInterestRateSettings
-                        [{"validFrom" "2022-08-18T10:27:47+02:00",
+                        [{"validFrom" "2022-07-18T10:27:47+02:00",
                           "interestRateSource" "FIXED_INTEREST_RATE",
                           "interestRate" 0.0},
                          {"validFrom" "2023-08-18T10:27:47+02:00",
@@ -138,7 +144,8 @@
                           "interestRateCeilingValue" 20.0,
                           "interestRateReviewUnit" "DAYS",
                           "interestRateReviewCount" 31,
-                          "interestSpread" 3}
+                          "interestSpread" 3
+                          }
                           ]})
   (call-api delete-loan-account-api {:loanid @LOANID})
   (ext/zap-all-loans2 @CUSTKEY)

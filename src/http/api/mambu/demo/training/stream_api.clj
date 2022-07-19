@@ -2,6 +2,9 @@
 ;; GitHub: https://github.com/mkersh/ClojureTests/tree/master/src/http/api/mambu/demo/training/stream_api.clj
 ;; See Also the more official Mambu Java streaming client:
 ;;     https://github.com/mambu-gmbh/Streaming-API-Java-Sample-Client/blob/master/src/main/java/streamingapi/client/StreamingApiClient.java
+;;
+;; #bookmark= 8564e243-eb88-4cdc-990b-f611de7e79f4
+;;
 (ns http.api.mambu.demo.training.stream_api
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
@@ -172,7 +175,7 @@
 ;;;        You will need to modify slightly to run your own tests
 
 (api/setenv "env8") ;; setup API calls to use europeshowcase.sandbox.mambu.com with streaming API consumer
-(def subscriptionid "e888e76b-d51e-4fb3-b125-f646af9f603a") ;; See create-subscription-api call below - to get value for this
+(def subscriptionid "7bd2428c-1084-48cc-8a69-01daf407b079") ;; See create-subscription-api call below - to get value for this
 (def url (str "https://europeshowcase.sandbox.mambu.com/api/v1/subscriptions/" subscriptionid "/events?batch_flush_timeout=20&batch_limit=1&commit_timeout=60"))
 (def apiKey (get-auth2 "env8")) ;; Get streaming apikey for europeshowcase.sandbox.mambu.com
 (def apiKey2 (get-auth2 "env6")) ;; Get apikey for europeshowcase.sandbox.mambu.com with core API consumer
