@@ -68,15 +68,23 @@
 
 (defn is-open-dep? [resList accObj]
   (let [state (get accObj "accountState")
-        accid (get accObj "id")]
+        accid (get accObj "id")
+        _ (prn "is-open-dep?" accid)
+        ]
     (if (and (not= state "CLOSED") (not= state "WITHDRAWN"))
       (conj resList accid)
       resList)))
 
 (defn get-all-open-dep-accounts [context]
   (let [context1 (steps/apply-api get-all-accounts context)
-        accList (api/get-attr context1 [:last-call])]
-    (reduce is-open-dep? [] accList)))
+        _ (prn "get-all-open-dep-accounts 11")
+        accList (api/get-attr context1 [:last-call])
+        _ (prn "get-all-open-dep-accounts 22" accList)
+        res (reduce is-open-dep? [] accList)
+        _ (prn "get-all-open-dep-accounts " res)
+        ]
+    res
+    ))
 
 (defn withdraw-and-close [context]
   (let [

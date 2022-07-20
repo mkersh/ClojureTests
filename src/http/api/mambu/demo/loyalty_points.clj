@@ -1,6 +1,6 @@
 ;;; #bookmark= b331f4c7-75f0-4a23-9d4b-cfa49cdfe973
 ;;; GiHub: https://github.com/mkersh/ClojureTests/blob/master/src/http/api/mambu/demo/loyalty_points.clj
-(ns http.api.mambu.demo.loyalty-points
+(ns http.api.mambu.demo.loyalty_points
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]))
 
@@ -158,11 +158,13 @@
 (comment
   (api/setenv "env2")
 
-  ;; Create a new clean customer for the LoyaltyPoint demo
-  (steps/process-collection (create-loyalty-customer 7)) ;; The number passed is used for the name ""Loyalty Tester n""
-  
+  ;; [1] Create a new clean customer for the LoyaltyPoint demo
+  ;;
+  (steps/process-collection (create-loyalty-customer 8)) ;; The number passed is used for the name ""Loyalty Tester n""
 
-  ;; Use the previous function to create a new loyalty point customer
+
+  ;; *******************************************************************
+  ;; Calls used whilst testing but you use [1] above to create a new customer and all the sub-accounts needed
   (steps/apply-api createLoyaltyPointAccount {:cust-key "8a818fdc7a80c056017a85257f69441c" :loyalty-product "8a818f5f713625dd017144cb4df05106"})
 
   ;;
