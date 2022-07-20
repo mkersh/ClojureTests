@@ -270,9 +270,9 @@
        (prn (str "No bonus this period - You had " deposits-count " deposits and " withdrawal-count " withdrawals"))
        (apply-bonus bonus-accid false application-date)))))
 
-(comment
 (api/setenv "env17")
-    
+(comment
+
 ;; [1] Setup a new RegSaver customer
 (create-new-regsaver-customer 9) ;; The number passed is used for the name ""RegSaver Tester n""
 ;; [1.1] Link to an existing account
@@ -281,6 +281,8 @@
 (reset! BONUS-ACCID "PVSH208")
 ;; [1.2] Call next function to zap client and accounts
 (zap-cust {:custid @CUSTID})
+(zap-cust {:custid "841727156"})
+
 
 
 ;; [2] Apply a number of deposit + withdrawal transaction

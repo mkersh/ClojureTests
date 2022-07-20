@@ -4,7 +4,7 @@
 ;;     https://github.com/mambu-gmbh/Streaming-API-Java-Sample-Client/blob/master/src/main/java/streamingapi/client/StreamingApiClient.java
 ;;
 ;; #bookmark= 8564e243-eb88-4cdc-990b-f611de7e79f4
-;;
+;; 
 (ns http.api.mambu.demo.training.stream_api
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
