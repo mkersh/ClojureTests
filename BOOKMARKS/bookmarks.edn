@@ -4,6 +4,8 @@
   :line 6},
  "97d12c61-e5ad-4037-88fb-0957be83a1d7"
  {:file "src/maths/loan_schedule4.clj", :line 12},
+ "2fcfa242-658d-4a96-a520-fdc24170ef3e"
+ {:file "src/http/api/mambu/config_as_code/branch_casc.clj", :line 1},
  "64f6dd89-071d-4493-abc2-c0a4f40277ef"
  {:file "src/maths/loan_schedule2.clj", :line 8},
  "357f20d4-585a-4321-b3ed-e6e5c8cf677f"

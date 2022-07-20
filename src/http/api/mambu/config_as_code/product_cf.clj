@@ -1,5 +1,6 @@
 ;; Workaround for storing loan-product custom-fields 
 ;; storing these under a branch+centre
+;; #bookmark= a247aa26-58cf-41e2-a69c-ee83ebdae7a3
 (ns http.api.mambu.config-as-code.product-cf
   (:require  [http.api.json_helper :as api]
              [http.api.api_pipe :as steps]
