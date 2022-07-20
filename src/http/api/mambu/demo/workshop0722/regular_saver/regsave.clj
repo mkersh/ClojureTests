@@ -1,3 +1,9 @@
+;; POC for having a bonus account linked to a RegSaver account:
+;; (1) Deposits+Withdrawals reflected in the bonus-account
+;;     This reflecton is done in an MPO application 
+;; (2) If certain T&Cs are met then the bonus is added at the end of each period
+;;
+;; #bookmark= d99edf2b-e03d-41c0-be1c-4fa82dfd7f3b
 (ns http.api.mambu.demo.workshop0722.regular-saver.regsave
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
