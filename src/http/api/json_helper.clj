@@ -173,7 +173,7 @@
   (BigDecimal. strNum))
 
 (defn round-num [num]
-  (format "%.2f" num))
+  (format "%.2f" (bigdec num)))
 
 (declare get-lists-from tidyup-results findPath-aux)
 

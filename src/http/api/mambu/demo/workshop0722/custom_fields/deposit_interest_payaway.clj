@@ -1,6 +1,5 @@
 ;;; Custom-field-dataset for capturing interest-payaway-instructions
-;;; Using http://localhost:3000/goto-file?&bookmark=f60f1934-2d31-4435-b6d3-246578a56644
-;; To setup custom-fields
+;;; Using http://localhost:3000/goto-file?&bookmark=f60f1934-2d31-4435-b6d3-246578a56644 - To setup custom-fields
 ;;;
 (ns http.api.mambu.demo.workshop0722.custom_fields.deposit_interest_payaway
   (:require [http.api.json_helper :as api]

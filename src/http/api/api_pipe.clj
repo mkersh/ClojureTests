@@ -15,6 +15,7 @@
   (:require [http.api.json_helper :as api]
             [clojure.pprint :as pp]))
 
+
 (defn show-only-val [context, nm, val]
   (let [show-only? (:show-only context)]
     (if show-only?  (str "{{" (name nm) "}}")
@@ -187,6 +188,16 @@
      (apply-api1 api-obj context)))
   ([api-obj context save-results-name]
    (apply-api2 api-obj context save-results-name)))
+
+;; convenience function for calling a single api-def
+(defn call-api
+  ([api context attr-to-return]
+   (let [res (call-api api context)
+         val (get res attr-to-return)]
+     val))
+  ([api context]
+   (let  [res (apply-api api context)]
+     (:last-call res))))
 
 
 (comment
