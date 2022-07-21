@@ -4,6 +4,8 @@
   :line 6},
  "97d12c61-e5ad-4037-88fb-0957be83a1d7"
  {:file "src/maths/loan_schedule4.clj", :line 12},
+ "a247aa26-58cf-41e2-a69c-ee83ebdae7a3"
+ {:file "src/http/api/mambu/config_as_code/product_cf.clj", :line 3},
  "2fcfa242-658d-4a96-a520-fdc24170ef3e"
  {:file "src/http/api/mambu/config_as_code/branch_casc.clj", :line 1},
  "64f6dd89-071d-4493-abc2-c0a4f40277ef"
@@ -42,6 +44,10 @@
  {:file "src/maths/loan_schedule2.clj", :line 79},
  "9de28b85-a797-4682-9403-1329daaf8cc3"
  {:file "src/functions/pow.clj", :line 1},
+ "08e24e91-6f76-4f13-ad1b-48aed8d2b260"
+ {:file
+  "src/http/api/mambu/demo/workshop0722/interest_payaway/intpay.clj",
+  :line 1},
  "2dce401d-2a1e-4c8d-83c6-b5c18c9f137d"
  {:file "src/testing/unit_test_examples.clj", :line 1},
  "c6906f02-3c46-4919-ba7b-058831bd90f7"

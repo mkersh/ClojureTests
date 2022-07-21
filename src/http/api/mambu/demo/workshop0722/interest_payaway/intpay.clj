@@ -1,3 +1,4 @@
+;; #bookmark= 08e24e91-6f76-4f13-ad1b-48aed8d2b260
 (ns http.api.mambu.demo.workshop0722.interest_payaway.intpay
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
