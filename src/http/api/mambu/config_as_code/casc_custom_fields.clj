@@ -216,12 +216,13 @@
   (let [all-obj @ALL_CUST_FIELDS
         fs-list (get-fieldsets all-obj)
         id-to-match (:id obj-to-update)
-        _ (prn (str "Looking to replace FS with ID=" id-to-match))
+        ;;_ (prn (str "Looking to replace FS with ID=" id-to-match))
         remove? (:remove obj-to-update)
         fs-list2 (filter #(not (nil? %))
                          (map (fn [obj]
                                 (let [id2 (:id obj)
-                                      _ (prn (str "considering FS ID=" id2))]
+                                      ;;_ (prn (str "considering FS ID=" id2))
+                                      ]
                                   (if (= id2 id-to-match)
                                     (if remove? nil obj-to-update)
                                     obj)))
@@ -282,24 +283,27 @@
 ([fs-obj field-obj append-fsid]
   (let [id0 (:id field-obj)
         id (if append-fsid (str id0 "_" (subs (:id fs-obj) 1)) id0)
-        type (:type field-obj)
+        type (:type field-obj) ;; options = (FREE_TEXT SELECTION NUMBER CHECKBOX DATE DATE_TIME CLIENT_LINK GROUP_LINK USER_LINK)
+        selectionOptions (:selectionOptions field-obj) ;; needed if type=SELECTION
         state (:state field-obj)
-        validationRules (:validationRules field-obj)
+        validationRules (:validationRules field-obj) ;; only allowed if type=FREE_TEXT
         displaySettings0 (:displaySettings field-obj)
         display-name (:displayName displaySettings0)
         display-name2 (if display-name (get-unique-display-name id display-name) id)
         displaySettings (assoc displaySettings0 :displayName display-name2)
         usage (:usage field-obj)
-        viewRights (:viewRights field-obj)
-        editRights (:editRights field-obj)
-        availableForAll (:availableForAll field-obj)
-        required (:required field-obj)
-        default (:default field-obj)]
+        viewRights (or (:viewRights field-obj) {:roles (), :allUsers true})
+        editRights (or (:editRights field-obj) {:roles (), :allUsers false})
+        availableForAll (or (:availableForAll field-obj) false)
+        required (or (:required field-obj) false)
+        default (or (:default field-obj) false)]
 
-    (assert (and id type state validationRules displaySettings viewRights editRights) (str "ERROR: add-field - mandatory params missing" field-obj))
+    (assert (and id type state displaySettings viewRights editRights) (str "ERROR: add-field - mandatory params missing: " field-obj))
+    (when selectionOptions (assert (nil? validationRules) "ERROR - add-field validation rules only allowed for type=FREE_TEXT"))
 
     (let [field-obj0 {:id id,
                      :type type,
+                     :selectionOptions selectionOptions
                      :state state,
                      :validationRules validationRules,
                      :displaySettings displaySettings,
@@ -317,8 +321,10 @@
           _ (reset! LAST_FIELD_SET fs-obj2)]
       (update-fieldset fs-obj2 fs-obj2)))))
 
-(defn add-field2 [fs-obj field-obj]
-  (add-field fs-obj field-obj true))
+(defn add-field2
+  ([field-obj] (add-field2 @LAST_FIELD_SET field-obj))
+  ([fs-obj field-obj]
+   (add-field fs-obj field-obj true)))
 
 ;; This next function will update changes to your tenant
 (defn save-updates! []
@@ -384,7 +390,7 @@
   (get-fieldset @ALL_CUST_FIELDS "_NewTestFieldSet2")
   @LAST_FIELD_SET
   (add-field2 @LAST_FIELD_SET {:id "mk1",
-                              :type "FREE_TEXT",
+                              :type "FREE_TEXT", ;; (FREE_TEXT SELECTION NUMBER CHECKBOX DATE DATE_TIME CLIENT_LINK GROUP_LINK USER_LINK) 
                               :state "ACTIVE",
                               :validationRules {:unique false},
                               :displaySettings {:displayName "cf1", :description "", :fieldSize "LONG"},
@@ -396,6 +402,22 @@
                               :availableForAll false,
                               :required false,
                               :default false})
+
+(add-field2 @LAST_FIELD_SET {:id "labelField2",
+                             :type "SELECTION",
+                             :state "ACTIVE",
+                             :displaySettings {:displayName "labelField2", :description "", :fieldSize "LONG"},
+                              ;; :usage [{:id "client", :required false, :default false}
+                              ;;         {:id "client-type2", :required false, :default false}]
+                              ;; :usage [{:id "LP2", :required false, :default false}]
+                             :selectionOptions [{:availableOptions
+                                                 [{:selectionId "label12", :value "label1", :score 1}
+                                                  {:selectionId "label22", :value "label2", :score 2}]}]
+                             :viewRights {:roles (), :allUsers true},
+                             :editRights {:roles (), :allUsers false},
+                             :availableForAll false,
+                             :required false,
+                             :default false})
 
  
   ;; [6] Test adding some of th new custom-fields to objects
