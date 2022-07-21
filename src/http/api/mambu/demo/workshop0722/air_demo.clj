@@ -116,7 +116,7 @@
   res-obj)
 )
 
-(defonce CUSTKEY (atom "8a1936ca8210c27a018211cfa8f05e48"))
+(defonce CUSTKEY (atom "8a1936ca8210c27a018211cfa8f05e48")) ;;
 (defonce PRODKEY (atom "8a194fd982119c470182119ebb1903ea")) ;; See set-PRODKEY! below to set
 
 (comment
@@ -127,17 +127,20 @@
   ;;
   ;; [1.1] DBEI product
   (create-air-product proddef-airprod1 "AIR/air-prod1.txt")
-  (call-api delete-loan-product-api {:prodid "mkairprod3"})
-  (set-PRODKEY! (call-api get-loan-product-api {:prodid "mkairprod3"}) )
+  (call-api delete-loan-product-api {:prodid "xxxx"})
+  (set-PRODKEY! (call-api get-loan-product-api {:prodid "lbsflexit"}) )
  
   ;; [2] Create a loan-account linked to AIR product
-  (create-loan-account {:prod-key @PRODKEY :acc-name "AIR ACCOUNT1"
-                        :cust-key @CUSTKEY :amount 100000 :grace_period 0 :num-installments 60
+  
+  ;; Create an account linked to mkairprod3
+   (reset! PRODKEY "8a194fd982119c470182119ebb1903ea")  ;; mkairprod3
+  (create-loan-account {:prod-key @PRODKEY :acc-name "2yr Fixed --> SVR"
+                        :cust-key @CUSTKEY :amount 100000 :grace_period 0 :num-installments 300
                         :accountInterestRateSettings
-                        [{"validFrom" "2022-07-18T10:27:47+02:00",
+                        [{"validFrom" "2022-08-18T10:27:47+02:00",
                           "interestRateSource" "FIXED_INTEREST_RATE",
                           "interestRate" 0.0},
-                         {"validFrom" "2023-08-18T10:27:47+02:00",
+                         {"validFrom" "2024-08-18T10:27:47+02:00",
                           "interestRateSource" "INDEX_INTEREST_RATE",
                           "indexSourceKey" "8a194466793b77a601793d0be8da691c",
                           "interestRateFloorValue" 2.0,
@@ -147,8 +150,36 @@
                           "interestSpread" 3
                           }
                           ]})
+
+   ;; Create an account linked to lbsflexit
+  (reset! PRODKEY "8a192fbd821fc4b80182210fd0e729b0")   ;; lbsflexit
+  (create-loan-account {:prod-key @PRODKEY :acc-name "LBS Flexit Mortgage"
+                        :cust-key @CUSTKEY :amount 100000 :grace_period 0 :num-installments 300
+                        :accountInterestRateSettings
+                        [{"validFrom" "2022-08-18T10:27:47+02:00",
+                          "interestRateSource" "FIXED_INTEREST_RATE",
+                          "interestRate" 3.99},
+                         {"validFrom" "2024-08-18T10:27:47+02:00",
+                          "interestRateSource" "INDEX_INTEREST_RATE",
+                          "indexSourceKey" "8a192fbd821fc4b80182210fd0e729ae",
+                          "interestRateFloorValue" 0.0,
+                          "interestRateCeilingValue" 20.0,
+                          "interestRateReviewUnit" "DAYS",
+                          "interestRateReviewCount" 31,
+                          "interestSpread" 0}
+                          {"validFrom" "2027-08-18T10:27:47+02:00",
+                           "interestRateSource" "INDEX_INTEREST_RATE",
+                           "indexSourceKey" "8a192fbd821fc4b8018220de61a458a8",
+                           "interestRateFloorValue" 0.0,
+                           "interestRateCeilingValue" 20.0,
+                           "interestRateReviewUnit" "DAYS",
+                           "interestRateReviewCount" 31,
+                           "interestSpread" 0}
+                          
+                          ]})
+
   (call-api delete-loan-account-api {:loanid @LOANID})
   (ext/zap-all-loans2 @CUSTKEY)
-
+(- 5.54 1.25)
 ;;
   )

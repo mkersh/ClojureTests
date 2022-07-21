@@ -1,6 +1,6 @@
 ;; template settings for Mambu product setup
 ;; See product_factory.clj - http://localhost:3000/goto-file?&bookmark=30c41be8-396e-491a-ac51-cec8b41b6859
-(ns mambu.extensions.product-factory.templates.pf-temps)
+(ns mambu.extensions.product_factory.templates.pf_temps)
 
 ;; Basic settings for a fixed-term based product
 (defn ft-basics []

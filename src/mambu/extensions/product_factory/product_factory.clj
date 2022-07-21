@@ -12,7 +12,7 @@
 (ns mambu.extensions.product_factory.product_factory
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
-            [mambu.extensions.product-factory.templates.pf-temps :as temp]
+            [mambu.extensions.product_factory.templates.pf_temps :as temp]
             ))
 
 
