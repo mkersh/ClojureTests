@@ -144,6 +144,7 @@
 
 (api/setenv "env17")
 (comment
+  ;; #bookmark= 22a26558-ec93-4c8b-a3f0-7dbcdb91d675
   ;; [1] apply-interest-payaway
   ;; [1.1] payaway externally
   (apply-interest-payaway {:from-acc "IntPay2" :pay-type "external" :sortcode "123456" :to-accid "87654321"})
@@ -155,8 +156,7 @@
   @LAST-PAYAWAY-TRANS
 
   ;; Test/debug 
-(call-api transfer-transaction {:from-accid "IntPay2" :to-accid "DPJE901":amount 500.22 :notes "Some notes" :deposit-ID (api/uuid)})
-
+  (call-api transfer-transaction {:from-accid "IntPay2" :to-accid "DPJE901" :amount 500.22 :notes "Some notes" :deposit-ID (api/uuid)})
   (call-api get-all-trans-api {:accid "IntPay2"})
   (get-interest-applied-trans (call-api get-all-trans-api {:accid "IntPay2"}))
 

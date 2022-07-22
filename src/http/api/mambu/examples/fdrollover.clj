@@ -1,3 +1,5 @@
+;;; #bookmark= c8a38eb2-5fec-4d04-b994-0ad5c007b38d
+;;;
 (ns http.api.mambu.examples.fdrollover
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]
@@ -215,102 +217,17 @@
             ]
         (steps/apply-api update-maturity-instruction context3)))))
 
-(defn orig-add-fd [_]
-  {:url (str "{{*env*}}/clients/021509389/savings")
+(defn MPO-process-run-api [_context]
+  {:url (:url (api/get-env-item "env19")) ;; Start new MPO TASK
    :method api/POST
-   :query-params {}
-   :body {"savingsAccount" {"accountHolderKey" "8a19ada3786e7b0701786edd9b4d0434"
-                            ;;"productTypeKey" "8a8186016a73c831016a7807c0bb2b2a"
-                            "productTypeKey" "8a19a9a6785b934201786a1c5bd30b8e"
-                            "name" ""
-                            "accountState" "APPROVED"
-                            "accountHolderType" "CLIENT"
-                            "accountType" "FIXED_DEPOSIT"
-                            "interestSettings" {"interestRate" "2.85"}
-                            "maturityDate" "2022-03-29"}
-          "customInformation" []}
-   :headers {
-             "Content-Type" "application/json"}})
+   :body {"msg" "started from code script"}
+   :headers {"Content-Type" "application/json"}})
 
-(comment
-  (api/setenv "env5")
-  (steps/apply-api getall-custom-field-sets {})
+(defn run-MPO-Term-Deposit-Rollover-EOD-process []
+  (steps/call-api MPO-process-run-api {}))
 
-  (today-date)
-  (year-ago-date)
-  (today-date+1)
-
-  (def fdsetupObj
-    {;; API Pipe settings
-     :show-only false ; when true only prints steps, doesn't execute
-     :throw-errors false
-     ;; Step1
-     :custid "8a19ada3786e7b0701786edd9b4d0434"
-     :prodid "8a19a9a6785b934201786a1c5bd30b8e" ;; monthly interest
-     :currency "EUR"
-     ;; step2
-     :accid "URBG897" ;; This will be overwritten if you use main-create-fd-process
-     ;; step3
-     :deposit-channel "8a19ca06707c68530170a012971101d0"
-     :deposit-amount 359.43
-     :deposit-ID (api/uuid) ;; This will be overwritten if you use main-create-fd-process
-     :start-date (str (year-ago-date) "T00:00:00+02:00")
-     ;; step4
-     :maturity-date (str (today-date+1) "T00:00:00+02:00")})
-
-  ;; Ways to test the individual steps
-  (steps/apply-api create-fd-account fdsetupObj)
-  ;; After calling previous, you then need to manually set :accid in fdsetupObj
-  (steps/apply-api approve-account fdsetupObj)
-  (steps/apply-api deposit-into-account fdsetupObj)
-  (steps/apply-api fd-start-maturity fdsetupObj)
-
-  ;; Deleting/Closing FD account(s)  
-  (try
-    (steps/apply-api delete-account fdsetupObj)
-    (catch Exception _
-      (prn "DELETE exception XXXX")))
-
-  (steps/apply-api delete-account fdsetupObj)
-  (steps/apply-api close-account fdsetupObj)
-  (steps/apply-api get-account fdsetupObj)
-  (steps/apply-api withdraw-from-account fdsetupObj)
-  (let
-   [results (steps/apply-api get-account fdsetupObj)
-    res2 (api/get-attr results [:last-call "balances" "totalBalance"])]
-    (prn res2))
-
-  ;; This is the Top level function to call to remove a FD
-  ;; It will try a number of calls until it succeeds  
-  (remove-fd-account fdsetupObj)
-  (remove-all-open-fd-accounts fdsetupObj)
-
-  (steps/apply-api get-all-accounts fdsetupObj)
-  (get-all-open-fd-accounts fdsetupObj)
-
-
-
-  ;; Create a new FD in one call
-  (steps/process-collection (main-create-fd-process fdsetupObj))
-
-  ;; Which FD(s) are maturing today i.e. Will the MPO App find
-  (steps/apply-api getall-fd-mature-today {})
-
-  ;; SETUP maturity instructions
-
-  (def maturityInstr
-    {:accid "FNNB213"
-     :maturity_dataset "_Rollover_Instructions"
-     :add_or_remove "add"
-     :maturity_field "Rollover_Y_N_Deposit_Accounts"
-     :maturity_value "No"})
-     
-  (steps/apply-api update-maturity-instruction maturityInstr)
-
-  
-
-(def maturityInstr
-  {:accid "CWXI055"
+(defn maturityInstr1 [accid]
+  {:accid accid
    :maturity_dataset "_Rollover_Instructions"
    :maturity_instructions
    [{:maturity_field "Rollover_Y_N_Deposit_Accounts"
@@ -319,20 +236,61 @@
      :maturity_value "Interest Paid Monthly"} ;; Interest Paid Monthly | Interest Paid at Maturity
     {:maturity_field "Rollover_Term_Deposit_Accounts"
      :maturity_value "3"} ;; 1 | 2 | 3 | 4 | 6 | 9 | 12
-    {:maturity_field "Rollover_Amount_Deposit_Accounts" 
-     :maturity_value "Original Principal with Interest"} ;; Original Principal without Interest | Original Principal with Interest | Specify Rollover Amount | Specify Payout Amount
+    {:maturity_field "Rollover_Amount_Deposit_Accounts"
+     :maturity_value "Specify Rollover Amount"} ;; Original Principal without Interest | Original Principal with Interest | Specify Rollover Amount | Specify Payout Amount ;; "Original Principal with Interest"
     {:maturity_field "Specified_Rollover_Amount_Deposi"
      :maturity_value "123.01"} ;; Number - Rollover Amount
     {:maturity_field "Specify_Payout_Amount_Deposit_Ac"
      :maturity_value "100"} ;; Number - Payout Amount
     {:maturity_field "Payout_Account_Number_Deposit_Ac"
      :maturity_value "IBAN-PayoutAccount"}
-     {:maturity_field "Payout_BSB_Number_Deposit_Accoun"
-      :maturity_value "PayoutSortCode"}
-     
-    ]})
+    {:maturity_field "Payout_BSB_Number_Deposit_Accoun"
+     :maturity_value "PayoutSortCode"}]})
 
-(setup-maturity-instructions maturityInstr)
+(def fdsetupObj
+  {;; API Pipe settings
+   :show-only false ; when true only prints steps, doesn't execute
+   :throw-errors false
+     ;; Step1
+   :custid "8a19ada3786e7b0701786edd9b4d0434"
+   :prodid "8a19a9a6785b934201786a1c5bd30b8e" ;; monthly interest
+   :currency "EUR"
+     ;; step2
+   :accid "URBG897" ;; This will be overwritten if you use main-create-fd-process
+     ;; step3
+   :deposit-channel "8a19ca06707c68530170a012971101d0"
+   :deposit-amount 359.43
+   :deposit-ID (api/uuid) ;; This will be overwritten if you use main-create-fd-process
+   :start-date (str (year-ago-date) "T00:00:00+02:00")
+     ;; step4
+   :maturity-date (str (today-date+1) "T00:00:00+02:00")})
+  
+  (defonce LAST-FD-ACCID (atom nil))
+  (defn create-ready-to-mature-FD []
+    (let [res (steps/process-collection (main-create-fd-process fdsetupObj))
+          new-fd-accid (get-in res [:last-call "id"])
+          _ (reset! LAST-FD-ACCID new-fd-accid)]
+      (prn (str "New (ready to mature) FD created " new-fd-accid))))
+
+(api/setenv "env5") ;; EUShowCase
+
+(comment
+  
+  ;; [1] TidyUp - Remove all FD accounts
+  (remove-all-open-fd-accounts fdsetupObj)
+
+  ;; [2] Create - a new FD in one call
+  ;; See fdsetupObj for parameters used
+  (create-ready-to-mature-FD)
+
+  ;; [3] Setup Maturity Instructions on the FD account
+  (setup-maturity-instructions (maturityInstr1 @LAST-FD-ACCID))
+  @LAST-FD-ACCID
+  (reset! LAST-FD-ACCID "PSRM783")
+
+  ;; [4] run-MPO-Term-Deposit-Rollover-EOD-process
+  ;; NOTE: This is hardcoded to 
+  (run-MPO-Term-Deposit-Rollover-EOD-process)
 
  ;;
   )

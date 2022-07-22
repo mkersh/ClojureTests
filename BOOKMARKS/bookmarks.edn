@@ -14,6 +14,10 @@
  {:file "src/tools/capability_taxonomy/captax.clj", :line 489},
  "b331f4c7-75f0-4a23-9d4b-cfa49cdfe973"
  {:file "src/http/api/mambu/demo/loyalty_points.clj", :line 1},
+ "e02a05a2-cb7a-4bf1-9cdf-fbcf6ad314bc"
+ {:file
+  "src/http/api/mambu/demo/workshop0722/custom_fields/deposit_interest_payaway.clj",
+  :line 3},
  "453bd6f6-f98b-48be-bb5d-94ef3ea5eafb"
  {:file "src/tools/local_code_server/bookmark_db.clj", :line 151},
  "7501ef93-3bb5-414e-9bc4-8726e8ac2611"
@@ -38,10 +42,16 @@
  "f60f1934-2d31-4435-b6d3-246578a56644"
  {:file "src/http/api/mambu/config_as_code/casc_custom_fields.clj",
   :line 2},
+ "22a26558-ec93-4c8b-a3f0-7dbcdb91d675"
+ {:file
+  "src/http/api/mambu/demo/workshop0722/interest_payaway/intpay.clj",
+  :line 147},
  "c5af6434-7b30-49e2-92ec-7f5178a3a06b"
  {:file "src/http/api/mambu/demo/workshop0722/air_demo.clj", :line 4},
  "75413827-b6af-48ac-90f8-4a3f8da73ac6"
  {:file "src/maths/loan_schedule2.clj", :line 79},
+ "c8a38eb2-5fec-4d04-b994-0ad5c007b38d"
+ {:file "src/http/api/mambu/examples/fdrollover.clj", :line 1},
  "9de28b85-a797-4682-9403-1329daaf8cc3"
  {:file "src/functions/pow.clj", :line 1},
  "08e24e91-6f76-4f13-ad1b-48aed8d2b260"
@@ -86,6 +96,10 @@
  "87ebc69d-f743-44b9-affd-5d188b4a21f3"
  {:file "src/http/api/mambu/demo/workshop0722/audit_trail.clj",
   :line 2},
+ "b2d41d5a-425e-444c-a169-99b791e1f39e"
+ {:file
+  "src/http/api/mambu/demo/workshop0722/custom_fields/maturity_instructions.clj",
+  :line 3},
  "137fe633-9ede-4ab4-b6a4-82d97d057c97"
  {:file "src/mambu/extensions/product_factory/pf_poc/pf_poc.clj",
   :line 2}}

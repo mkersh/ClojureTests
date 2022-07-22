@@ -175,6 +175,9 @@
 (defn round-num [num]
   (format "%.2f" (bigdec num)))
 
+(defn get-env-item [envId]
+  (get env/ENV-MAP envId))
+
 (declare get-lists-from tidyup-results findPath-aux)
 
 ;; Besides the conversion to :DECIMAL this function is nor needed

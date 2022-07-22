@@ -1,6 +1,6 @@
 ;;; Custom-field-dataset for capturing payment-arrangement(s)
 ;;; Using http://localhost:3000/goto-file?&bookmark=f60f1934-2d31-4435-b6d3-246578a56644 - To setup custom-fields
-;;;
+;;; #bookmark= b2d41d5a-425e-444c-a169-99b791e1f39e
 (ns http.api.mambu.demo.workshop0722.custom_fields.payment_arrangement
   (:require [http.api.json_helper :as api]
             [http.api.api_pipe :as steps]

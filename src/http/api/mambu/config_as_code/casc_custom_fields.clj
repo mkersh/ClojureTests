@@ -279,6 +279,7 @@
 
 ;; Add or update field
 (defn add-field 
+([field-obj] (add-field @LAST_FIELD_SET field-obj false))
 ([fs-obj field-obj] (add-field fs-obj field-obj false))
 ([fs-obj field-obj append-fsid]
   (let [id0 (:id field-obj)
