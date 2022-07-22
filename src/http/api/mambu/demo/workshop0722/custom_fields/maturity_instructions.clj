@@ -1,4 +1,4 @@
-;;; Custom-field-dataset for capturing payment-arrangement(s)
+;;; Custom-field-dataset for capturing maturity-instructions(s)
 ;;; Using http://localhost:3000/goto-file?&bookmark=f60f1934-2d31-4435-b6d3-246578a56644 - To setup custom-fields
 ;;; #bookmark= b2d41d5a-425e-444c-a169-99b791e1f39e
 (ns http.api.mambu.demo.workshop0722.custom_fields.maturity_instructions
@@ -101,8 +101,14 @@
   ;; [2] create/update the "Interest Payaway Instructions" datasset
   (create-update-fieldset-maturity-insructions)
 
+
+
+
+
+
   ;; Debug functions for examining the dataset
   (cf/get-all-custom-fields)
+  (cf/prn-fieldset-ids @cf/ALL_CUST_FIELDS)
   (cf/get-fieldset @cf/ALL_CUST_FIELDS "_Rollover_Instructions")
   @cf/ALL_CUST_FIELDS
   @cf/LAST_FIELD_SET

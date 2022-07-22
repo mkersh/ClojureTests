@@ -10,6 +10,10 @@
  {:file "src/http/api/mambu/config_as_code/branch_casc.clj", :line 1},
  "64f6dd89-071d-4493-abc2-c0a4f40277ef"
  {:file "src/maths/loan_schedule2.clj", :line 8},
+ "02b5e7b6-5e99-4db1-b5cd-6cf4ac7296d0"
+ {:file
+  "src/http/api/mambu/demo/workshop0722/regular_saver/regsave.clj",
+  :line 275},
  "357f20d4-585a-4321-b3ed-e6e5c8cf677f"
  {:file "src/tools/capability_taxonomy/captax.clj", :line 489},
  "b331f4c7-75f0-4a23-9d4b-cfa49cdfe973"
@@ -60,6 +64,10 @@
   :line 1},
  "2dce401d-2a1e-4c8d-83c6-b5c18c9f137d"
  {:file "src/testing/unit_test_examples.clj", :line 1},
+ "f7c2ee38-b8df-493f-a5c1-1e9f92e4df24"
+ {:file
+  "src/http/api/mambu/demo/workshop0722/custom_fields/payment_arrangement.clj",
+  :line 3},
  "c6906f02-3c46-4919-ba7b-058831bd90f7"
  {:file "src/http/api/mambu/examples/edit_schedule.clj", :line 253},
  "1989a54f-774f-46f0-a1da-5c50645c7394"
@@ -72,6 +80,8 @@
  {:file "src/maths/algebra2.clj", :line 1},
  "4f2ec93d-9e4c-4a8e-9588-a0d38d73a3b2"
  {:file "src/banking/iban/iban.clj", :line 1},
+ "282dac6d-4964-4ccd-8e54-c0ac52dfa602"
+ {:file "src/http/api/mambu/examples/fdrollover.clj", :line 278},
  "0b7e23fe-532f-47c0-aa6b-234955f47215"
  {:file "src/http/api/mambu/demo/credit_card/copy_products.clj",
   :line 2},

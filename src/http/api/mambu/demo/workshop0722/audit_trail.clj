@@ -145,7 +145,6 @@
 (comment
 
  (api/setenv "env16b") ;; MKH Audit
- (api/setenv "env15") ;; MH test 
  (api/setenv "env17") ;; SEUK
 
 ;; [1] Get list of most recent events

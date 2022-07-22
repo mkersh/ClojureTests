@@ -272,17 +272,17 @@
 
 (api/setenv "env17")
 (comment
-
+;; #bookmark= 02b5e7b6-5e99-4db1-b5cd-6cf4ac7296d0
 ;; [1] Setup a new RegSaver customer
 (create-new-regsaver-customer 9) ;; The number passed is used for the name ""RegSaver Tester n""
 ;; [1.1] Link to an existing account
 (reset! CUSTID 865827243)
 (reset! REGSAVER-ACCID "GEXA655")
 (reset! BONUS-ACCID "PVSH208")
+
 ;; [1.2] Call next function to zap client and accounts
 (zap-cust {:custid @CUSTID})
 (zap-cust {:custid "841727156"})
-
 
 
 ;; [2] Apply a number of deposit + withdrawal transaction
