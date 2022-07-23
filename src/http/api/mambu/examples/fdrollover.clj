@@ -237,7 +237,7 @@
     {:maturity_field "Rollover_Term_Deposit_Accounts"
      :maturity_value "3"} ;; 1 | 2 | 3 | 4 | 6 | 9 | 12
     {:maturity_field "Rollover_Amount_Deposit_Accounts"
-     :maturity_value "Specify Rollover Amount"} ;; Original Principal without Interest | Original Principal with Interest | Specify Rollover Amount | Specify Payout Amount ;; "Original Principal with Interest"
+     :maturity_value "Specify Rollover Amount"} ;; Original Principal without Interest | Original Principal with Interest | Specify Rollover Amount | Specify Payout Amount 
     {:maturity_field "Specified_Rollover_Amount_Deposi"
      :maturity_value "123.01"} ;; Number - Rollover Amount
     {:maturity_field "Specify_Payout_Amount_Deposit_Ac"
