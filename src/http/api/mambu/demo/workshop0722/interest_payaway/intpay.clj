@@ -10,6 +10,80 @@
 (def round-num api/round-num)
 
 (defonce LAST-PAYAWAY-TRANS (atom nil))
+(defonce INTPAY-PROD-KEY (atom "8a19c49e821effe701821fedfd6f4a48")) ; SAVINTPAY1
+(defonce INTPAY-ACCID (atom nil))
+(defonce CUSTID (atom nil))
+
+(defn get-client-api [context]
+  {:url (str "{{*env*}}/clients/" (:custid context))
+   :method api/GET
+   :query-params {"detailsLevel" "FULL"}
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}})
+
+(defn zap-cust [context]
+  (let  [cust-key (get (call-api get-client-api context) "encodedKey")
+         _ (prn "cust-key" cust-key)
+         context1 (assoc context :cust-key cust-key)]
+    (doall (zap/remove-all-open-dep-accounts context1))
+    (steps/apply-api zap/exit-customer2 context1)))
+
+(defn createSavingsAccount [context]
+  {:url (str "{{*env*}}/deposits")
+   :method api/POST
+   :headers {"Accept" "application/vnd.mambu.v2+json"
+             "Content-Type" "application/json"}
+   :body {"accountType" "REGULAR_SAVINGS"
+          "name" (:acc-name context)
+          "accountHolderKey" (:cust-key context)
+          "productTypeKey" (:product-key context)
+          "currencyCode" "GBP"
+          "accountHolderType" "CLIENT"}})
+
+;; A collection of steps     
+(defn create-intpayaway-customer-and-account [num]
+  {:context {:show-only false ; when true only prints steps, doesn't execute
+             :verbose true ;; print out step :label(s)
+             :first-name "IntPayaway", :last-name (str "Tester " num)
+             :branchid "8a19c49e821effe701821fedfd6f4a45"
+             ;; **** Debug Only settings next - allows you to jump to individual steps
+             :cust-key "8a19c1c8821634d6018217a3282e5798"
+             :regsaver-id "OXVX863"
+             :bonus-id "GSOT125"
+             :custid "861492689"}
+   :xjump-to-step [:step2 :one-only] ; set ":id :jump-here" in a step 
+   :steps [;; [STEP-1] Create Customer
+           {:label "[STEP-1] Create Customer"
+            :request lpd/create-customer
+            :post-filter [;(steps/save-last-to-context :cust-create)
+                          (steps/save-part-to-context ["encodedKey"] :cust-key)
+                          (steps/save-part-to-context ["id"] :custid)]}
+           ;; [STEP-2] Create RegSaver
+           {:label "[STEP-2] Create IntPayaway Account"
+            :id :step2
+            :pre-filter [(steps/save-value-to-context @INTPAY-PROD-KEY :product-key)
+                         (steps/save-value-to-context "IntPayaway" :acc-name)]
+            :request createSavingsAccount
+            :post-filter [(steps/save-part-to-context ["id"] :intpayaway-id)]}
+
+            ;; [STEP-7] Approve Accounts
+           {:label "[STEP-4] Approve Accounts"
+            :pre-filter [(steps/save-context-value-to-context :intpayaway-id :accid)]
+            :request lpd/approveDepositAccount}
+           ]})
+
+(defn create-new-intpayaway-customer [num]
+  (let [res-obj (steps/process-collection (create-intpayaway-customer-and-account num))
+        intpay-id (:intpayaway-id res-obj) 
+        custid (:custid res-obj)
+        _ (reset! INTPAY-ACCID intpay-id) 
+        _ (reset! CUSTID custid)]
+    (prn (str "New Customer + IntPayaway account created - custid=" custid " accountID=" intpay-id ))))
+
+
+;; *********************************************************************
+;; Interest Payaway functions
+;;
 
 (defn get-all-trans-api [context]
   {:url (str "{{*env*}}/deposits/" (:accid context) "/transactions")
@@ -144,12 +218,19 @@
 
 (api/setenv "env17")
 (comment
+  ;; #bookmark= 9d44b2a0-e57d-4ba1-a1e9-5bdc55df2b26
+  ;; [0] Create new IntPayaway customer and account
+  (create-new-intpayaway-customer 2)
+  @INTPAY-ACCID
+  ;; [0.1] Call next function to zap client and accounts
+  (zap-cust {:custid @CUSTID})
+
   ;; #bookmark= 22a26558-ec93-4c8b-a3f0-7dbcdb91d675
   ;; [1] apply-interest-payaway
   ;; [1.1] payaway externally
-  (apply-interest-payaway {:from-acc "IntPay2" :pay-type "external" :sortcode "123456" :to-accid "87654321"})
+  (apply-interest-payaway {:from-acc @INTPAY-ACCID :pay-type "external" :sortcode "123456" :to-accid "87654321"})
   ;; [1.2] payaway locally to another Mambu account
-  (apply-interest-payaway {:from-acc "IntPay2" :pay-type "internal" :sortcode "123456" :to-accid "DPJE901"})
+  (apply-interest-payaway {:from-acc @INTPAY-ACCID :pay-type "internal" :sortcode "123456" :to-accid "DPJE901"})
 
   ;; [2] Call the next function if you want to reverse the last apply-interest-payaway
   (call-api reverse-transaction-api {:loanTransactionId @LAST-PAYAWAY-TRANS})

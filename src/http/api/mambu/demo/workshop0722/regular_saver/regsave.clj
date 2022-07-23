@@ -318,6 +318,9 @@
 ;; Product information
 (call-api get-deposit-product-api {:prodid "RegSave1"} "encodedKey")
 (call-api get-deposit-product-api {:prodid "RegSaveBonus1"} "encodedKey")
+(call-api get-deposit-product-api {:prodid "SAVINTPAY1"} "encodedKey")
+
+
 (reset! REGSAVER-PROD-KEY  "8a19c1c8821634d6018217502f27642d")
 (reset! BONUS-PROD-KEY  "8a19c1c8821634d6018217502f276430")
 
